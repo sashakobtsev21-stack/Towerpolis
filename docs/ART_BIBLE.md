@@ -52,6 +52,17 @@ Draft direction (tune to taste): warm coral/red, sky cyan, sunny yellow, mint gr
 - **Music loop:** incompetech / Kevin MacLeod (CC-BY — **credit required**) or a cheap Epidemic Sound / Soundstripe sub for an exclusive signature theme.
 - ⚠️ Avoid shipping CC-BY without crediting in-app — real store/legal risk. Prefer CC0 for the commercial release.
 
+### 4.1 Towerpolis audio spec (player-stated — all mandatory)
+- **Music:** **upbeat, city/urban vibe**, loopable; intensity rises subtly with altitude tiers (§4.9 backdrop). A signature track is worth a small budget; CC0 loops fine for v1.
+- **Required SFX:**
+  - **Floor lands / settles** (the satisfying "thunk" + squash) — varied pitch to avoid fatigue.
+  - **Residents arriving** — light **crowd chatter / cheerful voices** as they parachute/umbrella in.
+  - **Floor falls / overhang shaved / tower topples** — a tumbling/crash sound (the funny collapse).
+  - **Perfect drop** — a rising chime; chain escalates pitch.
+  - **Menu + button-press** clicks (the player is unsure on button clicks — include a *subtle* one, toggleable in settings).
+  - Altitude-tier crossing — a soft whoosh/sparkle ("above the clouds").
+- `audio-designer` owns the mix (buses: music/SFX/UI/voices, ducking, mobile loudness, respect device mute).
+
 ---
 
 ## 5. Ready-to-use Midjourney v7 prompts

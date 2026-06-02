@@ -54,3 +54,18 @@
 
 ---
 *Bonus context if handy: your Midjourney plan tier (affects upscales/consistency), whether you already have Unity 6.3 + a Google Play Console account, and any hard deadline (e.g. a seasonal launch you're aiming at).*
+
+---
+
+## ✅ Answers — locked 2026-06-03 (folded into the GDD)
+- **A1 crane** time the swinging crane (Tower-Bloxx feel). **A2 tone** cartoony. **A3 run** endless until you fail; backdrop ascends through altitude tiers (~every 10 floors) → §4.9 Atmospheric Ascent.
+- **B4** endless + per-district height goal. **B5** forgiving 2-strike: bad drop shaves the overhang (roof/balcony falls), 2nd miss = topple/end. **B6** both crane-swing + wobble; swing speed rises only minimally. **B7** no beginner assist. **B8** camera up; pulls back to show the whole tower on a miss. **B9** minimal haptics.
+- **C10 upgrades** magnet/auto-center · slow-mo · extra life. **C11** two currencies (coins + gems). **C12/C13** dailies/streaks + achievements/missions explained in chat; folded into §4.3/§4.8.
+- **D14** 3 districts at launch. **D15** unlock by population; residents per floor: standard 2 / balcony 3 / premium 4. **D16** residents parachute/umbrella in on every placed floor (types/effects = Phase-4 TODO).
+- **E17** solo first. **E19** guest or Google; Google = cloud-saved, guest = one-time "progress not saved" warning.
+- **F20/F21** no ads at launch; wire the dormant base, turn on later.
+- **G22** style ref = the imagestowerbloxx folder; 4 Midjourney directions in `MIDJOURNEY_DIRECTIONS.md`. **G23** dev will open Blender (guide in `BLENDER_GUIDE.md`) — or Claude models via BlenderMCP. **G24** dev generates the icon (prompt provided).
+- **H25** upbeat city music; mandatory SFX (floor land, resident chatter, fall/topple, perfect chime, menu/buttons) → ART_BIBLE §4.1.
+- **I26** target normal phones @60fps (skip weak devices). **I27** portrait locked; tablet support yes.
+- **J** success = a beautiful game with superb physics, gameplay, sound — visual + game-feel first → GDD §5.1.
+- *Open:* time budget/week (J28) not yet given — pace TBD.

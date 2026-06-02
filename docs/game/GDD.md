@@ -27,33 +27,37 @@ No existing stacker (Stack, Tower Crash 3D, the dormant Tower Bloxx) offers this
 
 ---
 
-## 3. Core Loop Spec (crane → drop → grade → wobble → bonus)
+## 3. Core Loop Spec (crane → drop → grade → settle → residents)
 
-1. **Crane** swings the next block left↔right above the tower top. Oscillation period is driven by the **daily seed** (deterministic, identical for all players that day) and **shortens as the tower grows**.
-2. **Drop** — player taps; the block detaches and falls as a **Rigidbody**. *This is the only moment real physics is active.*
-3. **Grade** — on contact, **deterministic placement math** (in the Unity-free Core lib, NOT physics) computes overlap offset vs. the block below →
-   - **Perfect** (offset ≤ ~5%) — no slice, full bonus, resident spawns, perfect-chain++.
-   - **Good** (offset ≤ ~25%) — minor Stack-style overhang slice.
-   - **Sloppy** (offset ≤ ~50%) — larger slice, adds lean.
-   - **Miss** (no meaningful overlap) — block falls away; run ends (or costs a life/continue).
-4. **Freeze & weld** — the landed block immediately freezes and welds into the single `Tower` object. Juice fires: squash-Y → DOTween elastic settle; dust ring at contact; camera `DOShakePosition` scaled by misalignment.
-5. **Wobble** — the welded Tower runs **scripted sway** (fake spring). Amplitude grows and damping shrinks with height, so tall towers visibly lean and feel heavy. (Real rigidbody stacks explode past ~10–12 boxes — we **fake the wobble**, always.)
-6. **Bonus** — a **Perfect** triggers confetti + a **parachuting resident** (Mecanim falling/landing clip) + "PERFECT!" punch-scale pop + rising chime. Perfect-chains escalate chime + resident count.
-7. **End** → tower deposits into the **persistent city grid**; population +N (N scaled by perfect-ratio); daily-seed leaderboard updates; a share card auto-generates at the pride moment.
+*Locked from the player's answers. Classic Tower-Bloxx timing feel (catch the swinging crane), cartoony tone, endless-until-you-fail with per-district height goals.*
 
-**Scoring rule:** score = f(height, perfect-ratio, perfect-chain bonus). **Never** derived from PhysX (non-deterministic across devices → cheating + breaks daily-seed fairness).
+1. **Crane** swings the next floor block left↔right above the tower top. Player **times the swing** — this is the core skill. Swing period **increases only slightly** with height (kept *minimal* per design); the real rising tension comes from the wobble. Deterministic per-run seed (a **daily-seed** variant is a later meta mode, §4.2).
+2. **Drop** — player taps; the block detaches and falls as a **Rigidbody**. *Only moment real physics is active.*
+3. **Grade** — on contact, **deterministic placement math** (Unity-free Core lib, NOT physics) computes overlap offset vs. the block below:
+   - **Perfect** (tiny offset) — no slice; tower straightens a touch; **bonus residents** + perfect-chain++; "PERFECT!" pop + chime.
+   - **Good / Sloppy** (partial overlap) — the **overhang is sliced off** (the **roof or balcony falls away**); adds lean. Counts as a **miss strike**.
+   - **Miss** (no meaningful overlap) — block tumbles off; **miss strike**.
+   - **2-strike rule (forgiving, per player):** the run does **not** end on the first bad drop — the overhang is shaved and you continue. On the **2nd miss the tower topples and the run ends** (a big, funny cartoony collapse). *(cumulative vs. consecutive = a `game-designer` tuning call.)*
+4. **Settle & weld** — the landed block freezes and welds into the single `Tower` object. Juice: squash-Y → DOTween elastic settle; dust ring; **minimal** haptic tick; camera `DOShakePosition` scaled by misalignment. **Camera** tracks **up** as the tower grows; **on a miss the camera pulls back to reveal the whole swaying tower** (then the topple if it's the 2nd).
+5. **Wobble** — the welded Tower runs **scripted sway** (fake spring); amplitude grows / damping shrinks with height → tall towers visibly lean and feel heavy/tense. (Real rigidbody stacks explode past ~10–12 — we **fake the wobble**, always.)
+6. **Residents arrive on EVERY placed floor** — they **parachute / float down on umbrellas** onto the new floor (Tower-Bloxx signature), with **chatter SFX** on arrival. **Population per floor type:** standard floor = **2**, balcony floor = **3**, premium floor = **4**. A Perfect drop adds **bonus residents**. *(Resident behaviour/variety = a design TODO, §4.1.)*
+7. **Backdrop ascends** — every ~10 floors the background steps up through the atmosphere (rooftops & trees → open sky → clouds → stratosphere → stars → space…). See §4.9.
+8. **End** (2nd miss / topple, or reaching a district goal) → the completed tower **deposits into the persistent city grid**; population += sum of its residents; high score / leaderboard updates; a share card can auto-generate at the pride moment.
+
+**Scoring rule:** score = f(height, perfect-ratio, perfect-chain, residents housed). **Never** derived from PhysX (non-deterministic across devices → cheating + breaks any shared-seed fairness).
 
 ---
 
 ## 4. Systems
 
 ### 4.1 Build City + Districts (meta spine)
-- Persistent 3D city grid. Each completed run deposits its tower onto a plot. Perfectly-aligned towers spawn more parachuting residents → higher **city population** (the meta score).
+- Persistent 3D city grid. Each completed run deposits its tower onto a plot; **city population** (the meta score) = the sum of residents housed across all towers.
+- **Residents = population, per floor type** (from the core loop): standard floor = **2**, balcony floor = **3**, premium floor = **4**; a Perfect drop adds bonus residents. So *what* you build and *how cleanly* both feed the meta. Residents **parachute / float in on umbrellas onto every placed floor** with chatter SFX (the Tower-Bloxx signature). **Resident design TODO (`game-designer`):** do resident *types* differ only visually per district, or do special residents (VIP/premium) grant extra population/score? Decide in Phase 4.
 - The city is split into **districts (районы)**. **Each district has its own identity on three axes:**
   1. **Architecture** — the building/floor *style you stack* changes per district (e.g. cozy brick low-rises → glass offices → neon high-rises → pagodas → gingerbread houses). Same gameplay block, different mesh/material set.
   2. **Residents** — the parachuting characters *look and animate differently* per district (business folk, neon punks, kimono characters, elves…). Distinct idle/land/celebrate clips.
   3. **Skybox + palette + music** — backdrop, hero colors, and music bed are themed per district.
-- **Growth model (matches the release cadence):** ship with **1–2 districts**; **add a new city/district with each release / seasonal event** (Downtown → Neon → Winter → Sakura → Beach → Steampunk …). Each new district is a **data + art-pack drop on one shared system** (building variant set + resident variant set + skybox + palette + music) — *not* new code, so it's solo-sustainable. New districts can be **server-gated** (Remote Config) to release without an app update.
+- **Growth model (matches the release cadence):** ship with **3 districts**; **add a new city/district with each release / seasonal event** (Downtown → Neon → Winter → Sakura → Beach → Steampunk …). Each new district is a **data + art-pack drop on one shared system** (building variant set + resident variant set + skybox + palette + music) — *not* new code, so it's solo-sustainable. New districts can be **server-gated** (Remote Config) to release without an app update.
 - **Per-district loop:** a district has a fill goal (populate its grid / reach a population) → completing it **unlocks the next district** and grants a reward; each district has its **own leaderboard** (see 4.4). This gives the daily-score core a long-horizon collection/progression spine.
 - **Production note (`game-designer` + `technical-artist` own this):** define the district as a `DistrictDefinition` ScriptableObject (building set, resident set, skybox, palette, music, unlock cost, board id) so new districts are authored as data. See [`../ART_BIBLE.md`](../ART_BIBLE.md) for the seasonal art *system*.
 
@@ -62,17 +66,16 @@ No existing stacker (Stack, Tower Crash 3D, the dormant Tower Bloxx) offers this
 - Its own midnight-reset leaderboard. Powers streaks, fair competition, shareability, daily opens.
 
 ### 4.3 Progression & Upgrades
-- **Crane upgrades:** slower sway, wider drop tolerance, magnet/guide, slow-mo charge.
-- **Cosmetics economy:** block/tower skins, city themes/districts, crane skins (soft + hard currency).
+- **Crane upgrades (chosen 3 to start):** **(1) Magnet / auto-center** — gently pulls the block toward alignment; **(2) Slow-mo charge** — briefly slows the swing on demand; **(3) Extra life** — survive one extra miss (raises the 2-strike limit). *(Others — slower sway, wider tolerance — kept as later additions.)*
+- **Cosmetics economy:** block/tower skins, city themes/districts, crane skins (soft **coins** + premium **gems** — two currencies, see §4.8).
 - **Streaks + daily login rewards:** escalating rewards, 7-day milestone (the 2.3× daily-engagement inflection), streak-freeze/catch-up to stop churn-after-a-miss.
 - **Missions:** weekly ("build 5 towers >30 floors", "land 10 perfect drops"), achievements, prestige ("rebuild a megacity").
 - **Free progression track** (battle-pass-shaped, free at launch; paid premium track later).
 
-### 4.4 Leaderboards (design carefully)
-- **(a) Friends board** — *primary* retention driver (Google Play Games / later Game Center).
-- **(b) Weekly-reset global** — winnable window + pre-reset login spike.
-- **(c) Per-district/theme boards** — newcomers aren't crushed by veterans.
-- **No all-time global board as headline** — demotivates ~95% of players, hurts retention.
+### 4.4 Leaderboards & Social — **solo first** (per player's choice)
+- **v1 = solo:** personal high scores + per-district bests + achievements. **No social pressure at launch.**
+- **Added later (when social goes in):** **(a)** friends board (Google Play Games / later Game Center) as the primary driver; **(b)** weekly-reset global (winnable window); **(c)** per-district boards so newcomers aren't crushed. **No all-time global board as headline** (demotivates ~95%).
+- **PvP** (async "build-off" vs a friend on the same seed) is a *later* possibility, not v1.
 
 ### 4.5 Sharing / Virality (the entire UA budget)
 - Auto-generate a clean **vertical tower image / short collapse clip / "My City" panorama** with score + deep link, surfaced **at the peak-pride moment** (record run, district complete).
@@ -85,8 +88,8 @@ No existing stacker (Stack, Tower Crash 3D, the dormant Tower Bloxx) offers this
 
 ### 4.7 Authentication, Identity & Cloud Save
 *Principle: frictionless first. Never gate play behind a login.*
-- **Guest by default** — the game is fully playable on first launch with a local profile; no sign-in required.
-- **Android: Google Play Games Services (GPGS) sign-in** (optional, one tap) unlocks cloud save, leaderboards, achievements, and friends. This is the lowest-friction identity on Android and the backbone of rating/social.
+- **Guest by default** — fully playable on first launch with a **local** profile; no sign-in required. **Show a one-time warning** that guest progress lives only on this device and is lost on uninstall/new device — with a "Sign in to save" prompt.
+- **Android: Google Play Games Services (GPGS) sign-in** (optional, one tap) = **cloud-saved progress** + (later) leaderboards/achievements/friends. The frictionless way to not lose your city. (Game Center on iOS later.)
 - **iOS (later): Apple Game Center** for the same, plus **Sign in with Apple** if a custom account is ever needed.
 - **Cross-device / cross-platform sync (later):** a lightweight account layer (Firebase Auth or Unity Authentication) only if/when we need a single identity across Android↔iOS. Defer until iOS.
 - **Privacy-light:** collect the minimum; GDPR/Play data-safety/ATT consent handled in settings; no PII beyond the platform identity. `security-auditor` reviews the auth/save path before each store submission.
@@ -98,6 +101,14 @@ No existing stacker (Stack, Tower Crash 3D, the dormant Tower Bloxx) offers this
 - **Bonuses you EARN (live at/after the core):** daily login ladder, streak milestones (7-day = the engagement inflection), weekly mission rewards, district-completion rewards, perfect-chain score bonuses, "first win of the day" bonus, achievement payouts.
 - **Bonuses you BUY (later, post-retention):** gem packs, starter pack, cosmetic bundles, season/battle-pass premium track, "remove ads", convenience powerups (extra continue, crane-slow charge). All cosmetic/convenience.
 - **Sequencing:** the earned economy is built in Phase 4 (data-driven, currency math in `Towerpolis.Core` with NUnit tests); the purchasable layer is wired dormant in Phase 7 and switched on only after retention gates pass.
+
+### 4.9 Atmospheric Ascent (backdrop progression) — *signature visual*
+*The player's idea, and a strong one: the higher you build, the higher into the sky you climb. Make it grander and "much wider" than a simple swap.*
+- The backdrop **steps up through altitude tiers** as the tower grows (≈ every 10 floors, tunable):
+  **Street level** (other rooftops, trees, traffic, birds) → **Open sky** (low clouds, kites, balloons) → **Cloud sea** (above the clouds, sun glare, planes) → **Upper atmosphere / stratosphere** (thin air, jet streams, aurora hint, curvature begins) → **Edge of space** (deep blue→black, first stars, satellites) → **Space** (stars, the Earth's curve below, moon, the odd UFO) → and beyond if they keep going.
+- **Make it feel vast:** smooth **gradient/parallax transitions** between tiers (not hard cuts), a slowly shifting **sky gradient + sun/star position**, **parallax cloud/star layers**, ambient props per tier (balloons → planes → satellites → comets), and a subtle **color-grade + music-intensity shift** as you ascend. Crossing a tier is a small celebratory beat ("☁️ Above the clouds!").
+- **Cheap & mobile-safe:** tiers are **2D parallax planes / skybox blends + a few pooled props**, not heavy 3D — owned by `rendering-engineer` + `vfx-artist` + `technical-artist` against the perf budget. Per-district palette recolors the same tier system (§4.1), so it composes with districts.
+- This is **both** a difficulty-reward feedback (you *see* how high you got) and a share-worthy visual (a tower piercing into space). Reference: see [`../ART_BIBLE.md`](../ART_BIBLE.md).
 
 ---
 
@@ -113,6 +124,11 @@ No existing stacker (Stack, Tower Crash 3D, the dormant Tower Bloxx) offers this
 | Crash/ANR (Android Vitals) | low — weak vitals = auto-exclusion from Play promotion |
 
 Treat **D1 < 30%** as "core not fun yet" — a design signal, not a content problem.
+
+### 5.1 Definition of success & platform targets (player-stated)
+- **Primary success = a beautiful game with superb physics, gameplay, sound — visual + game-feel above all.** Quality-first; downloads/revenue are secondary outcomes that follow quality. Every scope trade-off favors *feel and polish* over feature count.
+- **Devices:** target **normal/mid phones at 60 fps** — **not** chasing the weakest devices. **Orientation: portrait, locked.** **Tablet support: yes** (responsive layout / safe areas — `ui-ux-designer`).
+- These set the perf budget posture for `unity-engine-architect` + `mobile-performance-engineer`: 60 fps on a mid device, portrait, tablet-safe, beauty that holds frame rate.
 
 ---
 

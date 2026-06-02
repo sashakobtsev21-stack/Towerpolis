@@ -1,5 +1,5 @@
 {
-  "//": "Ruflo / Claude Flow orchestration MCP servers for Towerpolis. Activate by opening Claude Code in this repo. claude-flow provides the swarm/memory/coordination tools the agents reference (mcp__claude-flow__*). Needs Node 20+. Run `npx claude-flow@v3alpha doctor` once to verify; set ANTHROPIC_API_KEY in env if prompted. ruv-swarm is optional (extra swarm topology tools). flow-nexus (cloud sandboxes) is optional and needs a login — add it back only if you use Flow-Nexus.",
+  "//": "Ruflo / Claude Flow orchestration + BlenderMCP for Towerpolis. Activate by opening Claude Code in this repo (Node 20+). claude-flow = the swarm/memory/coordination tools the agents reference (mcp__claude-flow__*); run `npx claude-flow@v3alpha doctor` once. ruv-swarm = optional extra topologies. blender = ahujasid/blender-mcp: lets Claude drive Blender to model the blocks; needs `uv` installed (uvx) + the BlenderMCP addon installed & connected inside a RUNNING Blender (3.6+). See docs/BLENDER_GUIDE.md and docs/AGENT_ORCHESTRATION.md.",
   "mcpServers": {
     "claude-flow": {
       "command": "npx",
@@ -10,6 +10,10 @@
       "command": "npx",
       "args": ["-y", "ruv-swarm", "mcp", "start"],
       "env": { "NODE_NO_WARNINGS": "1" }
+    },
+    "blender": {
+      "command": "uvx",
+      "args": ["blender-mcp"]
     }
   }
 }
