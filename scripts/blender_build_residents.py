@@ -1,5 +1,5 @@
-# Towerpolis residents v2 — more human (legs+shoes, torso, arms+hands, head+hair+eyes):
-# 3 with umbrellas + parachutes = 2 paraglider WINGS + 1 round DOME. 6 bright colors.
+# Towerpolis residents v3 — human figures; UMBRELLAS look like umbrellas (ribbed cone +
+# curved handle), PARACHUTES: 2 paraglider WINGS (arched) + 1 round DOME. Tidy row.
 import bpy
 
 def mat(name,rgba,rough=0.45):
@@ -10,10 +10,6 @@ def mat(name,rgba,rough=0.45):
         if 'Base Color' in b.inputs: b.inputs['Base Color'].default_value=rgba
         if 'Roughness' in b.inputs: b.inputs['Roughness'].default_value=rough
     return m
-
-def clear(n):
-    o=bpy.data.objects.get(n)
-    if o: bpy.data.objects.remove(o,do_unlink=True)
 
 def box(sx,sy,sz,c,m=None,rot=None,bevel=0.0):
     bpy.ops.object.select_all(action='DESELECT')
@@ -36,79 +32,95 @@ def sphere(r,c,m=None,segs=14,squash=1.0):
     if m: o.data.materials.append(m)
     return o
 
+def cone(r,depth,c,m=None,verts=12,r2=0.0):
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.mesh.primitive_cone_add(vertices=verts,radius1=r,radius2=r2,depth=depth,location=c)
+    o=bpy.context.active_object
+    if m: o.data.materials.append(m)
+    return o
+
 def join(main,parts):
     bpy.ops.object.select_all(action='DESELECT'); main.select_set(True)
     for p in parts:
         if p: p.select_set(True)
     bpy.context.view_layer.objects.active=main; bpy.ops.object.join(); return main
 
-m_skin =mat('R_Skin',(0.98,0.78,0.62,1))
-m_shoe =mat('R_Shoe',(0.22,0.18,0.16,1))
-m_pants=mat('R_Pants',(0.28,0.30,0.40,1))
-m_eye  =mat('R_Eye',(0.10,0.10,0.12,1))
-m_stick=mat('R_Stick',(0.45,0.45,0.5,1))
-HAIR=[mat('R_Hair0',(0.20,0.13,0.08,1)),mat('R_Hair1',(0.08,0.07,0.07,1)),mat('R_Hair2',(0.55,0.36,0.12,1))]
+m_skin=mat('R_Skin',(0.98,0.78,0.62,1)); m_shoe=mat('R_Shoe',(0.22,0.18,0.16,1))
+m_pants=mat('R_Pants',(0.28,0.30,0.40,1)); m_eye=mat('R_Eye',(0.10,0.10,0.12,1))
+m_stick=mat('R_Stick',(0.40,0.40,0.45,1))
+HAIR=[mat('R_Hair0',(0.20,0.13,0.08,1)),mat('R_Hair1',(0.07,0.07,0.07,1)),mat('R_Hair2',(0.55,0.36,0.12,1))]
 
+import math
 def person(bx,by,cloth,hair):
-    """Return (root, parts) — a cute but clearly-human figure standing at (bx,by)."""
     parts=[]
-    for lx in (-0.09,0.09):                                   # legs + shoes
+    for lx in (-0.09,0.09):
         parts.append(box(0.12,0.13,0.36,(bx+lx,by,0.18),m_pants,bevel=0.03))
         parts.append(box(0.14,0.22,0.08,(bx+lx,by+0.05,0.04),m_shoe,bevel=0.02))
-    root=box(0.32,0.20,0.42,(bx,by,0.58),cloth,bevel=0.06)    # torso (root)
-    parts.append(box(0.34,0.21,0.10,(bx,by,0.40),cloth))     # hips
-    parts.append(box(0.10,0.10,0.07,(bx,by,0.82),m_skin))    # neck
-    parts.append(sphere(0.17,(bx,by,0.97),m_skin))           # head
-    parts.append(sphere(0.185,(bx,by-0.03,1.03),hair,squash=0.7))  # hair cap
-    for ex in (-0.06,0.06):                                   # eyes
+    root=box(0.32,0.20,0.42,(bx,by,0.58),cloth,bevel=0.06)
+    parts.append(box(0.34,0.21,0.10,(bx,by,0.40),cloth))
+    parts.append(box(0.10,0.10,0.07,(bx,by,0.82),m_skin))
+    parts.append(sphere(0.17,(bx,by,0.97),m_skin))
+    parts.append(sphere(0.185,(bx,by-0.03,1.03),hair,squash=0.7))
+    for ex in (-0.06,0.06):
         parts.append(box(0.035,0.02,0.045,(bx+ex,by+0.15,0.98),m_eye))
-    for ax in (-0.21,0.21):                                   # arms + hands
+    for ax in (-0.21,0.21):
         parts.append(box(0.085,0.09,0.36,(bx+ax,by,0.58),cloth,bevel=0.03))
         parts.append(sphere(0.065,(bx+ax,by,0.38),m_skin))
     return root,parts
 
 def umbrella_resident(name,bx,by,cloth,canopy,hair):
-    clear(name)
+    for o in list(bpy.data.objects):
+        if o.name==name: bpy.data.objects.remove(o,do_unlink=True)
     root,parts=person(bx,by,cloth,hair)
-    parts.append(box(0.028,0.028,0.66,(bx+0.21,by+0.05,1.10),m_stick))   # pole from hand
-    parts.append(sphere(0.46,(bx+0.21,by+0.05,1.5),canopy,squash=0.45))  # rounded umbrella dome
-    parts.append(box(0.028,0.028,0.08,(bx+0.21,by+0.05,1.62),m_stick))   # tip
+    hx=bx+0.21; hy=by+0.05
+    parts.append(box(0.026,0.026,0.78,(hx,hy,1.06),m_stick))          # shaft
+    parts.append(box(0.026,0.14,0.026,(hx,hy+0.07,0.68),m_stick))     # curved (J) handle base
+    cap=cone(0.52,0.30,(hx,hy,1.55),canopy,verts=12)                  # POINTED umbrella canopy
+    parts.append(cap)
+    parts.append(box(0.022,0.022,0.12,(hx,hy,1.74),m_stick))          # ferrule tip
+    for a in range(12):                                              # rib tips at canopy rim
+        ang=a/12.0*2*math.pi
+        parts.append(box(0.03,0.03,0.03,(hx+math.cos(ang)*0.5,hy+math.sin(ang)*0.5,1.42),canopy))
     o=join(root,parts); o.name=name; return o
 
 def wing_resident(name,bx,by,cloth,wing,hair):
-    """Paraglider — a wide arched WING canopy + suspension lines."""
-    clear(name)
+    for o in list(bpy.data.objects):
+        if o.name==name: bpy.data.objects.remove(o,do_unlink=True)
     root,parts=person(bx,by,cloth,hair)
-    z=2.0
-    parts.append(box(1.7,0.55,0.07,(bx,by,z),wing))                       # center span
-    parts.append(box(0.55,0.55,0.07,(bx-1.0,by,z-0.16),wing,rot=(0,0.5,0)))   # left tip down
-    parts.append(box(0.55,0.55,0.07,(bx+1.0,by,z-0.16),wing,rot=(0,-0.5,0)))  # right tip down
-    for cx in (-0.6,-0.3,0,0.3,0.6):                                      # cell dividers
-        parts.append(box(0.025,0.55,0.10,(bx+cx,by,z-0.05),m_skin))
-    for cx in (-0.85,-0.45,0.45,0.85):                                    # suspension lines
-        parts.append(box(0.015,0.015,1.05,(bx+cx*0.55,by,z-0.62),m_stick,rot=(0,cx*0.12,0)))
+    z=2.05
+    for seg in (-2,-1,0,1,2):                                        # arched wing (parabola)
+        sx=seg*0.38; dz=-(seg*seg)*0.07
+        parts.append(box(0.42,0.6,0.06,(bx+sx,by,z+dz),wing))
+    for sx in (-0.6,-0.3,0,0.3,0.6):                                 # cell dividers
+        parts.append(box(0.02,0.6,0.10,(bx+sx,by,z-0.04),m_stick))
+    for sx in (-0.72,-0.5,-0.28,0.28,0.5,0.72):                      # many suspension lines
+        parts.append(box(0.012,0.012,1.05,(bx+sx*0.6,by,z-0.62),m_stick,rot=(0,sx*0.18,0)))
     o=join(root,parts); o.name=name; return o
 
 def dome_resident(name,bx,by,cloth,chute,hair):
-    """Round parachute (the one that flies into the premium floor)."""
-    clear(name)
+    for o in list(bpy.data.objects):
+        if o.name==name: bpy.data.objects.remove(o,do_unlink=True)
     root,parts=person(bx,by,cloth,hair)
-    parts.append(sphere(0.78,(bx,by,2.05),chute,segs=18,squash=0.55))     # dome
-    for (sx,sy) in [(-0.55,-0.55),(0.55,-0.55),(-0.55,0.55),(0.55,0.55)]:
-        parts.append(box(0.018,0.018,1.1,(bx+sx*0.5,by+sy*0.4,1.45),m_stick))
+    z=2.05
+    parts.append(sphere(0.82,(bx,by,z),chute,segs=16,squash=0.6))    # round canopy
+    for a in range(8):                                              # gore seams
+        ang=a/8.0*2*math.pi
+        parts.append(box(0.02,0.02,0.5,(bx+math.cos(ang)*0.45,by+math.sin(ang)*0.45,z+0.18),m_stick))
+    for (sx,sy) in [(-0.6,-0.6),(0.6,-0.6),(-0.6,0.6),(0.6,0.6),(-0.82,0),(0.82,0),(0,-0.82),(0,0.82)]:
+        parts.append(box(0.015,0.015,1.15,(bx+sx*0.5,by+sy*0.5,z-0.65),m_stick))   # 8 lines
     o=join(root,parts); o.name=name; return o
 
-CLOTH=[(0.90,0.25,0.28,1),(0.20,0.45,0.85,1),(0.25,0.65,0.40,1),
-       (0.95,0.55,0.18,1),(0.55,0.35,0.80,1),(0.90,0.40,0.62,1)]
-CAN  =[(1.0,0.30,0.30,1),(0.25,0.6,1.0,1),(0.35,0.85,0.45,1),
-       (1.0,0.65,0.2,1),(0.7,0.45,0.95,1),(1.0,0.5,0.75,1)]
+CLOTH=[(0.90,0.25,0.28,1),(0.20,0.45,0.85,1),(0.25,0.65,0.40,1),(0.95,0.55,0.18,1),(0.55,0.35,0.80,1),(0.90,0.40,0.62,1)]
+CAN  =[(1.0,0.30,0.30,1),(0.25,0.6,1.0,1),(0.35,0.85,0.45,1),(1.0,0.65,0.2,1),(0.7,0.45,0.95,1),(1.0,0.5,0.75,1)]
 def CM(i,t): return mat('R_%s%d'%(t,i),CLOTH[i] if t=='c' else CAN[i])
 
 log=[]
-for i in range(3):  # 3 umbrellas
-    umbrella_resident('Resident_Umbrella_%d'%(i+1), -5+i*1.7, -5, CM(i,'c'), CM(i,'k'), HAIR[i%3]); log.append('umbrella %d'%(i+1))
-wing_resident('Resident_Wing_1', -5,   -7.6, CM(3,'c'), CM(3,'k'), HAIR[0]); log.append('wing 1')
-wing_resident('Resident_Wing_2', -3.3, -7.6, CM(4,'c'), CM(4,'k'), HAIR[1]); log.append('wing 2')
-dome_resident('Resident_Dome_1', -1.6, -7.6, CM(5,'c'), CM(5,'k'), HAIR[2]); log.append('dome 1')
+# tidy row in front of the blocks (y = -3.5)
+umbrella_resident('Resident_Umbrella_1',0,-3.5,CM(0,'c'),CM(0,'k'),HAIR[0]); log.append('umbrella 1')
+umbrella_resident('Resident_Umbrella_2',2,-3.5,CM(1,'c'),CM(1,'k'),HAIR[1]); log.append('umbrella 2')
+umbrella_resident('Resident_Umbrella_3',4,-3.5,CM(2,'c'),CM(2,'k'),HAIR[2]); log.append('umbrella 3')
+wing_resident('Resident_Wing_1',6,-3.5,CM(3,'c'),CM(3,'k'),HAIR[0]); log.append('wing 1')
+wing_resident('Resident_Wing_2',8,-3.5,CM(4,'c'),CM(4,'k'),HAIR[1]); log.append('wing 2')
+dome_resident('Resident_Dome_1',10,-3.5,CM(5,'c'),CM(5,'k'),HAIR[2]); log.append('dome 1')
 bpy.context.view_layer.update()
-print('RESIDENTS v2:\n  '+'\n  '.join(log))
+print('RESIDENTS v3 (tidy):\n  '+'\n  '.join(log))
