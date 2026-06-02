@@ -32,9 +32,10 @@ def clear(n):
 def box(sx,sy,sz,c,m=None,rot=None):
     bpy.ops.object.select_all(action='DESELECT')
     bpy.ops.mesh.primitive_cube_add(size=1,location=c)
-    o=bpy.context.active_object; o.scale=(sx,sy,sz); bpy.ops.object.transform_apply(scale=True)
-    if rot:
-        o.rotation_euler=rot; bpy.ops.object.transform_apply(rotation=True)
+    o=bpy.context.active_object; o.scale=(sx,sy,sz)
+    if rot: o.rotation_euler=rot
+    # keep location=False so origin stays at c -> rotation bakes about the box CENTER (not world 0)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
     if m: o.data.materials.append(m)
     return o
 
@@ -69,8 +70,8 @@ def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
             mx=-W/2+W*(k+1)/(vm+1); p.append(box(MM,0.06,H,(bx+off+mx,y+n*0.03,cz),white))
         for k in range(hm):
             mz=-H/2+H*(k+1)/(hm+1); p.append(box(W,0.06,MM,(bx+off,y+n*0.03,cz+mz),white))
-        if canopy:  # thin, small projection, no brackets
-            p.append(box(W+0.14,0.07,0.03,(bx+off,y+n*0.055,cz+H/2+0.10),canopy))
+        if canopy:  # sloped awning sitting ON the window's top frame, EMBEDDED in the wall
+            p.append(box(W+0.16,0.28,0.05,(bx+off,y,cz+H/2),canopy,rot=(-n*0.85,0,0)))
     else:
         x=1.0 if face=='R' else -1.0; n=1 if face=='R' else -1
         p.append(box(0.06,W,H,(bx+x,off,cz),glass))
@@ -83,7 +84,7 @@ def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
         for k in range(hm):
             mz=-H/2+H*(k+1)/(hm+1); p.append(box(0.06,W,MM,(bx+x+n*0.03,off,cz+mz),white))
         if canopy:
-            p.append(box(0.07,W+0.14,0.03,(bx+x+n*0.055,off,cz+H/2+0.10),canopy))
+            p.append(box(0.28,W+0.16,0.05,(bx+x,off,cz+H/2),canopy,rot=(0,n*0.85,0)))
     return p
 
 def windows(bx,faces,offs,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
@@ -151,7 +152,7 @@ def entrance(bx,white,door,gold,canopy,steps,rail):
     p.append(box(0.025,0.14,dh,(bx,1.02,cz),white))
     p.append(box(0.05,0.07,0.12,(bx-0.13,1.05,cz),gold))
     p.append(box(0.05,0.07,0.12,(bx+0.13,1.05,cz),gold))
-    p.append(box(1.45,0.32,0.04,(bx,1.14,dh+bz+0.10-0.077),canopy,rot=(-0.5,0,0)))  # tilted, wall-anchored
+    p.append(box(1.45,0.32,0.05,(bx,1.0,dh+bz),canopy,rot=(-0.85,0,0)))  # awning on entrance door top (embedded)
     # steps pulled IN toward the house
     p.append(box(1.2,0.34,0.12,(bx,1.18,0.06),steps))
     p.append(box(1.0,0.22,0.20,(bx,1.12,0.14),steps))
@@ -186,17 +187,15 @@ def safe(l,f):
 
 def b1():  # Standard green; windows F/L/R; ONE full-width canopy per window-face
     o=body('Floor_Standard',2,2,FH,0,m_green)
-    p=rim(0,m_white)+windows(0,('F','L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,None)
-    for f in ('F','L','R'): p+=full_canopy(0,f,m_canlb,CZ+0.95/2+0.12)
+    p=rim(0,m_white)+windows(0,('F','L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
     join(o,p)
 safe('Floor_Standard',b1)
 
 def b2():  # Balcony yellow; wooden balcony+door front; windows L/R + full-width canopy
     o=body('Floor_Balcony',2,2,FH,3,m_yellow)
-    p=rim(3,m_white)+windows(3,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,None)
-    for f in ('L','R'): p+=full_canopy(3,f,m_canlb,CZ+0.95/2+0.12)
+    p=rim(3,m_white)+windows(3,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
     p+=balcony(3,'F',m_wood,1.3)+door_unit(3,'F',0.0,0.62,1.25,m_white,m_glass,m_gold)
-    p+=full_canopy(3,'F',m_canlb,1.52)               # front canopy over the door
+    p.append(box(0.90,0.28,0.05,(3,1.0,1.31),m_canlb,rot=(-0.85,0,0)))   # awning on balcony door top (embedded)
     join(o,p)
 safe('Floor_Balcony',b2)
 
@@ -206,12 +205,10 @@ def b3():  # Premium blue; FULL-WIDTH marble balcony + door + 2 windows + ONE co
     p+=balcony(6,'F',m_marble,1.92,d=0.5)
     p+=door_unit(6,'F',0.0,0.6,1.3,m_white,m_glass,m_gold)
     for s in (-0.74,0.74):
-        p+=win(6,'F',s,0.82,0.28,1.0,m_white,m_glass,vm=0,hm=2,canopy=None)
-    p+=full_canopy(6,'F',m_marble,1.46,w=2.08)                      # single continuous canopy
-    p+=win(6,'L',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=None)
-    p+=win(6,'R',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=None)
-    p+=full_canopy(6,'L',m_marble,CZ+1.1/2+0.12,w=1.7)   # wider side canopies
-    p+=full_canopy(6,'R',m_marble,CZ+1.1/2+0.12,w=1.7)
+        p+=win(6,'F',s,0.82,0.28,1.0,m_white,m_glass,vm=0,hm=2,canopy=m_marble)
+    p.append(box(0.84,0.30,0.05,(6,1.0,1.36),m_marble,rot=(-0.85,0,0)))   # awning on premium door top (embedded)
+    p+=win(6,'L',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
+    p+=win(6,'R',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
     for (px,py) in [(-0.95,-0.95),(0.95,-0.95),(-0.95,0.95),(0.95,0.95)]:
         p.append(box(0.1,0.1,FH,(6+px,py,FH/2),m_white))
     join(o,p)
