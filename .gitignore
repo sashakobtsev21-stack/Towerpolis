@@ -52,6 +52,9 @@ bin/
 *.dll
 *.exe
 
+# Blender preview screenshots (throwaway)
+scripts/*preview*.png
+
 # ===== OS / misc =====
 .DS_Store
 Thumbs.db
