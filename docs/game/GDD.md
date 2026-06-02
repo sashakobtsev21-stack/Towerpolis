@@ -47,10 +47,15 @@ No existing stacker (Stack, Tower Crash 3D, the dormant Tower Bloxx) offers this
 
 ## 4. Systems
 
-### 4.1 Build City (meta spine)
-- Persistent 3D city grid. Each completed run deposits its tower onto a plot.
-- Perfectly-aligned towers spawn more parachuting residents → higher **city population** (the meta score).
-- Districts/themes unlock at population milestones (Downtown → Neon → Winter → …). Each is a recolor + prop swap on the base tower (seasonal art *system*, not bespoke).
+### 4.1 Build City + Districts (meta spine)
+- Persistent 3D city grid. Each completed run deposits its tower onto a plot. Perfectly-aligned towers spawn more parachuting residents → higher **city population** (the meta score).
+- The city is split into **districts (районы)**. **Each district has its own identity on three axes:**
+  1. **Architecture** — the building/floor *style you stack* changes per district (e.g. cozy brick low-rises → glass offices → neon high-rises → pagodas → gingerbread houses). Same gameplay block, different mesh/material set.
+  2. **Residents** — the parachuting characters *look and animate differently* per district (business folk, neon punks, kimono characters, elves…). Distinct idle/land/celebrate clips.
+  3. **Skybox + palette + music** — backdrop, hero colors, and music bed are themed per district.
+- **Growth model (matches the release cadence):** ship with **1–2 districts**; **add a new city/district with each release / seasonal event** (Downtown → Neon → Winter → Sakura → Beach → Steampunk …). Each new district is a **data + art-pack drop on one shared system** (building variant set + resident variant set + skybox + palette + music) — *not* new code, so it's solo-sustainable. New districts can be **server-gated** (Remote Config) to release without an app update.
+- **Per-district loop:** a district has a fill goal (populate its grid / reach a population) → completing it **unlocks the next district** and grants a reward; each district has its **own leaderboard** (see 4.4). This gives the daily-score core a long-horizon collection/progression spine.
+- **Production note (`game-designer` + `technical-artist` own this):** define the district as a `DistrictDefinition` ScriptableObject (building set, resident set, skybox, palette, music, unlock cost, board id) so new districts are authored as data. See [`../ART_BIBLE.md`](../ART_BIBLE.md) for the seasonal art *system*.
 
 ### 4.2 Daily Seed (heartbeat)
 - One global crane/sequence per day, generated deterministically by the Core lib (xorshift/seed-by-date).
@@ -77,6 +82,22 @@ No existing stacker (Stack, Tower Crash 3D, the dormant Tower Bloxx) offers this
 ### 4.6 Menus / Settings / Localization
 - Main menu, settings (sound/music sliders, language, haptics, quality, reset/restore, privacy/consent).
 - **RU + EN at launch** via Unity Localization string tables. No hardcoded user-facing strings. Store listings RU+EN too (localization is an explicit Apple featuring criterion).
+
+### 4.7 Authentication, Identity & Cloud Save
+*Principle: frictionless first. Never gate play behind a login.*
+- **Guest by default** — the game is fully playable on first launch with a local profile; no sign-in required.
+- **Android: Google Play Games Services (GPGS) sign-in** (optional, one tap) unlocks cloud save, leaderboards, achievements, and friends. This is the lowest-friction identity on Android and the backbone of rating/social.
+- **iOS (later): Apple Game Center** for the same, plus **Sign in with Apple** if a custom account is ever needed.
+- **Cross-device / cross-platform sync (later):** a lightweight account layer (Firebase Auth or Unity Authentication) only if/when we need a single identity across Android↔iOS. Defer until iOS.
+- **Privacy-light:** collect the minimum; GDPR/Play data-safety/ATT consent handled in settings; no PII beyond the platform identity. `security-auditor` reviews the auth/save path before each store submission.
+
+### 4.8 Bonuses & Currency (earned now → purchasable later)
+*Two currencies; everything launches **earnable**, purchasable layers come later (and never pay-to-win).*
+- **Coins (soft, earned):** from every run (height + perfects), daily login, missions, district completion, watch-a-rewarded-ad doubler (later). Spent on crane upgrades + common cosmetics.
+- **Gems (premium):** earned **sparingly** at launch (milestones, achievements, streak peaks); **purchasable later** via IAP. Spent on premium cosmetics, district skins, battle-pass premium, continues.
+- **Bonuses you EARN (live at/after the core):** daily login ladder, streak milestones (7-day = the engagement inflection), weekly mission rewards, district-completion rewards, perfect-chain score bonuses, "first win of the day" bonus, achievement payouts.
+- **Bonuses you BUY (later, post-retention):** gem packs, starter pack, cosmetic bundles, season/battle-pass premium track, "remove ads", convenience powerups (extra continue, crane-slow charge). All cosmetic/convenience.
+- **Sequencing:** the earned economy is built in Phase 4 (data-driven, currency math in `Towerpolis.Core` with NUnit tests); the purchasable layer is wired dormant in Phase 7 and switched on only after retention gates pass.
 
 ---
 
@@ -128,7 +149,7 @@ Treat **D1 < 30%** as "core not fun yet" — a design signal, not a content prob
 
 **Realistic zero-UA expectation (honest):** scale is the constraint, not eCPM. ~15K DAU × ~5 sessions × ~1.5 rewarded/session ≈ $3–9K/month from ads; hybrid IAP roughly doubles ARPDAU. **Reaching 15K DAU organically is the hard part** — expect months 1–3 in the hundreds-to-low-thousands DAU unless featured (a top slot can deliver ~+470% installs — effectively the whole UA budget). **Model $0–low-hundreds/month pre-featuring.**
 
-**RU-specific note:** Google Play / App Store payouts and card payments for RF-based devs are constrained (sanctions/withdrawal friction). Decide the publishing entity / payout route early (foreign entity, alt stores like RuStore as a secondary channel, etc.).
+**Developer payout note (defer — resolve before Phase 7, not now):** the dev is a **Ukrainian citizen based in Georgia**, holding **RF self-employed (самозанятый) status + RF cards, plus Ukrainian and Georgian bank cards.** This is a *flexibility*, not a constraint — Google Play & Apple payouts work cleanly to a **Georgian** bank account / sole-proprietor (and many indies register a Georgian Individual Entrepreneur for a low, simple tax regime). Decision deferred: pick the **publishing entity + payout account** (Georgia is the natural fit) when monetization actually turns on. RuStore/alt-stores are an *optional extra* channel, not required. First priority per the dev: **ship the game — build, tune, and art it — money plumbing comes later.**
 
 ---
 

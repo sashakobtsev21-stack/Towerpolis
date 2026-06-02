@@ -2,8 +2,15 @@
 
 A premium-feel casual **3D physics tower-stacker** (Unity 6.3, Android-first → iOS later). Full design in [`docs/game/GDD.md`](docs/game/GDD.md); pillars in [`docs/game/pillars.md`](docs/game/pillars.md); build plan + agent orchestration in [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md); art/audio in [`docs/ART_BIBLE.md`](docs/ART_BIBLE.md); decisions in [`docs/adr/`](docs/adr).
 
-## Agent studio
-The **15-agent Unity game-dev studio** lives in [`.claude/agents/game-dev/`](.claude/agents/game-dev) (copied from the `my_agents` framework at `C:\Users\Oleksandr\Desktop\agents\ruflo\.claude\agents\game-dev`). Drive it as a 3-tier hierarchy: `game-director` (vision/pillars/scope) → `game-designer` + `unity-engine-architect` → the engineering/art/QA implementers. Invoke them as `subagent_type` (Agent) / `agentType` (Workflow) when this repo is the session root, or via the `npx ruflo` swarm. **Claude Code still writes the Unity C# itself** — the agents are the roles/lenses (designer specifies → gameplay-programmer implements → game-qa-engineer verifies). The team reads `docs/game/GDD.md` + `docs/game/pillars.md`, records ADRs in `docs/adr/`, and shares state in the `collaboration` namespace. Full per-phase mapping in `BUILD_PLAN.md` §0–1. The broader Ruflo `my_agents` toolchain (researcher, payments, security-auditor, CLI swarm) remains available for non-game-specific tasks.
+## Agent studio & orchestration
+**109 agents** from `my_agents` are connected under [`.claude/agents/`](.claude/agents): the **15-agent Unity game-dev studio** (`game-dev/`) + the support specialists (research, security, payments, devops/release, docs, quality, prompts, telemetry, swarm coordinators). Full map: **[`docs/AGENT_ORCHESTRATION.md`](docs/AGENT_ORCHESTRATION.md)**.
+
+- **Master coordinator = `studio-orchestrator`** (opus) — decomposes any goal, picks the phase roster, sequences handoffs, enforces binding decisions, synthesizes. It **defers creative/game calls to `game-director`** and routes cross-cutting work to support specialists.
+- **3-tier game studio:** `game-director` → `game-designer` + `unity-engine-architect` → engineering/art/QA implementers.
+- **Anti-drift (enforced):** hierarchical, **6–8 active agents per task**, specialized roles. The 109 are a *menu, not a standing team* — pull only the phase's roster (see `BUILD_PLAN.md` §1).
+- **Comms:** named agents + `SendMessage`; namespaces `collaboration`/`coordination`/`tasks`/`security`; **never write secrets to a namespace.** Conflicts resolve: **ADR (`docs/adr/`) > GDD/pillars > game-director (creative) > orchestrator.**
+- **Invoke** as `subagent_type` (Agent) / `agentType` (Workflow) when this repo is the session root, or via the `npx ruflo` swarm. **Claude Code still writes the Unity C# itself** — agents are the roles/lenses (designer specifies → gameplay-programmer implements → game-qa-engineer verifies).
+- **MCP/plugins:** [`.claude/mcp.json`](.claude/mcp.json) wires claude-flow + ruv-swarm; run [`scripts/setup-agents.ps1`](scripts/setup-agents.ps1) once to install the game-relevant Ruflo plugins. Activation needs the session rooted here + Node 20+.
 
 ## Architecture rules
 - **Deterministic game logic → `Towerpolis.Core`**, a Unity-free C# assembly (`noEngineReferences: true`) with **NUnit** tests that run via `dotnet test` standalone AND in Unity Test Runner. Grading, daily seed, scoring, city population, economy math live here.

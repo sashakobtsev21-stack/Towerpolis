@@ -1,0 +1,15 @@
+{
+  "//": "Ruflo / Claude Flow orchestration MCP servers for Towerpolis. Activate by opening Claude Code in this repo. claude-flow provides the swarm/memory/coordination tools the agents reference (mcp__claude-flow__*). Needs Node 20+. Run `npx claude-flow@v3alpha doctor` once to verify; set ANTHROPIC_API_KEY in env if prompted. ruv-swarm is optional (extra swarm topology tools). flow-nexus (cloud sandboxes) is optional and needs a login — add it back only if you use Flow-Nexus.",
+  "mcpServers": {
+    "claude-flow": {
+      "command": "npx",
+      "args": ["-y", "claude-flow@v3alpha", "mcp", "start"],
+      "env": { "NODE_NO_WARNINGS": "1" }
+    },
+    "ruv-swarm": {
+      "command": "npx",
+      "args": ["-y", "ruv-swarm", "mcp", "start"],
+      "env": { "NODE_NO_WARNINGS": "1" }
+    }
+  }
+}

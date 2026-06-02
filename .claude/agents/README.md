@@ -1,9 +1,15 @@
 # Towerpolis subagents
 
-`game-dev/` holds the **15-agent Unity game-dev studio** copied from the `my_agents` framework
-(`C:\Users\Oleksandr\Desktop\agents\ruflo\.claude\agents\game-dev`). They are first-class Claude Code
-subagents — invocable as `subagent_type` (Agent tool) / `agentType` (Workflow) when a session is rooted
-in this repo. See [`../../docs/BUILD_PLAN.md`](../../docs/BUILD_PLAN.md) §0 for the hierarchy and per-phase usage.
+**109 agents** connected from the `my_agents` framework (`C:\Users\Oleksandr\Desktop\agents\ruflo\.claude\agents`),
+minus the wrong-stack rosters (flow-nexus/cloud, dual-mode/Codex, React-Native mobile). They are first-class
+Claude Code subagents — invocable as `subagent_type` (Agent) / `agentType` (Workflow) when a session is rooted
+in this repo. **Master coordinator: [`studio-orchestrator.md`](studio-orchestrator.md)** (routes everything, defers
+game calls to `game-director`). Full org + comms + MCP/plugins: **[`../../docs/AGENT_ORCHESTRATION.md`](../../docs/AGENT_ORCHESTRATION.md)**;
+per-phase rosters in [`../../docs/BUILD_PLAN.md`](../../docs/BUILD_PLAN.md).
+
+> Anti-drift: the 109 are a **menu, not a standing team** — only 6–8 run per task. `game-dev/` is the core studio (below); the other folders (`core/`, `sparc/`, `security-auditor`, `payments/`, `devops/`, `github/`, `testing/`, `analysis/`, `goal/`, `swarm/`, `hive-mind/`, `documentation/`, `optimization/`, etc.) are support specialists pulled in per phase.
+
+## Game-dev studio (`game-dev/`)
 
 | Tier | Agent | Model | Owns |
 |---|---|---|---|
