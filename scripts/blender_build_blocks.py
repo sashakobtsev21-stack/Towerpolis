@@ -57,7 +57,7 @@ def join(main,parts):
         if p: p.select_set(True)
     bpy.context.view_layer.objects.active=main; bpy.ops.object.join(); return main
 
-def awn(bx,face,off,topz,wid,m,proj=0.18,th=0.025,tilt=0.7):
+def awn(bx,face,off,topz,wid,m,proj=0.09,th=0.025,tilt=0.7):
     # sloped awning whose BACK-TOP edge is anchored at (wall, topz); slopes ONLY down-&-out
     # (its highest point is topz -> never pokes up through the floor top; sits above the frame)
     co=proj/2*math.cos(tilt); so=proj/2*math.sin(tilt); tco=th/2*math.cos(tilt); tso=th/2*math.sin(tilt)
@@ -71,7 +71,7 @@ def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
     p=[]
     if face in ('F','B'):
         y=1.0 if face=='F' else -1.0; n=1 if face=='F' else -1
-        gy=y-n*0.03; fy=y                                  # glass flush, frame recessed (half in wall)
+        gy=y-n*0.015; fy=y                                 # glass slightly proud (no z-fight), frame recessed
         p.append(box(W,0.06,H,(bx+off,gy,cz),glass))
         p.append(box(W+0.08,0.05,FB,(bx+off,fy,cz+H/2),white))
         p.append(box(W+0.08,0.05,FB,(bx+off,fy,cz-H/2),white))
@@ -84,7 +84,7 @@ def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
         if canopy: p+=awn(bx,face,off,cz+H/2+0.07,W+0.16,canopy)
     else:
         x=1.0 if face=='R' else -1.0; n=1 if face=='R' else -1
-        gx=x-n*0.03; fx=x
+        gx=x-n*0.015; fx=x
         p.append(box(0.06,W,H,(bx+gx,off,cz),glass))
         p.append(box(0.05,W+0.08,FB,(bx+fx,off,cz+H/2),white))
         p.append(box(0.05,W+0.08,FB,(bx+fx,off,cz-H/2),white))
@@ -119,26 +119,26 @@ def door_unit(bx,face,off,dw,dh,white,panel,gold):
     p=[]; cz=dh/2.0+0.06
     if face in ('F','B'):
         y=1.0 if face=='F' else -1.0; n=1 if face=='F' else -1; fy=y       # frame recessed (half in wall)
-        p.append(box(dw,0.07,dh,(bx+off,y-n*0.03,cz),panel))               # glass flush
+        p.append(box(dw,0.07,dh,(bx+off,y-n*0.015,cz),panel))             # glass slightly proud
         p.append(box(dw+0.10,0.07,FB,(bx+off,fy,cz+dh/2),white))
         p.append(box(dw+0.10,0.07,FB,(bx+off,fy,cz-dh/2),white))
         p.append(box(FB,0.07,dh+0.10,(bx+off-dw/2,fy,cz),white))
         p.append(box(FB,0.07,dh+0.10,(bx+off+dw/2,fy,cz),white))
         p.append(box(MM,0.07,dh,(bx+off,fy,cz),white))
         p.append(box(dw,0.07,MM,(bx+off,fy,0.42),white))
-        p.append(box(0.05,0.09,0.16,(bx+off-0.07,y+n*0.06,cz),gold))
-        p.append(box(0.05,0.09,0.16,(bx+off+0.07,y+n*0.06,cz),gold))
+        p.append(box(0.04,0.06,0.11,(bx+off-0.07,y+n*0.06,cz),gold))
+        p.append(box(0.04,0.06,0.11,(bx+off+0.07,y+n*0.06,cz),gold))
     else:
         x=1.0 if face=='R' else -1.0; n=1 if face=='R' else -1; fx=x         # frame recessed (half in wall)
-        p.append(box(0.07,dw,dh,(bx+x-n*0.03,off,cz),panel))                # glass flush
+        p.append(box(0.07,dw,dh,(bx+x-n*0.015,off,cz),panel))               # glass slightly proud
         p.append(box(0.07,dw+0.10,FB,(bx+fx,off,cz+dh/2),white))
         p.append(box(0.07,dw+0.10,FB,(bx+fx,off,cz-dh/2),white))
         p.append(box(0.07,FB,dh+0.10,(bx+fx,off-dw/2,cz),white))
         p.append(box(0.07,FB,dh+0.10,(bx+fx,off+dw/2,cz),white))
         p.append(box(0.07,MM,dh,(bx+fx,off,cz),white))
         p.append(box(0.07,dw,MM,(bx+fx,off,0.42),white))
-        p.append(box(0.09,0.05,0.16,(bx+x+n*0.06,off-0.07,cz),gold))
-        p.append(box(0.09,0.05,0.16,(bx+x+n*0.06,off+0.07,cz),gold))
+        p.append(box(0.06,0.04,0.11,(bx+x+n*0.06,off-0.07,cz),gold))
+        p.append(box(0.06,0.04,0.11,(bx+x+n*0.06,off+0.07,cz),gold))
     return p
 
 def balcony(bx,face,rail,w,d=0.45):
@@ -160,9 +160,9 @@ def entrance(bx,white,door,gold,canopy,steps,rail):
     p.append(box(dw+0.14,0.10,dh+0.14,(bx,1.0,cz),white))
     p.append(box(dw,0.12,dh,(bx,1.0,cz),door))
     p.append(box(0.025,0.14,dh,(bx,1.02,cz),white))
-    p.append(box(0.05,0.07,0.12,(bx-0.13,1.05,cz),gold))
-    p.append(box(0.05,0.07,0.12,(bx+0.13,1.05,cz),gold))
-    p+=awn(bx,'F',0.0,dh+bz+0.07,1.5,canopy)          # awning above entrance door
+    p.append(box(0.035,0.05,0.09,(bx-0.13,1.05,cz),gold))
+    p.append(box(0.035,0.05,0.09,(bx+0.13,1.05,cz),gold))
+    p+=awn(bx,'F',0.0,dh+bz+0.20,1.5,canopy)          # awning above entrance door — raised higher
     # steps pulled IN toward the house
     p.append(box(1.2,0.34,0.12,(bx,1.18,0.06),steps))
     p.append(box(1.0,0.22,0.20,(bx,1.12,0.14),steps))
