@@ -29,10 +29,12 @@ def clear(n):
     o=bpy.data.objects.get(n)
     if o: bpy.data.objects.remove(o,do_unlink=True)
 
-def box(sx,sy,sz,c,m=None):
+def box(sx,sy,sz,c,m=None,rot=None):
     bpy.ops.object.select_all(action='DESELECT')
     bpy.ops.mesh.primitive_cube_add(size=1,location=c)
     o=bpy.context.active_object; o.scale=(sx,sy,sz); bpy.ops.object.transform_apply(scale=True)
+    if rot:
+        o.rotation_euler=rot; bpy.ops.object.transform_apply(rotation=True)
     if m: o.data.materials.append(m)
     return o
 
@@ -90,12 +92,13 @@ def windows(bx,faces,offs,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
         for o in offs: p+=win(bx,f,o,cz,W,H,white,glass,vm,hm,canopy)
     return p
 
-def full_canopy(bx,face,m,z,w=2.08,proj=0.15,th=0.03):
+def full_canopy(bx,face,m,z,w=2.08,proj=0.30,th=0.04,tilt=0.7):
+    # sloped awning (~40 deg): outer edge drops
     if face in ('F','B'):
         n=1 if face=='F' else -1
-        return [box(w,proj,th,(bx,1.0*n+n*proj/2,z),m)]
+        return [box(w,proj,th,(bx,1.0*n+n*proj*0.42,z),m,rot=(-n*tilt,0,0))]
     sgn=1 if face=='R' else -1
-    return [box(proj,w,th,(bx+1.0*sgn+sgn*proj/2,0,z),m)]
+    return [box(proj,w,th,(bx+1.0*sgn+sgn*proj*0.42,0,z),m,rot=(0,sgn*tilt,0))]
 
 def rim(bx,white,t=0.12):
     return [box(2.12,2.12,t,(bx,0,t/2.0),white)]
@@ -140,16 +143,22 @@ def balcony(bx,face,rail,w,d=0.45):
     p.append(box(w,0.06,0.06,(bx,yo-n*0.06,sh+rh),rail))
     return p
 
-def entrance(bx,white,door,gold,canopy,steps):
-    p=[]; dw=0.8; dh=1.0; cz=dh/2+0.04
+def entrance(bx,white,door,gold,canopy,steps,rail):
+    p=[]; dw=0.8; dh=1.0; bz=0.22; cz=bz+dh/2   # door RAISED (bottom at bz)
     p.append(box(dw+0.14,0.10,dh+0.14,(bx,1.0,cz),white))
     p.append(box(dw,0.12,dh,(bx,1.0,cz),door))
     p.append(box(0.025,0.14,dh,(bx,1.02,cz),white))
-    p.append(box(0.05,0.07,0.12,(bx-0.13,1.05,0.55),gold))
-    p.append(box(0.05,0.07,0.12,(bx+0.13,1.05,0.55),gold))
-    p.append(box(1.4,0.30,0.04,(bx,1.12,dh+0.14),canopy))   # thinner narrower canopy, no brackets
-    p.append(box(1.3,0.55,0.1,(bx,1.5,0.05),steps))
-    p.append(box(1.05,0.3,0.18,(bx,1.4,0.12),steps))
+    p.append(box(0.05,0.07,0.12,(bx-0.13,1.05,cz),gold))
+    p.append(box(0.05,0.07,0.12,(bx+0.13,1.05,cz),gold))
+    p.append(box(1.45,0.32,0.04,(bx,1.16,dh+bz+0.10),canopy,rot=(-0.7,0,0)))  # tilted canopy
+    # steps pulled IN toward the house
+    p.append(box(1.2,0.34,0.12,(bx,1.18,0.06),steps))
+    p.append(box(1.0,0.22,0.20,(bx,1.12,0.14),steps))
+    # handrails beside the steps
+    for sx in (-0.62,0.62):
+        p.append(box(0.05,0.05,0.42,(bx+sx,1.16,0.30),rail))   # post in
+        p.append(box(0.05,0.05,0.42,(bx+sx,1.34,0.24),rail))   # post out
+        p.append(box(0.05,0.34,0.05,(bx+sx,1.25,0.46),rail))   # rail
     return p
 
 # ---- materials ----
@@ -186,6 +195,7 @@ def b2():  # Balcony yellow; wooden balcony+door front; windows L/R + full-width
     p=rim(3,m_white)+windows(3,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,None)
     for f in ('L','R'): p+=full_canopy(3,f,m_canlb,CZ+0.95/2+0.12)
     p+=balcony(3,'F',m_wood,1.3)+door_unit(3,'F',0.0,0.62,1.25,m_white,m_glass,m_gold)
+    p+=full_canopy(3,'F',m_canlb,1.52)               # front canopy over the door
     join(o,p)
 safe('Floor_Balcony',b2)
 
@@ -197,8 +207,10 @@ def b3():  # Premium blue; FULL-WIDTH marble balcony + door + 2 windows + ONE co
     for s in (-0.74,0.74):
         p+=win(6,'F',s,0.82,0.28,1.0,m_white,m_glass,vm=0,hm=2,canopy=None)
     p+=full_canopy(6,'F',m_marble,1.46,w=2.08)                      # single continuous canopy
-    p+=win(6,'L',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
-    p+=win(6,'R',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
+    p+=win(6,'L',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=None)
+    p+=win(6,'R',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=None)
+    p+=full_canopy(6,'L',m_marble,CZ+1.1/2+0.12,w=1.7)   # wider side canopies
+    p+=full_canopy(6,'R',m_marble,CZ+1.1/2+0.12,w=1.7)
     for (px,py) in [(-0.95,-0.95),(0.95,-0.95),(-0.95,0.95),(0.95,0.95)]:
         p.append(box(0.1,0.1,FH,(6+px,py,FH/2),m_white))
     join(o,p)
@@ -209,7 +221,7 @@ def b5():  # Base brick, no windows, entrance (dark-brown canopy + grey steps)
     p=[box(2.08,2.08,0.1,(12,0,1.45),m_white)]
     for z in (0.4,0.75,1.1):
         p.append(box(2.04,2.04,0.02,(12,0,z),m_brickL))
-    p+=entrance(12,m_white,m_dbrown,m_gold,m_dbrown,m_steps)
+    p+=entrance(12,m_white,m_dbrown,m_gold,m_dbrown,m_steps,m_white)
     join(o,p)
 safe('Base_Ground',b5)
 

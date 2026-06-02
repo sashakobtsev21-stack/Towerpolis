@@ -1,5 +1,5 @@
 import bpy
-name = 'Floor_Premium'
+name = 'Base_Ground'
 o = bpy.data.objects.get(name)
 bpy.ops.object.select_all(action='DESELECT')
 if o: o.select_set(True)
