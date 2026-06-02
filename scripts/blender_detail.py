@@ -1,5 +1,5 @@
 import bpy
-sel = ['Floor_Standard','Floor_Balcony','Floor_Premium']
+sel = ['Resident_Umbrella_1','Resident_Umbrella_2','Resident_Umbrella_3','Resident_Parachute_1','Resident_Parachute_2','Resident_Parachute_3']
 bpy.ops.object.select_all(action='DESELECT')
 for area in bpy.context.screen.areas:
     if area.type == 'VIEW_3D':

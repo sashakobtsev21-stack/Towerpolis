@@ -10,7 +10,7 @@ def dup(src, z, nm):
     bpy.context.collection.objects.link(o); o.location = (-6, 0, z)
     return o
 
-order = ['Base_Ground','Floor_Standard','Floor_Balcony','Floor_Standard','Floor_Premium','Roof_Cap']
+order = ['Base_Ground','Floor_Standard','Floor_Balcony','Floor_Standard','Floor_Premium']
 z = 0.0; demo = []
 for i, nm in enumerate(order):
     src = bpy.data.objects[nm]
