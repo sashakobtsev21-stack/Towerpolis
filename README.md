@@ -22,11 +22,14 @@ A modern take on the *Tower Bloxx* core loop: a crane swings a building block, y
 
 ## Documents (source of truth)
 
-- [`docs/GDD.md`](docs/GDD.md) — Game Design Document (pillars, core loop, systems, MVP)
+- [`docs/game/GDD.md`](docs/game/GDD.md) — Game Design Document (core loop, systems, MVP)
+- [`docs/game/pillars.md`](docs/game/pillars.md) — the 3 design pillars
 - [`docs/MARKET_ANALYSIS.md`](docs/MARKET_ANALYSIS.md) — market, competitors, naming, sources
-- [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) — phased build plan + which Ruflo agents run each phase
+- [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) — phased build plan + the 15-agent studio per phase
 - [`docs/ART_BIBLE.md`](docs/ART_BIBLE.md) — art direction, palette, Midjourney prompts, 3D/audio pipeline
-- [`CLAUDE.md`](CLAUDE.md) — engineering conventions + how this project drives the Ruflo agents
+- [`docs/adr/`](docs/adr) — architecture decision records
+- [`.claude/agents/game-dev/`](.claude/agents/game-dev) — the 15 Unity game-dev subagents (from `my_agents`)
+- [`CLAUDE.md`](CLAUDE.md) — engineering conventions + how this project drives the agents
 
 ## Tech stack (decided)
 

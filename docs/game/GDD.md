@@ -144,4 +144,4 @@ Treat **D1 < 30%** as "core not fun yet" — a design signal, not a content prob
 
 ---
 
-*See [`MARKET_ANALYSIS.md`](MARKET_ANALYSIS.md) for the numbers, [`BUILD_PLAN.md`](BUILD_PLAN.md) for the phased agent plan, [`ART_BIBLE.md`](ART_BIBLE.md) for art/audio.*
+*Design pillars: [`pillars.md`](pillars.md). See [`../MARKET_ANALYSIS.md`](../MARKET_ANALYSIS.md) for the numbers, [`../BUILD_PLAN.md`](../BUILD_PLAN.md) for the phased agent plan, [`../ART_BIBLE.md`](../ART_BIBLE.md) for art/audio, [`../adr/`](../adr) for architecture decisions.*
