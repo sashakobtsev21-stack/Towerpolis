@@ -1,12 +1,11 @@
-# Towerpolis blocks v2 — premium look: framed emissive windows, beveled edges (soft
-# shadows/highlights), glossy + metallic-gold materials, a real glass balcony, roof &
-# base detail. Direction 1 palette, brighter. Idempotent. Low-poly-ish (mobile OK).
+# Towerpolis blocks v3 — match the reference: clean isometric apartment tower.
+# ONE pastel body color (recolorable per district) + WHITE trim everywhere
+# (window frames, floor rims, balconies, parapet, base). Soft beveled forms, tidy.
 import bpy, bmesh
 
-def mat(name, rgba, rough=0.3, metal=0.0, emis=0.0, spec=0.6):
+def mat(name, rgba, rough=0.45, metal=0.0, emis=0.0, spec=0.5):
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    m.use_nodes = True
-    m.diffuse_color = rgba
+    m.use_nodes = True; m.diffuse_color = rgba
     b = m.node_tree.nodes.get('Principled BSDF')
     if b:
         I = b.inputs
@@ -27,22 +26,15 @@ def clear(name):
     o = bpy.data.objects.get(name)
     if o: bpy.data.objects.remove(o, do_unlink=True)
 
-def add_box(sx, sy, sz, center, material=None):
+def add_box(sx, sy, sz, c, material=None):
     bpy.ops.object.select_all(action='DESELECT')
-    bpy.ops.mesh.primitive_cube_add(size=1, location=center)
-    o = bpy.context.active_object
-    o.scale = (sx, sy, sz); bpy.ops.object.transform_apply(scale=True)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=c)
+    o = bpy.context.active_object; o.scale = (sx, sy, sz)
+    bpy.ops.object.transform_apply(scale=True)
     if material: o.data.materials.append(material)
     return o
 
-def add_cyl(r, depth, center, material=None, verts=12):
-    bpy.ops.object.select_all(action='DESELECT')
-    bpy.ops.mesh.primitive_cylinder_add(vertices=verts, radius=r, depth=depth, location=center)
-    o = bpy.context.active_object
-    if material: o.data.materials.append(material)
-    return o
-
-def body_box(name, sx, sy, sz, base_x, body_mat, bevel=0.045):
+def body_box(name, sx, sy, sz, bx, body_mat, bevel=0.06):
     bpy.ops.object.select_all(action='DESELECT')
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0,0,0))
     o = bpy.context.active_object; o.name = name
@@ -50,159 +42,122 @@ def body_box(name, sx, sy, sz, base_x, body_mat, bevel=0.045):
     bpy.context.scene.cursor.location = (0,0,-sz/2.0)
     bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
     bpy.context.scene.cursor.location = (0,0,0)
-    o.location = (base_x, 0, 0)
-    o.data.materials.append(body_mat)
+    o.location = (bx, 0, 0); o.data.materials.append(body_mat)
     if bevel:
-        md = o.modifiers.new('bev','BEVEL'); md.width=bevel; md.segments=2; md.limit_method='ANGLE'
+        md = o.modifiers.new('b','BEVEL'); md.width=bevel; md.segments=2; md.limit_method='ANGLE'
         bpy.context.view_layer.objects.active = o
-        try: bpy.ops.object.modifier_apply(modifier='bev')
+        try: bpy.ops.object.modifier_apply(modifier='b')
         except Exception: pass
     return o
 
 def join(main, parts):
-    bpy.ops.object.select_all(action='DESELECT')
-    main.select_set(True)
+    bpy.ops.object.select_all(action='DESELECT'); main.select_set(True)
     for p in parts:
         if p: p.select_set(True)
-    bpy.context.view_layer.objects.active = main
-    bpy.ops.object.join()
-    return main
+    bpy.context.view_layer.objects.active = main; bpy.ops.object.join(); return main
 
-def windows_on_face(base_x, face, cols, rows, glass, frame, span=0.55, z0=0.20, z1=0.82):
-    parts = []
-    for c in range(cols):
-        fx = (-span + 2*span*c/(cols-1)) if cols > 1 else 0.0
-        for r in range(rows):
-            z = z0 + (z1-z0)*(r/(rows-1) if rows > 1 else 0.5)
-            if face in ('F','B'):
-                y = 1.0 if face == 'F' else -1.0
-                dy = 0.03 if face == 'F' else -0.03
-                parts.append(add_box(0.46,0.10,0.42, (base_x+fx, y, z), frame))
-                parts.append(add_box(0.34,0.12,0.30, (base_x+fx, y+dy, z), glass))
-            else:
-                x = 1.0 if face == 'R' else -1.0
-                dx = 0.03 if face == 'R' else -0.03
-                parts.append(add_box(0.10,0.46,0.42, (base_x+x, fx, z), frame))
-                parts.append(add_box(0.12,0.34,0.30, (base_x+x+dx, fx, z), glass))
-    return parts
-
-def balcony(base_x, gold, glass2, planter):
+def windows(bx, faces, w=0.46, h=0.6, z=0.55, span=0.42, white=None, glass=None):
     p = []
-    p.append(add_box(1.5,0.55,0.09, (base_x,1.25,0.30), gold))            # slab
-    p.append(add_box(1.5,0.04,0.40, (base_x,1.50,0.52), glass2))          # glass panel
-    for px in (-0.70,0.70):
-        p.append(add_box(0.07,0.55,0.55,(base_x+px,1.25,0.55), gold))     # posts
-    p.append(add_box(1.56,0.58,0.06,(base_x,1.26,0.74), gold))            # top rail
-    p.append(add_box(0.42,0.20,0.18,(base_x-0.5,1.30,0.39), planter))     # planter
+    for face in faces:
+        for off in (-span, span):
+            if face in ('F','B'):
+                y = 1.0 if face=='F' else -1.0; dy = 0.03 if face=='F' else -0.03
+                p.append(add_box(w+0.14, 0.07, h+0.14, (bx+off, y, z), white))   # white frame plate
+                p.append(add_box(w, 0.12, h, (bx+off, y+dy, z), glass))           # glass (proud)
+            else:
+                x = 1.0 if face=='R' else -1.0; dx = 0.03 if face=='R' else -0.03
+                p.append(add_box(0.07, w+0.14, h+0.14, (bx+x, off, z), white))
+                p.append(add_box(0.12, w, h, (bx+x+dx, off, z), glass))
     return p
 
-# ---------- materials (brighter, glossy, premium) ----------
-m_std   = mat('TP_Body_Coral',  (1.00,0.45,0.24,1), rough=0.20)
-m_bal   = mat('TP_Body_Green',  (0.28,0.80,0.42,1), rough=0.20)
-m_prem  = mat('TP_Body_Royal',  (0.40,0.34,1.00,1), rough=0.15, spec=0.9)
-m_glass = mat('TP_Glass',       (1.00,0.90,0.58,1), rough=0.07, emis=1.8)
-m_glassR= mat('TP_GlassRail',   (0.62,0.88,1.00,1), rough=0.05, emis=0.5)
-m_gold  = mat('TP_Gold',        (1.00,0.80,0.26,1), rough=0.18, metal=1.0)
-m_white = mat('TP_FrameWhite',  (0.99,0.99,0.97,1), rough=0.22)
-m_roof  = mat('TP_Roof_Sky',    (0.31,0.76,0.97,1), rough=0.18)
-m_base  = mat('TP_Base',        (1.00,0.97,0.90,1), rough=0.28)
-m_plant = mat('TP_Planter',     (0.20,0.62,0.32,1), rough=0.5)
-m_door  = mat('TP_Door',        (0.62,0.36,0.20,1), rough=0.3)
-m_grd   = mat('TP_Ground',      (0.93,0.95,0.98,1), rough=0.6)
+def floor_rim(bx, white, t=0.12):
+    return [add_box(2.1, 2.1, t, (bx, 0, t/2.0), white)]          # white band at floor base
+
+def balcony(bx, white, glass, fy=1.0):
+    p = []
+    p.append(add_box(1.2, 0.42, 0.07, (bx, fy+0.2, 0.16), white))         # slab
+    for px in (-0.55,-0.18,0.18,0.55):
+        p.append(add_box(0.05,0.05,0.34,(bx+px, fy+0.39, 0.33), white))   # balusters
+    p.append(add_box(1.26, 0.06, 0.05, (bx, fy+0.39, 0.50), white))       # top rail
+    p.append(add_box(0.5, 0.10, 0.82, (bx, fy, 0.45), glass))             # glass door
+    return p
+
+# ---- materials: ONE body color (recolorable) + white trim + glass ----
+m_body  = mat('TP_Body',  (0.91,0.46,0.42,1), rough=0.50)   # soft coral-red (per-district recolor)
+m_white = mat('TP_White', (0.96,0.96,0.92,1), rough=0.38)   # trim/frames/rails/roof
+m_glass = mat('TP_Glass', (0.80,0.90,0.97,1), rough=0.12, emis=0.35)
+m_base  = mat('TP_Base',  (0.95,0.93,0.88,1), rough=0.5)     # ground floor cream
+m_door  = mat('TP_Door',  (0.30,0.33,0.45,1), rough=0.35)
 
 NAMES = ['Floor_Standard','Floor_Balcony','Floor_Premium','Roof_Cap','Base_Ground']
-for n in NAMES + ['TP_GroundPlane']:
-    clear(n)
-
+for n in NAMES: clear(n)
 log = []
 def safe(label, fn):
     try: fn(); log.append(label+' ok')
-    except Exception as e: log.append(label+' ERR: '+repr(e)[:120])
+    except Exception as e: log.append(label+' ERR '+repr(e)[:110])
 
-# 1) Standard — coral, framed windows all sides
+# Floor_Standard: body + white floor-rim + 2 windows/face
 def b1():
-    o = body_box('Floor_Standard',2,2,1,0,m_std)
-    parts=[]
-    for f in ('F','B','L','R'): parts += windows_on_face(0,f,2,2,m_glass,m_white)
-    join(o,parts)
+    o = body_box('Floor_Standard',2,2,1,0,m_body)
+    join(o, floor_rim(0,m_white) + windows(0,('F','B','L','R'),white=m_white,glass=m_glass))
 safe('Floor_Standard', b1)
 
-# 2) Balcony — green, glass balcony on front, windows elsewhere
+# Floor_Balcony: rim + windows on 3 sides + white balcony on front
 def b2():
-    o = body_box('Floor_Balcony',2,2,1,3,m_bal)
-    parts=[]
-    for f in ('B','L','R'): parts += windows_on_face(3,f,2,2,m_glass,m_white)
-    parts += balcony(3,m_gold,m_glassR,m_plant)
-    join(o,parts)
+    o = body_box('Floor_Balcony',2,2,1,3,m_body)
+    join(o, floor_rim(3,m_white) + windows(3,('B','L','R'),white=m_white,glass=m_glass)
+            + balcony(3,m_white,m_glass))
 safe('Floor_Balcony', b2)
 
-# 3) Premium — royal violet, gold frames+cornice, 3 window rows
+# Floor_Premium: rim + taller windows + white corner pilasters (subtle upscale)
 def b3():
-    o = body_box('Floor_Premium',2,2,1,6,m_prem)
-    parts=[]
-    for f in ('F','B','L','R'): parts += windows_on_face(6,f,2,3,m_glass,m_gold)
-    parts.append(add_box(2.28,2.28,0.12,(6,0,0.95), m_gold))   # cornice
-    parts.append(add_box(2.12,2.12,0.07,(6,0,0.04), m_gold))   # base band
-    join(o,parts)
+    o = body_box('Floor_Premium',2,2,1,6,m_body)
+    p = floor_rim(6,m_white) + windows(6,('F','B','L','R'),h=0.74,z=0.52,white=m_white,glass=m_glass)
+    for (px,py) in [(-1.0,-1.0),(1.0,-1.0),(-1.0,1.0),(1.0,1.0)]:
+        p.append(add_box(0.16,0.16,1.02,(6+px*0.95,py*0.95,0.5), m_white))   # corner pilasters
+    join(o, p)
 safe('Floor_Premium', b3)
 
-# 4) Roof_Cap — tapered, parapet, water tank, antenna
+# Roof_Cap: white flat roof + raised parapet + small penthouse + railing
 def b4():
-    o = body_box('Roof_Cap',2,2,0.4,9,m_roof,bevel=0.03)
-    me=o.data; bm=bmesh.new(); bm.from_mesh(me)
-    for v in bm.verts:
-        if v.co.z>0.3: v.co.x*=0.8; v.co.y*=0.8
-    bm.to_mesh(me); bm.free(); me.update()
-    parts=[]
-    for (dx,dy,sx,sy) in [(0,0.9,1.9,0.12),(0,-0.9,1.9,0.12),(0.9,0,0.12,1.9),(-0.9,0,0.12,1.9)]:
-        parts.append(add_box(sx,sy,0.16,(9+dx,dy,0.34), m_white))  # parapet
-    parts.append(add_cyl(0.26,0.5,(9,0.3,0.45), m_white))          # water tank
-    parts.append(add_box(0.05,0.05,0.8,(9,-0.3,0.7), m_gold))      # antenna mast
-    parts.append(add_box(0.18,0.18,0.06,(9,-0.3,1.05), m_glass))   # antenna light
-    join(o,parts)
+    o = body_box('Roof_Cap',2,2,0.3,9,m_white,bevel=0.04)
+    p = []
+    for (dx,dy,sx,sy) in [(0,0.95,2.06,0.14),(0,-0.95,2.06,0.14),(0.95,0,0.14,2.06),(-0.95,0,0.14,2.06)]:
+        p.append(add_box(sx,sy,0.22,(9+dx,dy,0.30), m_white))         # parapet
+    p.append(add_box(0.95,0.95,0.55,(9,-0.15,0.55), m_white))         # penthouse box
+    p.append(add_box(0.5,0.1,0.34,(9,0.33,0.52), m_glass))            # penthouse door
+    p.append(add_box(0.4,0.4,0.16,(9,0.55,0.5), m_white))             # rooftop unit
+    p.append(add_box(0.05,0.05,0.5,(9.6,-0.6,0.6), m_white))          # antenna
+    join(o, p)
 safe('Roof_Cap', b4)
 
-# 5) Base_Ground — plinth, gold band, door, steps
+# Base_Ground: wider cream base + white rim + entrance + steps + 2 windows
 def b5():
-    o = body_box('Base_Ground',2.5,2.5,0.6,12,m_base)
-    parts=[]
-    parts.append(add_box(2.6,2.6,0.10,(12,0,0.52), m_gold))        # top band
-    parts.append(add_box(0.6,0.12,0.5,(12,1.25,0.25), m_gold))     # door frame
-    parts.append(add_box(0.44,0.14,0.42,(12,1.26,0.21), m_door))   # door
-    for i,zz in enumerate((0.0,)):
-        parts.append(add_box(1.2,0.5,0.12,(12,1.55,0.06), m_base)) # step
-    for f in ('L','R','B'): parts += windows_on_face(12,f,2,1,m_glass,m_white,z0=0.30,z1=0.30)
-    join(o,parts)
+    o = body_box('Base_Ground',2.2,2.2,0.8,12,m_base)
+    p = []
+    p.append(add_box(2.28,2.28,0.1,(12,0,0.74), m_white))             # top rim
+    p.append(add_box(0.66,0.12,0.62,(12,1.1,0.31), m_white))          # door frame
+    p.append(add_box(0.5,0.14,0.52,(12,1.12,0.26), m_door))           # door
+    p.append(add_box(0.9,0.6,0.1,(12,1.45,0.05), m_white))            # step
+    for off in (-0.62,0.62):
+        p.append(add_box(0.44,0.07,0.4,(12+off,1.1,0.42), m_white))   # window frame
+        p.append(add_box(0.32,0.1,0.28,(12+off,1.12,0.42), m_glass))  # glass
+    join(o, p)
 safe('Base_Ground', b5)
 
-# ---------- lighting + ground + render shading for a good screenshot ----------
+# light + ground for preview
 def stage():
-    if not bpy.data.objects.get('TP_GroundPlane'):
-        gp = add_box(60,60,0.1,(6,0,-0.05), m_grd); gp.name='TP_GroundPlane'
+    clear('TP_GroundPlane')
+    gp = add_box(60,60,0.1,(6,0,-0.05), mat('TP_Ground',(0.93,0.95,0.98,1),rough=0.7)); gp.name='TP_GroundPlane'
     if not bpy.data.objects.get('TP_Sun'):
-        ld = bpy.data.lights.new('TP_Sun','SUN'); ld.energy=4.0
-        try: ld.angle=0.15
+        ld = bpy.data.lights.new('TP_Sun','SUN'); ld.energy=3.0
+        try: ld.angle=0.2
         except Exception: pass
-        sun = bpy.data.objects.new('TP_Sun', ld); bpy.context.collection.objects.link(sun)
-        sun.rotation_euler=(0.6,0.1,0.5)
-    try:
-        w = bpy.data.worlds[0]; w.use_nodes=True
-        bg = w.node_tree.nodes.get('Background')
-        if bg: bg.inputs[0].default_value=(0.55,0.78,0.95,1); bg.inputs[1].default_value=1.0
-    except Exception: pass
-    try: bpy.context.scene.eevee.use_gtao=True
-    except Exception: pass
-    for area in bpy.context.screen.areas:
-        if area.type=='VIEW_3D':
-            try: area.spaces[0].shading.type='RENDERED'
-            except Exception: pass
+        su = bpy.data.objects.new('TP_Sun', ld); bpy.context.collection.objects.link(su); su.rotation_euler=(0.6,0.1,0.5)
 safe('stage', stage)
 
 bpy.context.view_layer.update()
-built = sum(1 for n in NAMES if bpy.data.objects.get(n))
 for n in NAMES:
-    ob=bpy.data.objects.get(n)
-    if ob:
-        tr=sum(len(p.vertices)-2 for p in ob.data.polygons)
-        log.append("  %-15s tris~%d" % (n,tr))
-print("BUILT %d/5 (v2 premium):\n%s" % (built,"\n".join(log)))
+    ob = bpy.data.objects.get(n)
+    if ob: log.append("  %-15s tris~%d" % (n, sum(len(p.vertices)-2 for p in ob.data.polygons)))
+print("BUILT %d/5 (v3 clean):\n%s" % (sum(1 for n in NAMES if bpy.data.objects.get(n)), "\n".join(log)))
