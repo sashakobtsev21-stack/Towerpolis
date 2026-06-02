@@ -57,6 +57,16 @@ def join(main,parts):
         if p: p.select_set(True)
     bpy.context.view_layer.objects.active=main; bpy.ops.object.join(); return main
 
+def awn(bx,face,off,topz,wid,m,proj=0.36,th=0.025,tilt=0.7):
+    # sloped awning whose BACK-TOP edge is anchored at (wall, topz); slopes ONLY down-&-out
+    # (its highest point is topz -> never pokes up through the floor top; sits above the frame)
+    co=proj/2*math.cos(tilt); so=proj/2*math.sin(tilt); tco=th/2*math.cos(tilt); tso=th/2*math.sin(tilt)
+    if face in ('F','B'):
+        n=1 if face=='F' else -1
+        return [box(wid,proj,th,(bx+off, 1.0*n+n*(co-tso), topz-(so+tco)),m,rot=(-n*tilt,0,0))]
+    sgn=1 if face=='R' else -1
+    return [box(proj,wid,th,(bx+1.0*sgn+sgn*(co-tso), off, topz-(so+tco)),m,rot=(0,sgn*tilt,0))]
+
 def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
     p=[]
     if face in ('F','B'):
@@ -70,8 +80,7 @@ def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
             mx=-W/2+W*(k+1)/(vm+1); p.append(box(MM,0.06,H,(bx+off+mx,y+n*0.03,cz),white))
         for k in range(hm):
             mz=-H/2+H*(k+1)/(hm+1); p.append(box(W,0.06,MM,(bx+off,y+n*0.03,cz+mz),white))
-        if canopy:  # sloped awning ABOVE the window frame, thinner + longer projection
-            p.append(box(W+0.16,0.40,0.025,(bx+off,y,cz+H/2+0.09),canopy,rot=(-n*0.85,0,0)))
+        if canopy: p+=awn(bx,face,off,cz+H/2+0.07,W+0.16,canopy)
     else:
         x=1.0 if face=='R' else -1.0; n=1 if face=='R' else -1
         p.append(box(0.06,W,H,(bx+x,off,cz),glass))
@@ -83,8 +92,7 @@ def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
             my=-W/2+W*(k+1)/(vm+1); p.append(box(0.06,MM,H,(bx+x+n*0.03,off+my,cz),white))
         for k in range(hm):
             mz=-H/2+H*(k+1)/(hm+1); p.append(box(0.06,W,MM,(bx+x+n*0.03,off,cz+mz),white))
-        if canopy:
-            p.append(box(0.40,W+0.16,0.025,(bx+x,off,cz+H/2+0.09),canopy,rot=(0,n*0.85,0)))
+        if canopy: p+=awn(bx,face,off,cz+H/2+0.07,W+0.16,canopy)
     return p
 
 def windows(bx,faces,offs,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
@@ -152,7 +160,7 @@ def entrance(bx,white,door,gold,canopy,steps,rail):
     p.append(box(0.025,0.14,dh,(bx,1.02,cz),white))
     p.append(box(0.05,0.07,0.12,(bx-0.13,1.05,cz),gold))
     p.append(box(0.05,0.07,0.12,(bx+0.13,1.05,cz),gold))
-    p.append(box(1.5,0.44,0.025,(bx,1.0,dh+bz+0.09),canopy,rot=(-0.85,0,0)))  # awning above entrance door (thin, longer)
+    p+=awn(bx,'F',0.0,dh+bz+0.07,1.5,canopy)          # awning above entrance door
     # steps pulled IN toward the house
     p.append(box(1.2,0.34,0.12,(bx,1.18,0.06),steps))
     p.append(box(1.0,0.22,0.20,(bx,1.12,0.14),steps))
@@ -195,7 +203,7 @@ def b2():  # Balcony yellow; wooden balcony+door front; windows L/R + full-width
     o=body('Floor_Balcony',2,2,FH,3,m_yellow)
     p=rim(3,m_white)+windows(3,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
     p+=balcony(3,'F',m_wood,1.3)+door_unit(3,'F',0.0,0.62,1.25,m_white,m_glass,m_gold)
-    p.append(box(0.94,0.40,0.025,(3,1.0,1.40),m_canlb,rot=(-0.85,0,0)))   # awning above balcony door (thin, longer)
+    p+=awn(3,'F',0.0,1.38,2.08,m_canlb)               # awning above balcony door — FULL floor width
     join(o,p)
 safe('Floor_Balcony',b2)
 
@@ -206,7 +214,7 @@ def b3():  # Premium blue; FULL-WIDTH marble balcony + door + 2 windows + ONE co
     p+=door_unit(6,'F',0.0,0.6,1.3,m_white,m_glass,m_gold)
     for s in (-0.74,0.74):
         p+=win(6,'F',s,0.82,0.28,1.0,m_white,m_glass,vm=0,hm=2,canopy=m_marble)
-    p.append(box(0.88,0.42,0.025,(6,1.0,1.46),m_marble,rot=(-0.85,0,0)))   # awning above premium door (thin, longer)
+    p+=awn(6,'F',0.0,1.43,0.92,m_marble)              # awning above premium door
     p+=win(6,'L',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
     p+=win(6,'R',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
     for (px,py) in [(-0.95,-0.95),(0.95,-0.95),(-0.95,0.95),(0.95,0.95)]:

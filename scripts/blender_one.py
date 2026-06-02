@@ -1,6 +1,6 @@
 import bpy
 from mathutils import Quaternion
-NAME = 'Floor_Standard'
+NAME = 'Floor_Balcony'
 for o in bpy.data.objects:
     if o.name.startswith('Resident_'):
         try: o.hide_set(True)
