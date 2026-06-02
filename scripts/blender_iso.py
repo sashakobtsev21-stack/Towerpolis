@@ -13,6 +13,8 @@ for area in bpy.context.screen.areas:
         for region in area.regions:
             if region.type == 'WINDOW':
                 with bpy.context.temp_override(area=area, region=region):
-                    bpy.ops.view3d.view_axis(type='BACK')
+                    bpy.ops.view3d.view_axis(type='FRONT')
+                    for _ in range(3): bpy.ops.view3d.view_orbit(type='ORBITLEFT')
+                    for _ in range(2): bpy.ops.view3d.view_orbit(type='ORBITUP')
                     bpy.ops.view3d.view_selected()
-print('front view set on', name)
+print('iso view on', name)
