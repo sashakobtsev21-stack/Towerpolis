@@ -83,31 +83,19 @@ def umbrella_resident(name,bx,by,cloth,canopy,hair):
         parts.append(box(0.03,0.03,0.03,(hx+math.cos(ang)*0.5,hy+math.sin(ang)*0.5,1.42),canopy))
     o=join(root,parts); o.name=name; return o
 
-def wing_resident(name,bx,by,cloth,wing,hair):
+def parachute_resident(name,bx,by,cloth,chute,hair):
+    # like the umbrella but ~2x bigger and ROUND (a dome canopy), with suspension lines
     for o in list(bpy.data.objects):
         if o.name==name: bpy.data.objects.remove(o,do_unlink=True)
     root,parts=person(bx,by,cloth,hair)
-    z=2.05
-    for seg in (-2,-1,0,1,2):                                        # arched wing (parabola)
-        sx=seg*0.38; dz=-(seg*seg)*0.07
-        parts.append(box(0.42,0.6,0.06,(bx+sx,by,z+dz),wing))
-    for sx in (-0.6,-0.3,0,0.3,0.6):                                 # cell dividers
-        parts.append(box(0.02,0.6,0.10,(bx+sx,by,z-0.04),m_stick))
-    for sx in (-0.72,-0.5,-0.28,0.28,0.5,0.72):                      # many suspension lines
-        parts.append(box(0.012,0.012,1.05,(bx+sx*0.6,by,z-0.62),m_stick,rot=(0,sx*0.18,0)))
-    o=join(root,parts); o.name=name; return o
-
-def dome_resident(name,bx,by,cloth,chute,hair):
-    for o in list(bpy.data.objects):
-        if o.name==name: bpy.data.objects.remove(o,do_unlink=True)
-    root,parts=person(bx,by,cloth,hair)
-    z=2.05
-    parts.append(sphere(0.82,(bx,by,z),chute,segs=16,squash=0.6))    # round canopy
-    for a in range(8):                                              # gore seams
-        ang=a/8.0*2*math.pi
-        parts.append(box(0.02,0.02,0.5,(bx+math.cos(ang)*0.45,by+math.sin(ang)*0.45,z+0.18),m_stick))
-    for (sx,sy) in [(-0.6,-0.6),(0.6,-0.6),(-0.6,0.6),(0.6,0.6),(-0.82,0),(0.82,0),(0,-0.82),(0,0.82)]:
-        parts.append(box(0.015,0.015,1.15,(bx+sx*0.5,by+sy*0.5,z-0.65),m_stick))   # 8 lines
+    z=2.4
+    parts.append(sphere(1.05,(bx,by,z),chute,segs=20,squash=0.56))   # big round canopy (~2x umbrella)
+    for a in range(10):                                              # gore seams over the dome
+        ang=a/10.0*2*math.pi
+        parts.append(box(0.022,0.022,0.62,(bx+math.cos(ang)*0.62,by+math.sin(ang)*0.62,z+0.10),m_stick,
+                         rot=(math.sin(ang)*0.5,-math.cos(ang)*0.5,0)))
+    for (sx,sy) in [(-0.72,-0.72),(0.72,-0.72),(-0.72,0.72),(0.72,0.72),(-1.0,0),(1.0,0),(0,-1.0),(0,1.0)]:
+        parts.append(box(0.016,0.016,1.35,(bx+sx*0.55,by+sy*0.55,z-0.9),m_stick))   # 8 suspension lines
     o=join(root,parts); o.name=name; return o
 
 CLOTH=[(0.90,0.25,0.28,1),(0.20,0.45,0.85,1),(0.25,0.65,0.40,1),(0.95,0.55,0.18,1),(0.55,0.35,0.80,1),(0.90,0.40,0.62,1)]
@@ -119,8 +107,8 @@ log=[]
 umbrella_resident('Resident_Umbrella_1',0,-3.5,CM(0,'c'),CM(0,'k'),HAIR[0]); log.append('umbrella 1')
 umbrella_resident('Resident_Umbrella_2',2,-3.5,CM(1,'c'),CM(1,'k'),HAIR[1]); log.append('umbrella 2')
 umbrella_resident('Resident_Umbrella_3',4,-3.5,CM(2,'c'),CM(2,'k'),HAIR[2]); log.append('umbrella 3')
-wing_resident('Resident_Wing_1',6,-3.5,CM(3,'c'),CM(3,'k'),HAIR[0]); log.append('wing 1')
-wing_resident('Resident_Wing_2',8,-3.5,CM(4,'c'),CM(4,'k'),HAIR[1]); log.append('wing 2')
-dome_resident('Resident_Dome_1',10,-3.5,CM(5,'c'),CM(5,'k'),HAIR[2]); log.append('dome 1')
+parachute_resident('Resident_Parachute_1',6,-3.5,CM(3,'c'),CM(3,'k'),HAIR[0]); log.append('parachute 1')
+parachute_resident('Resident_Parachute_2',8,-3.5,CM(4,'c'),CM(4,'k'),HAIR[1]); log.append('parachute 2')
+parachute_resident('Resident_Parachute_3',10,-3.5,CM(5,'c'),CM(5,'k'),HAIR[2]); log.append('parachute 3')
 bpy.context.view_layer.update()
 print('RESIDENTS v3 (tidy):\n  '+'\n  '.join(log))

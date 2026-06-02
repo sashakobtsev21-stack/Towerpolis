@@ -1,5 +1,5 @@
 import bpy
-name = 'Base_Ground'
+name = 'Floor_Standard'
 o = bpy.data.objects.get(name)
 bpy.ops.object.select_all(action='DESELECT')
 if o: o.select_set(True)
@@ -13,6 +13,6 @@ for area in bpy.context.screen.areas:
         for region in area.regions:
             if region.type == 'WINDOW':
                 with bpy.context.temp_override(area=area, region=region):
-                    bpy.ops.view3d.view_axis(type='BACK')
+                    bpy.ops.view3d.view_axis(type='FRONT')
                     bpy.ops.view3d.view_selected()
 print('front view set on', name)

@@ -1,7 +1,7 @@
 # Towerpolis blocks v8: full-width premium balcony + single continuous canopy; all
 # canopies 2x narrower+thinner, no vertical brackets; full-width canopy on standard;
 # glass much bluer + glossy clearcoat; NO roof.
-import bpy
+import bpy, math
 FH=1.5; FB=0.04; MM=0.018
 
 def mat(name,rgba,rough=0.3,metal=0.0,emis=0.0,spec=0.6,coat=0.0):
@@ -92,13 +92,14 @@ def windows(bx,faces,offs,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
         for o in offs: p+=win(bx,f,o,cz,W,H,white,glass,vm,hm,canopy)
     return p
 
-def full_canopy(bx,face,m,z,w=2.08,proj=0.30,th=0.04,tilt=0.7):
-    # sloped awning (~40 deg): outer edge drops
+def full_canopy(bx,face,m,z0,w=2.08,proj=0.28,th=0.04,tilt=0.5):
+    # sloped awning whose INNER edge stays flush on the wall (anchored, not floating)
+    co=(proj/2)*math.cos(tilt); so=(proj/2)*math.sin(tilt)
     if face in ('F','B'):
         n=1 if face=='F' else -1
-        return [box(w,proj,th,(bx,1.0*n+n*proj*0.42,z),m,rot=(-n*tilt,0,0))]
+        return [box(w,proj,th,(bx, 1.0*n+n*co, z0-so),m,rot=(-n*tilt,0,0))]
     sgn=1 if face=='R' else -1
-    return [box(proj,w,th,(bx+1.0*sgn+sgn*proj*0.42,0,z),m,rot=(0,sgn*tilt,0))]
+    return [box(proj,w,th,(bx+1.0*sgn+sgn*co, 0, z0-so),m,rot=(0,sgn*tilt,0))]
 
 def rim(bx,white,t=0.12):
     return [box(2.12,2.12,t,(bx,0,t/2.0),white)]
@@ -150,7 +151,7 @@ def entrance(bx,white,door,gold,canopy,steps,rail):
     p.append(box(0.025,0.14,dh,(bx,1.02,cz),white))
     p.append(box(0.05,0.07,0.12,(bx-0.13,1.05,cz),gold))
     p.append(box(0.05,0.07,0.12,(bx+0.13,1.05,cz),gold))
-    p.append(box(1.45,0.32,0.04,(bx,1.16,dh+bz+0.10),canopy,rot=(-0.7,0,0)))  # tilted canopy
+    p.append(box(1.45,0.32,0.04,(bx,1.14,dh+bz+0.10-0.077),canopy,rot=(-0.5,0,0)))  # tilted, wall-anchored
     # steps pulled IN toward the house
     p.append(box(1.2,0.34,0.12,(bx,1.18,0.06),steps))
     p.append(box(1.0,0.22,0.20,(bx,1.12,0.14),steps))
