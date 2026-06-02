@@ -57,7 +57,7 @@ def join(main,parts):
         if p: p.select_set(True)
     bpy.context.view_layer.objects.active=main; bpy.ops.object.join(); return main
 
-def awn(bx,face,off,topz,wid,m,proj=0.36,th=0.025,tilt=0.7):
+def awn(bx,face,off,topz,wid,m,proj=0.18,th=0.025,tilt=0.7):
     # sloped awning whose BACK-TOP edge is anchored at (wall, topz); slopes ONLY down-&-out
     # (its highest point is topz -> never pokes up through the floor top; sits above the frame)
     co=proj/2*math.cos(tilt); so=proj/2*math.sin(tilt); tco=th/2*math.cos(tilt); tso=th/2*math.sin(tilt)
@@ -71,27 +71,29 @@ def win(bx,face,off,cz,W,H,white,glass,vm=1,hm=1,canopy=None):
     p=[]
     if face in ('F','B'):
         y=1.0 if face=='F' else -1.0; n=1 if face=='F' else -1
-        p.append(box(W,0.06,H,(bx+off,y,cz),glass))
-        p.append(box(W+0.08,0.06,FB,(bx+off,y+n*0.03,cz+H/2),white))
-        p.append(box(W+0.08,0.06,FB,(bx+off,y+n*0.03,cz-H/2),white))
-        p.append(box(FB,0.06,H+0.08,(bx+off-W/2,y+n*0.03,cz),white))
-        p.append(box(FB,0.06,H+0.08,(bx+off+W/2,y+n*0.03,cz),white))
+        gy=y-n*0.03; fy=y                                  # glass flush, frame recessed (half in wall)
+        p.append(box(W,0.06,H,(bx+off,gy,cz),glass))
+        p.append(box(W+0.08,0.05,FB,(bx+off,fy,cz+H/2),white))
+        p.append(box(W+0.08,0.05,FB,(bx+off,fy,cz-H/2),white))
+        p.append(box(FB,0.05,H+0.08,(bx+off-W/2,fy,cz),white))
+        p.append(box(FB,0.05,H+0.08,(bx+off+W/2,fy,cz),white))
         for k in range(vm):
-            mx=-W/2+W*(k+1)/(vm+1); p.append(box(MM,0.06,H,(bx+off+mx,y+n*0.03,cz),white))
+            mx=-W/2+W*(k+1)/(vm+1); p.append(box(MM,0.05,H,(bx+off+mx,fy,cz),white))
         for k in range(hm):
-            mz=-H/2+H*(k+1)/(hm+1); p.append(box(W,0.06,MM,(bx+off,y+n*0.03,cz+mz),white))
+            mz=-H/2+H*(k+1)/(hm+1); p.append(box(W,0.05,MM,(bx+off,fy,cz+mz),white))
         if canopy: p+=awn(bx,face,off,cz+H/2+0.07,W+0.16,canopy)
     else:
         x=1.0 if face=='R' else -1.0; n=1 if face=='R' else -1
-        p.append(box(0.06,W,H,(bx+x,off,cz),glass))
-        p.append(box(0.06,W+0.08,FB,(bx+x+n*0.03,off,cz+H/2),white))
-        p.append(box(0.06,W+0.08,FB,(bx+x+n*0.03,off,cz-H/2),white))
-        p.append(box(0.06,FB,H+0.08,(bx+x+n*0.03,off-W/2,cz),white))
-        p.append(box(0.06,FB,H+0.08,(bx+x+n*0.03,off+W/2,cz),white))
+        gx=x-n*0.03; fx=x
+        p.append(box(0.06,W,H,(bx+gx,off,cz),glass))
+        p.append(box(0.05,W+0.08,FB,(bx+fx,off,cz+H/2),white))
+        p.append(box(0.05,W+0.08,FB,(bx+fx,off,cz-H/2),white))
+        p.append(box(0.05,FB,H+0.08,(bx+fx,off-W/2,cz),white))
+        p.append(box(0.05,FB,H+0.08,(bx+fx,off+W/2,cz),white))
         for k in range(vm):
-            my=-W/2+W*(k+1)/(vm+1); p.append(box(0.06,MM,H,(bx+x+n*0.03,off+my,cz),white))
+            my=-W/2+W*(k+1)/(vm+1); p.append(box(0.05,MM,H,(bx+fx,off+my,cz),white))
         for k in range(hm):
-            mz=-H/2+H*(k+1)/(hm+1); p.append(box(0.06,W,MM,(bx+x+n*0.03,off,cz+mz),white))
+            mz=-H/2+H*(k+1)/(hm+1); p.append(box(0.05,W,MM,(bx+fx,off,cz+mz),white))
         if canopy: p+=awn(bx,face,off,cz+H/2+0.07,W+0.16,canopy)
     return p
 
@@ -116,8 +118,8 @@ def rim(bx,white,t=0.12):
 def door_unit(bx,face,off,dw,dh,white,panel,gold):
     p=[]; cz=dh/2.0+0.06
     if face in ('F','B'):
-        y=1.0 if face=='F' else -1.0; n=1 if face=='F' else -1; fy=y+n*0.03
-        p.append(box(dw,0.07,dh,(bx+off,y,cz),panel))
+        y=1.0 if face=='F' else -1.0; n=1 if face=='F' else -1; fy=y       # frame recessed (half in wall)
+        p.append(box(dw,0.07,dh,(bx+off,y-n*0.03,cz),panel))               # glass flush
         p.append(box(dw+0.10,0.07,FB,(bx+off,fy,cz+dh/2),white))
         p.append(box(dw+0.10,0.07,FB,(bx+off,fy,cz-dh/2),white))
         p.append(box(FB,0.07,dh+0.10,(bx+off-dw/2,fy,cz),white))
@@ -127,8 +129,8 @@ def door_unit(bx,face,off,dw,dh,white,panel,gold):
         p.append(box(0.05,0.09,0.16,(bx+off-0.07,y+n*0.06,cz),gold))
         p.append(box(0.05,0.09,0.16,(bx+off+0.07,y+n*0.06,cz),gold))
     else:
-        x=1.0 if face=='R' else -1.0; n=1 if face=='R' else -1; fx=x+n*0.03
-        p.append(box(0.07,dw,dh,(bx+x,off,cz),panel))
+        x=1.0 if face=='R' else -1.0; n=1 if face=='R' else -1; fx=x         # frame recessed (half in wall)
+        p.append(box(0.07,dw,dh,(bx+x-n*0.03,off,cz),panel))                # glass flush
         p.append(box(0.07,dw+0.10,FB,(bx+fx,off,cz+dh/2),white))
         p.append(box(0.07,dw+0.10,FB,(bx+fx,off,cz-dh/2),white))
         p.append(box(0.07,FB,dh+0.10,(bx+fx,off-dw/2,cz),white))
@@ -203,7 +205,7 @@ def b2():  # Balcony yellow; wooden balcony+door front; windows L/R + full-width
     o=body('Floor_Balcony',2,2,FH,3,m_yellow)
     p=rim(3,m_white)+windows(3,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
     p+=balcony(3,'F',m_wood,1.3)+door_unit(3,'F',0.0,0.62,1.25,m_white,m_glass,m_gold)
-    p+=awn(3,'F',0.0,1.38,2.08,m_canlb)               # awning above balcony door — FULL floor width
+    p+=awn(3,'F',0.0,1.38,1.7,m_canlb)                # awning above balcony door — wide (a bit narrower)
     join(o,p)
 safe('Floor_Balcony',b2)
 
@@ -217,9 +219,7 @@ def b3():  # Premium blue; FULL-WIDTH marble balcony + door + 2 windows + ONE co
     p+=awn(6,'F',0.0,1.43,0.92,m_marble)              # awning above premium door
     p+=win(6,'L',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
     p+=win(6,'R',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
-    for (px,py) in [(-0.95,-0.95),(0.95,-0.95),(-0.95,0.95),(0.95,0.95)]:
-        p.append(box(0.1,0.1,FH,(6+px,py,FH/2),m_white))
-    join(o,p)
+    join(o,p)   # (premium corner posts removed)
 safe('Floor_Premium',b3)
 
 def b5():  # Base brick, no windows, entrance (dark-brown canopy + grey steps)
