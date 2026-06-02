@@ -4,14 +4,24 @@
 
 ---
 
-## 1. Style Lock
+## 1. Style Lock — ✅ CHOSEN: Direction 1 "Tower Bloxx revival" (2026-06-03)
 
-**Stylized low-poly · vibrant saturated palette · chunky high-contrast silhouettes · flat / baked lighting.**
+**Bright glossy isometric cartoon · chunky apartment blocks with big friendly windows + balconies · tiny residents parachuting in on colorful umbrellas · sunny blue sky · vibrant saturated colors · soft global illumination · clean readable silhouettes.**
 
-Why: cheapest 3D style, runs trivially on low-end Android, hides asset-mismatch sins, and matches the reference (bright cartoon city, fat blocks, parachuting residents). **"Premium feel" comes from juice, not polygon count** — budget time on animation/feel, not fidelity.
+Player picked this from the Midjourney directions (and generated the icon from the matching prompt). It's the closest to the reference (`imagestowerbloxx`) and the easiest to keep coherent. **"Premium feel" comes from juice, not polygon count** — budget time on animation/feel. Keep blocks chunky and glossy (a touch of specular), not flat-matte.
 
-### Hero palette (pick 4–6, then freeze)
-Draft direction (tune to taste): warm coral/red, sky cyan, sunny yellow, mint green, deep navy accent, off-white. Lock the hexes in this file once chosen and apply to all materials and UI.
+### Hero palette (frozen — apply to all materials + UI; tune hexes during look-dev)
+| Role | Color | ~Hex |
+|---|---|---|
+| Sky / primary | bright sky cyan | `#4FC3F7` |
+| Sunshine accent | sunny yellow | `#FFD54F` |
+| Hot accent / crane | coral red | `#FF6B5E` |
+| Nature / "go" | leaf-mint green | `#66BB6A` |
+| Windows (lit) | warm glass | `#FFF3C4` (slight emissive) |
+| Ink / shadow accent | deep navy | `#1F3A5F` |
+| Neutral | off-white | `#F7F7F2` |
+
+*Consistency:* lock your chosen Midjourney image as `--sref` for every future asset; recolor every Synty/AI/Blender asset to this palette before it enters the project.
 
 ### Rulebook
 - One outline/lighting convention across everything (flat + soft GI / baked).
