@@ -33,6 +33,10 @@ namespace Towerpolis.Game.Gameplay
         public void Init(GameTuning tuning, Transform baseBlock, float baseTopY, float topWidth)
         {
             _tuning = tuning;
+            // The tower root must be unit-scaled: children (base + welded floors) inherit this scale,
+            // and a zero/odd scale on the host GameObject would shrink them to nothing (invisible).
+            transform.localScale = Vector3.one;
+            transform.localPosition = Vector3.zero;
             if (baseBlock != null) baseBlock.SetParent(transform, true);
             TopY = baseTopY;
             TopX = 0f;
