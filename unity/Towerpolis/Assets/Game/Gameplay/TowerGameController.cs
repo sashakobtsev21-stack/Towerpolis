@@ -129,7 +129,6 @@ namespace Towerpolis.Game.Gameplay
 
             _pendingBlock = null;
             _falling = null;
-            if (cameraRig != null) cameraRig.SetFloorCount(_run.FloorCount);
 
             if (outcome.Toppled)
             {
