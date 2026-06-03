@@ -16,7 +16,7 @@ namespace Towerpolis.Game.Gameplay
         static readonly Color ColStandard = new Color(0.32f, 0.78f, 0.38f);
         static readonly Color ColBalcony = new Color(1.00f, 0.82f, 0.15f);
         static readonly Color ColPremium = new Color(0.18f, 0.58f, 1.00f);
-        static readonly Color ColBase = new Color(0.78f, 0.40f, 0.32f);
+        static readonly Color ColBase = new Color(0.82f, 0.82f, 0.86f); // light concrete — must stand out from the brown skybox ground
 
         Material _matStandard, _matBalcony, _matPremium, _matBase;
 
@@ -55,7 +55,14 @@ namespace Towerpolis.Game.Gameplay
         {
             var root = CreateBlock(FloorType.Standard, width, "Base");
             var mesh = root.Find("Mesh");
-            if (mesh != null) mesh.GetComponent<MeshRenderer>().sharedMaterial = _matBase;
+            if (mesh != null)
+            {
+                mesh.GetComponent<MeshRenderer>().sharedMaterial = _matBase;
+                Vector3 s = mesh.localScale; // a wider plinth so the foundation reads clearly
+                s.x *= 1.2f;
+                s.z *= 1.2f;
+                mesh.localScale = s;
+            }
             return root;
         }
 

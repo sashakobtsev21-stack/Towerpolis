@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f75a7ed72abeed54fa4dc0986cd959fe, type: 3}
+  m_Name: GameTuning
+  m_EditorClassIdentifier: Towerpolis.Game::Towerpolis.Game.Gameplay.GameTuning
+  floorHeight: 1.5
+  craneHeight: 5
+  swingHalfArc: 1.4
+  periodFloor1: 2.8
+  periodMinClamp: 2
+  periodRampFactor: 0.012
+  gravityScale: 2.5
+  wobbleAmpBase: 0.5
+  wobbleAmpPerFloor: 0.08
+  wobbleAmpMax: 6
+  wobbleAmpMin: 0.5
+  wobbleLeanBias: 1.2
+  wobblePeriodBase: 0.6
+  wobblePeriodPerFloor: 0.015
+  wobblePeriodMax: 2
+  wobblePeriodMin: 0.5
+  idleWobbleScale: 0.3
+  dampingRate: 2
+  dampingRateMin: 0.5
+  dampingDecayPerFloor: 0.025
+  maxLeanBiasAngle: 4
+  cameraTargetOffsetY: 4
+  cameraFollowSmoothTime: 0.4
+  cameraDistance: 10
+  cameraDistancePerFloor: 0.08
+  maxCameraDistance: 18
+  cameraAngleX: 25
