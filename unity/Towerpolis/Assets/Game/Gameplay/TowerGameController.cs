@@ -126,7 +126,7 @@ namespace Towerpolis.Game.Gameplay
             }
             else
             {
-                TumbleAway(_pendingBlock);
+                TumbleAway(_pendingBlock, offsetX);
             }
 
             _pendingBlock = null;
@@ -144,7 +144,7 @@ namespace Towerpolis.Game.Gameplay
             }
         }
 
-        static void TumbleAway(Transform block)
+        static void TumbleAway(Transform block, float offsetX)
         {
             if (block == null) return;
             var rb = block.GetComponent<Rigidbody>();
@@ -153,6 +153,11 @@ namespace Towerpolis.Game.Gameplay
                 rb.isKinematic = false;
                 rb.useGravity = true;
                 rb.constraints = RigidbodyConstraints.None;
+                // Fling it OUT to the side it missed toward (plus a little up + spin) so it falls clear
+                // of the leaning tower instead of clipping straight down through the floors below.
+                float dir = offsetX >= 0f ? 1f : -1f;
+                rb.linearVelocity = new Vector3(dir * 5f, 1.0f, 0f);
+                rb.angularVelocity = new Vector3(0f, 0f, -dir * 6f);
             }
             Destroy(block.gameObject, 3f);
         }
