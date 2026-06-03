@@ -133,12 +133,10 @@ namespace Towerpolis.Game.Gameplay
                 // overhang. The tower welds it FLUSH in local space (no gaps/overlaps under the sway).
                 float offsetApplied = outcome.Grade == Grade.Perfect ? 0f : offsetX;
                 tower.WeldPlaced(_pendingBlock, offsetApplied, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
-                spawner.SetColliderEnabled(_pendingBlock, true); // now a solid obstacle in the tower
                 _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt
             }
             else
             {
-                spawner.SetColliderEnabled(_pendingBlock, true); // so it physically bounces off the tower
                 TumbleAway(_pendingBlock, offsetX);
             }
 
@@ -177,11 +175,10 @@ namespace Towerpolis.Game.Gameplay
                 // Nudge it toward the side it missed (physics + the tower's colliders do the rest — it
                 // bounces off the building and tumbles down).
                 float dir = offsetX >= 0f ? 1f : -1f;
-                rb.linearVelocity = new Vector3(dir * 2.5f, 0.5f, 0f);
-                rb.angularVelocity = new Vector3(0f, 0f, -dir * 2.0f); // gentler spin
+                rb.linearVelocity = new Vector3(dir * 4.0f, 1.0f, 0f); // fling it clear of the tower
+                rb.angularVelocity = new Vector3(0f, 0f, -dir * 2.0f);
             }
-            // Brief bounce off the tower, then collider off + self-destroy (no snagging on far blocks/air).
-            block.gameObject.AddComponent<TumbleDebris>();
+            Destroy(block.gameObject, 3f); // no collider — it just falls clear and is cleaned up
         }
 
         static bool TapPressed()
