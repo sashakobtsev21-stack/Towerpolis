@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Standalone build of Towerpolis.Core for `dotnet test`. It compiles the SAME .cs files
+       Unity compiles via the asmdef, so the deterministic logic is verified outside the editor.
+       netstandard2.1 enforces that Core only uses APIs available to Unity's scripting runtime. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Towerpolis.Core</AssemblyName>
+    <RootNamespace>Towerpolis.Core</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\unity\Towerpolis\Assets\_Core\Runtime\**\*.cs" />
+  </ItemGroup>
+
+</Project>

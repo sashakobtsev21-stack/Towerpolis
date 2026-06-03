@@ -52,6 +52,10 @@ bin/
 *.dll
 *.exe
 
+# ...but DO commit the standalone Core test harness (ours, not Unity-generated)
+!core/**/*.csproj
+!core/Towerpolis.Core.slnx
+
 # Blender preview screenshots (throwaway)
 scripts/*preview*.png
 

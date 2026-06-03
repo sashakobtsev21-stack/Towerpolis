@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Runs the Unity-free Core test suite via `dotnet test`. Compiles the SAME test .cs files
+       Unity's Test Runner compiles (they use only NUnit.Framework, no UnityEngine), so green here
+       == green in the editor. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>Towerpolis.Core.Tests</AssemblyName>
+    <RootNamespace>Towerpolis.Core.Tests</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\unity\Towerpolis\Assets\_Core\Tests\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Towerpolis.Core\Towerpolis.Core.csproj" />
+  </ItemGroup>
+
+</Project>

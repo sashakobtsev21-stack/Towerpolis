@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Always runs — verifies the deterministic Core with no Unity/license needed (ADR 0005).
+  core-tests:
+    name: Core (dotnet test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test Towerpolis.Core
+        run: >
+          dotnet test core/Towerpolis.Core.Tests/Towerpolis.Core.Tests.csproj
+          -c Release
+          --logger "trx;LogFileName=core-tests.trx"
+          --results-directory artifacts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-test-results
+          path: artifacts/**/*.trx
+
+  # GameCI can't read secrets in a job `if:`, so surface "is a Unity license configured?" as output.
+  check-unity-secret:
+    name: Unity license configured?
+    runs-on: ubuntu-latest
+    outputs:
+      has-license: ${{ steps.c.outputs.has }}
+    steps:
+      - id: c
+        run: echo "has=${{ secrets.UNITY_LICENSE != '' }}" >> "$GITHUB_OUTPUT"
+
+  # Skeleton: activates automatically once UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD secrets
+  # are added. Until then it is skipped, so CI stays green.
+  unity-android:
+    name: Unity — EditMode tests + Android AAB
+    runs-on: ubuntu-latest
+    needs: [ core-tests, check-unity-secret ]
+    if: needs.check-unity-secret.outputs.has-license == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/cache@v4
+        with:
+          path: unity/Towerpolis/Library
+          key: Library-${{ hashFiles('unity/Towerpolis/Assets/**', 'unity/Towerpolis/Packages/**', 'unity/Towerpolis/ProjectSettings/**') }}
+          restore-keys: |
+            Library-
+      - name: EditMode tests (Unity Test Runner)
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: unity/Towerpolis
+          testMode: EditMode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Android (AAB)
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: unity/Towerpolis
+          targetPlatform: Android
+          androidAppBundle: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Android-build
+          path: build

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Towerpolis.Core.Tests/Towerpolis.Core.Tests.csproj" />
+  <Project Path="Towerpolis.Core/Towerpolis.Core.csproj" />
+</Solution>
