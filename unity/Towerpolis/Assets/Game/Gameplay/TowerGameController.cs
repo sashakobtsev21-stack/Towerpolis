@@ -133,10 +133,12 @@ namespace Towerpolis.Game.Gameplay
                 // overhang. The tower welds it FLUSH in local space (no gaps/overlaps under the sway).
                 float offsetApplied = outcome.Grade == Grade.Perfect ? 0f : offsetX;
                 tower.WeldPlaced(_pendingBlock, offsetApplied, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
+                spawner.SetColliderEnabled(_pendingBlock, true); // solid face for missed blocks to land on / tip off
                 _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt
             }
             else
             {
+                spawner.SetColliderEnabled(_pendingBlock, true);
                 TumbleAway(_pendingBlock, offsetX);
             }
 
@@ -170,17 +172,18 @@ namespace Towerpolis.Game.Gameplay
             if (rb != null)
             {
                 rb.isKinematic = false;
+                // Continuous detection so the falling block hits the block FACES accurately instead of
+                // tunnelling through and catching on "air".
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 rb.useGravity = true;
                 rb.constraints = RigidbodyConstraints.None;
-                // Nudge it toward the side it missed (physics + the tower's colliders do the rest — it
-                // bounces off the building and tumbles down).
+                // Gentle: it lands on the top block's edge, then its weight hanging off the edge + gravity
+                // tip it off naturally and it tumbles down the side.
                 float dir = offsetX >= 0f ? 1f : -1f;
-                // Keep falling (don't pause at the contact line — that pause read as a "bounce off the
-                // top block"): carry strong downward speed plus a sideways fling so it sails on past.
-                rb.linearVelocity = new Vector3(dir * 4.0f, -9f, 0f);
-                rb.angularVelocity = new Vector3(0f, 0f, -dir * 2.0f);
+                rb.linearVelocity = new Vector3(dir * 1.0f, -1.5f, 0f);
+                rb.angularVelocity = new Vector3(0f, 0f, -dir * 1.0f);
             }
-            Destroy(block.gameObject, 3f); // no collider — it just falls clear and is cleaned up
+            Destroy(block.gameObject, 4f);
         }
 
         static bool TapPressed()

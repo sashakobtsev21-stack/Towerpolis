@@ -61,7 +61,7 @@ namespace Towerpolis.Game.Gameplay
             {
                 mesh.GetComponent<MeshRenderer>().sharedMaterial = _matBase;
                 var col = mesh.GetComponent<Collider>();
-                if (col != null) col.enabled = false; // no physics colliders anywhere — nothing to snag on
+                if (col != null) col.enabled = true; // solid so missed blocks bounce off the real faces
                 Vector3 s = mesh.localScale; // a wider plinth so the foundation reads clearly
                 s.x *= 1.2f;
                 s.z *= 1.2f;
