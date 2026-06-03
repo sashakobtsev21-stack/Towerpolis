@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Towerpolis.Core.Determinism;
@@ -42,6 +43,16 @@ namespace Towerpolis.Game.Gameplay
         public int Strikes => _run != null ? _run.MissStrikes : 0;
         public bool IsOver => _state == State.Over;
 
+        // HUD events — the HUDController subscribes to these.
+        public event Action<int> ScoreChanged;   // new total score
+        public event Action<int> FloorAdded;      // new floor count
+        public event Action<int> StrikeAdded;     // strike number reached (1 or 2)
+        public event Action<Vector3> PerfectHit;  // world position for the "PERFECT!" pop
+        public event Action RunToppled;
+        public event Action RunStarted;
+
+        float _overSince;
+
         void Start() => NewRun();
 
         public void NewRun()
@@ -60,6 +71,7 @@ namespace Towerpolis.Game.Gameplay
             if (cameraRig != null) cameraRig.Init(tuning, tower);
 
             SpawnNext();
+            RunStarted?.Invoke();
         }
 
         void ClearTower()
@@ -92,7 +104,7 @@ namespace Towerpolis.Game.Gameplay
                     if (_settleTimer <= 0f) SpawnNext();
                     break;
                 case State.Over:
-                    if (TapPressed()) NewRun();
+                    if (Time.time - _overSince > 1.0f && TapPressed()) NewRun();
                     break;
             }
         }
@@ -130,12 +142,20 @@ namespace Towerpolis.Game.Gameplay
                 TumbleAway(_pendingBlock, offsetX);
             }
 
+            Vector3 placedPos = _pendingBlock != null ? _pendingBlock.position : Vector3.zero;
             _pendingBlock = null;
             _falling = null;
+
+            ScoreChanged?.Invoke(Score);
+            if (outcome.FloorPlaced) FloorAdded?.Invoke(Floors);
+            if (outcome.Grade == Grade.Perfect) PerfectHit?.Invoke(placedPos + Vector3.up * tuning.floorHeight);
+            if (outcome.Grade == Grade.Miss) StrikeAdded?.Invoke(Strikes);
 
             if (outcome.Toppled)
             {
                 _state = State.Over;
+                _overSince = Time.time;
+                RunToppled?.Invoke();
                 Debug.Log("[Towerpolis] Run over — floors " + Floors + ", score " + Score);
             }
             else

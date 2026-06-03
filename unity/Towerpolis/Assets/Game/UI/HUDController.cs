@@ -1,0 +1,353 @@
+using System.Collections;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using Towerpolis.Game.Gameplay;
+
+namespace Towerpolis.Game.UI
+{
+    /// <summary>
+    /// MVP HUD built entirely in code (no manual Canvas wiring): score (top-centre), height (top-right),
+    /// two strike pips (bottom-left), a "PERFECT!" world pop, a strike/miss vignette flash, and an
+    /// end-of-run restart panel. Subscribes to <see cref="TowerGameController"/>'s events. UGUI + TMP.
+    /// Add this component to any GameObject; it finds the game controller and builds itself.
+    /// (If text doesn't appear: Window → TextMeshPro → Import TMP Essential Resources, once.)
+    /// </summary>
+    public sealed class HUDController : MonoBehaviour
+    {
+        static readonly Color Navy = new Color(0.12f, 0.23f, 0.37f);
+        static readonly Color Coral = new Color(1.00f, 0.42f, 0.37f);
+        static readonly Color Yellow = new Color(1.00f, 0.835f, 0.31f);
+        static readonly Color OffWhite = new Color(0.97f, 0.97f, 0.95f);
+        static readonly Color Mint = new Color(0.40f, 0.73f, 0.40f);
+        static readonly Color PipEmpty = new Color(0.12f, 0.23f, 0.37f, 0.6f);
+
+        TowerGameController _game;
+        Camera _cam;
+
+        RectTransform _safeRoot;
+        TMP_Text _scoreLabel;
+        TMP_Text _floorsLabel;
+        readonly Image[] _pips = new Image[2];
+        Image _vignette;
+
+        TMP_Text _perfectLabel;
+        RectTransform _perfectRect;
+
+        GameObject _restartPanel;
+        TMP_Text _restartScore;
+        TMP_Text _restartBest;
+
+        int _highScore;
+
+        void Start()
+        {
+            _game = GetComponent<TowerGameController>();
+            if (_game == null) _game = FindFirstObjectByType<TowerGameController>();
+            _cam = Camera.main;
+
+            BuildUI();
+
+            if (_game != null)
+            {
+                _game.ScoreChanged += OnScoreChanged;
+                _game.FloorAdded += OnFloorAdded;
+                _game.StrikeAdded += OnStrikeAdded;
+                _game.PerfectHit += OnPerfect;
+                _game.RunToppled += OnToppled;
+                _game.RunStarted += OnRunStarted;
+            }
+            OnRunStarted();
+        }
+
+        void OnDestroy()
+        {
+            if (_game == null) return;
+            _game.ScoreChanged -= OnScoreChanged;
+            _game.FloorAdded -= OnFloorAdded;
+            _game.StrikeAdded -= OnStrikeAdded;
+            _game.PerfectHit -= OnPerfect;
+            _game.RunToppled -= OnToppled;
+            _game.RunStarted -= OnRunStarted;
+        }
+
+        void Update()
+        {
+            // Apply the device safe area each frame (cheap; handles notches / rotation).
+            if (_safeRoot == null) return;
+            Rect sa = Screen.safeArea;
+            _safeRoot.anchorMin = new Vector2(sa.xMin / Screen.width, sa.yMin / Screen.height);
+            _safeRoot.anchorMax = new Vector2(sa.xMax / Screen.width, sa.yMax / Screen.height);
+            _safeRoot.offsetMin = Vector2.zero;
+            _safeRoot.offsetMax = Vector2.zero;
+        }
+
+        // ---------- event handlers ----------
+
+        void OnScoreChanged(int score)
+        {
+            if (_scoreLabel != null) _scoreLabel.text = score.ToString();
+            Punch(_scoreLabel != null ? _scoreLabel.rectTransform : null, 1.25f);
+        }
+
+        void OnFloorAdded(int floors)
+        {
+            if (_floorsLabel != null) _floorsLabel.text = floors + "F";
+        }
+
+        void OnStrikeAdded(int strikeNumber)
+        {
+            int idx = Mathf.Clamp(strikeNumber - 1, 0, _pips.Length - 1);
+            if (_pips[idx] != null)
+            {
+                _pips[idx].color = Coral;
+                Punch(_pips[idx].rectTransform, 1.4f);
+            }
+            FlashVignette(0.25f, 0.4f);
+        }
+
+        void OnPerfect(Vector3 worldPos)
+        {
+            if (_perfectLabel == null || _cam == null) return;
+            StopCoroutine(nameof(PerfectPop));
+            _pendingPerfectWorld = worldPos;
+            StartCoroutine(nameof(PerfectPop));
+        }
+
+        void OnToppled()
+        {
+            FlashVignette(0.5f, 0.8f);
+            for (int i = 0; i < _pips.Length; i++)
+                if (_pips[i] != null) _pips[i].color = Coral;
+            StartCoroutine(ShowRestartAfter(1.2f));
+        }
+
+        void OnRunStarted()
+        {
+            if (_scoreLabel != null) _scoreLabel.text = "0";
+            if (_floorsLabel != null) _floorsLabel.text = "0F";
+            for (int i = 0; i < _pips.Length; i++)
+                if (_pips[i] != null) _pips[i].color = PipEmpty;
+            if (_restartPanel != null) _restartPanel.SetActive(false);
+        }
+
+        // ---------- animations ----------
+
+        void Punch(RectTransform rt, float peak)
+        {
+            if (rt == null) return;
+            StopCoroutine(nameof(PunchCo));
+            _punchTarget = rt;
+            _punchPeak = peak;
+            StartCoroutine(nameof(PunchCo));
+        }
+
+        RectTransform _punchTarget;
+        float _punchPeak;
+
+        IEnumerator PunchCo()
+        {
+            RectTransform rt = _punchTarget;
+            float t = 0f, dur = 0.2f;
+            while (t < dur && rt != null)
+            {
+                t += Time.deltaTime;
+                float p = t / dur;
+                float s = 1f + (_punchPeak - 1f) * Mathf.Sin(p * Mathf.PI); // up then back to 1
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+            if (rt != null) rt.localScale = Vector3.one;
+        }
+
+        Vector3 _pendingPerfectWorld;
+
+        IEnumerator PerfectPop()
+        {
+            _perfectLabel.gameObject.SetActive(true);
+            float t = 0f, dur = 0.7f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float p = t / dur;
+                Vector3 sp = _cam.WorldToScreenPoint(_pendingPerfectWorld);
+                _perfectRect.position = sp;
+                float scale = p < 0.4f ? Mathf.Lerp(0f, 1.3f, p / 0.4f) : Mathf.Lerp(1.3f, 1.0f, (p - 0.4f) / 0.6f);
+                _perfectRect.localScale = new Vector3(scale, scale, 1f);
+                float a = p < 0.5f ? 1f : Mathf.Lerp(1f, 0f, (p - 0.5f) / 0.5f);
+                _perfectLabel.color = new Color(Yellow.r, Yellow.g, Yellow.b, a);
+                yield return null;
+            }
+            _perfectLabel.gameObject.SetActive(false);
+        }
+
+        void FlashVignette(float peakAlpha, float fade)
+        {
+            if (_vignette == null) return;
+            StopCoroutine(nameof(VignetteCo));
+            _vigPeak = peakAlpha;
+            _vigFade = fade;
+            StartCoroutine(nameof(VignetteCo));
+        }
+
+        float _vigPeak, _vigFade;
+
+        IEnumerator VignetteCo()
+        {
+            _vignette.gameObject.SetActive(true);
+            _vignette.color = new Color(1f, 0f, 0f, _vigPeak);
+            float t = 0f;
+            while (t < _vigFade)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Lerp(_vigPeak, 0f, t / _vigFade);
+                _vignette.color = new Color(1f, 0f, 0f, a);
+                yield return null;
+            }
+            _vignette.gameObject.SetActive(false);
+        }
+
+        IEnumerator ShowRestartAfter(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            int finalScore = _game != null ? _game.Score : 0;
+            bool newBest = finalScore > _highScore;
+            if (newBest) _highScore = finalScore;
+
+            if (_restartScore != null) _restartScore.text = finalScore.ToString();
+            if (_restartBest != null)
+            {
+                _restartBest.text = newBest ? "NEW BEST!" : "BEST  " + _highScore;
+                _restartBest.color = newBest ? Mint : Navy;
+            }
+            if (_restartPanel != null) _restartPanel.SetActive(true);
+        }
+
+        // ---------- UI construction ----------
+
+        void BuildUI()
+        {
+            var canvasGo = new GameObject("HUD_Canvas");
+            canvasGo.transform.SetParent(transform, false);
+            var canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 10;
+            var scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080, 1920);
+            scaler.matchWidthOrHeight = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            _vignette = NewImage("Vignette", canvasGo.transform, new Color(1f, 0f, 0f, 0f));
+            Stretch(_vignette.rectTransform);
+            _vignette.raycastTarget = false;
+            _vignette.gameObject.SetActive(false);
+
+            var safeGo = new GameObject("SafeRoot", typeof(RectTransform));
+            safeGo.transform.SetParent(canvasGo.transform, false);
+            _safeRoot = (RectTransform)safeGo.transform;
+            Stretch(_safeRoot);
+
+            _scoreLabel = NewText("Score", _safeRoot, 72, FontStyles.Bold, TextAlignmentOptions.Top);
+            Place(_scoreLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -32f), new Vector2(700f, 100f));
+
+            _floorsLabel = NewText("Floors", _safeRoot, 48, FontStyles.Normal, TextAlignmentOptions.TopRight);
+            Place(_floorsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(-28f, -36f), new Vector2(300f, 80f));
+
+            for (int i = 0; i < 2; i++)
+            {
+                _pips[i] = NewImage("Pip" + i, _safeRoot, PipEmpty);
+                Place(_pips[i].rectTransform, new Vector2(0f, 0f), new Vector2(34f + i * 64f, 56f), new Vector2(52f, 52f));
+            }
+
+            _perfectLabel = NewText("Perfect", canvasGo.transform, 80, FontStyles.Bold, TextAlignmentOptions.Center);
+            _perfectLabel.color = Yellow;
+            _perfectLabel.text = "PERFECT!";
+            _perfectRect = _perfectLabel.rectTransform;
+            _perfectRect.sizeDelta = new Vector2(600f, 120f);
+            _perfectLabel.gameObject.SetActive(false);
+
+            BuildRestartPanel(canvasGo.transform);
+        }
+
+        void BuildRestartPanel(Transform parent)
+        {
+            _restartPanel = new GameObject("RestartPanel", typeof(RectTransform));
+            _restartPanel.transform.SetParent(parent, false);
+            var prt = (RectTransform)_restartPanel.transform;
+            prt.anchorMin = prt.anchorMax = prt.pivot = new Vector2(0.5f, 0f);
+            prt.anchoredPosition = new Vector2(0f, 360f);
+            prt.sizeDelta = new Vector2(700f, 520f);
+
+            _restartScore = NewText("FinalScore", prt, 110, FontStyles.Bold, TextAlignmentOptions.Center);
+            _restartScore.color = OffWhite;
+            Place(_restartScore.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(700f, 160f));
+
+            _restartBest = NewText("Best", prt, 40, FontStyles.Normal, TextAlignmentOptions.Center);
+            Place(_restartBest.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -180f), new Vector2(700f, 60f));
+
+            var btnGo = new GameObject("RetryButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            btnGo.transform.SetParent(prt, false);
+            var brt = (RectTransform)btnGo.transform;
+            brt.anchorMin = brt.anchorMax = brt.pivot = new Vector2(0.5f, 0f);
+            brt.anchoredPosition = new Vector2(0f, 20f);
+            brt.sizeDelta = new Vector2(480f, 110f);
+            btnGo.GetComponent<Image>().color = Coral;
+            btnGo.GetComponent<Button>().onClick.AddListener(OnRetry);
+
+            var label = NewText("RetryLabel", brt, 42, FontStyles.Bold, TextAlignmentOptions.Center);
+            label.color = OffWhite;
+            label.text = "ONE MORE TRY";
+            Stretch(label.rectTransform);
+
+            _restartPanel.SetActive(false);
+        }
+
+        void OnRetry()
+        {
+            if (_restartPanel != null) _restartPanel.SetActive(false);
+            if (_game != null) _game.NewRun();
+        }
+
+        // ---------- helpers ----------
+
+        static TMP_Text NewText(string name, Transform parent, float size, FontStyles style, TextAlignmentOptions align)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var t = go.AddComponent<TextMeshProUGUI>();
+            t.fontSize = size;
+            t.fontStyle = style;
+            t.alignment = align;
+            t.color = OffWhite;
+            t.raycastTarget = false;
+            return t;
+        }
+
+        static Image NewImage(string name, Transform parent, Color color)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var img = go.GetComponent<Image>();
+            img.color = color;
+            return img;
+        }
+
+        static void Stretch(RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.localScale = Vector3.one;
+        }
+
+        static void Place(RectTransform rt, Vector2 anchor, Vector2 anchoredPos, Vector2 size)
+        {
+            rt.anchorMin = rt.anchorMax = rt.pivot = anchor;
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+            rt.localScale = Vector3.one;
+        }
+    }
+}

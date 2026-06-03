@@ -3,7 +3,9 @@
     "rootNamespace": "Towerpolis.Game",
     "references": [
         "Towerpolis.Core",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
