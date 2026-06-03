@@ -17,13 +17,14 @@ namespace Towerpolis.Game.Gameplay
         float _phase;
         float _cableLength;
         float _thetaMax;
+        float _tiltFactor;
         bool _swinging;
 
         public float Phase => _phase;
         public float CurrentX => _block != null ? _block.position.x : (_tower != null ? _tower.TopWorldX : 0f);
 
         public void BeginSwing(Transform block, TowerController tower, float craneHeight,
-            float halfArc, float period, float phase, float cableLength)
+            float halfArc, float period, float phase, float cableLength, float tiltFactor)
         {
             _block = block;
             _tower = tower;
@@ -33,6 +34,7 @@ namespace Towerpolis.Game.Gameplay
             _phase = phase;
             _cableLength = Mathf.Max(0.5f, cableLength);
             _thetaMax = Mathf.Asin(Mathf.Clamp(_halfArc / _cableLength, -1f, 1f));
+            _tiltFactor = tiltFactor;
             _swinging = true;
             Apply();
         }
@@ -60,8 +62,9 @@ namespace Towerpolis.Game.Gameplay
             float pivotY = holdY + _cableLength;
             float x = centerX + _cableLength * Mathf.Sin(theta);
             float y = pivotY - _cableLength * Mathf.Cos(theta);
+            // Position follows the full arc; the visible block tilt is scaled down by the tilt factor.
             _block.SetPositionAndRotation(new Vector3(x, y, 0f),
-                Quaternion.Euler(0f, 0f, -theta * Mathf.Rad2Deg));
+                Quaternion.Euler(0f, 0f, -theta * Mathf.Rad2Deg * _tiltFactor));
         }
     }
 }

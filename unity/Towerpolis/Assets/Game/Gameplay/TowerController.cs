@@ -3,30 +3,31 @@ using UnityEngine;
 namespace Towerpolis.Game.Gameplay
 {
     /// <summary>
-    /// The welded tower (Tower-Bloxx model). Tracks the top surface and runs a PERPETUAL scripted sway
-    /// (spec §5, pivoted): the root pivots at the base bottom-center and tilts around Z. The sway never
-    /// rings out over time — its amplitude is driven by the accumulated lean (overhang), so a clean
-    /// (centred) tower barely sways and a top-heavy/overhanging one sways hard toward the lean side.
-    /// Perfect drops shrink the lean (calming the sway). No Rigidbodies — the sway is always faked
+    /// The welded tower (Tower-Bloxx model). Blocks stack FLUSH in the tower's LOCAL space (so the
+    /// wobble rotation can never open gaps or make them overlap — the whole stack rotates as one). Runs
+    /// a PERPETUAL scripted sway whose amplitude comes only from accumulated overhang (lean): a centred
+    /// tower doesn't sway, an off-centre one sways toward the lean and never decays with idle time, and
+    /// a Perfect/magnet drop shrinks the lean to calm it. No Rigidbodies — sway is always faked
     /// (ADR-0002; real stacks explode past ~10–12 floors).
-    ///
-    /// KNOWN LIMITATION (physics review): TopX/TopY are tracked on the unrotated axis while this root
-    /// rotates for the sway — negligible at low lean. The full drop-onto-the-swaying-tower model + the
-    /// Phase-3 deterministic sway clock are a game-designer respec item (see the Tower-Bloxx pivot note).
     /// </summary>
     public sealed class TowerController : MonoBehaviour
     {
-        public float TopY { get; private set; }
-        public float TopX { get; private set; }
         public float TopWidth { get; private set; }
 
-        /// <summary>The CURRENT world X of the top block's centre — it sways with the wobble. Grading and
-        /// the crane aim at this (not the frozen logical TopX) so a clean hit on the swaying tower
-        /// doesn't read as off-centre.</summary>
-        public float TopWorldX => _topBlock != null ? _topBlock.position.x : TopX;
+        /// <summary>Current swaying world X of the top centre — grading and the crane aim here.</summary>
+        public float TopWorldX => _topBlock != null ? _topBlock.position.x : 0f;
+        /// <summary>Current world Y of the top face — contact threshold / crane height.</summary>
+        public float TopY => _topBlock != null ? _topBlock.position.y + _tuning.floorHeight : _baseTopFaceY;
+        /// <summary>Structural top X/Y WITHOUT the sway — the camera follows these so the sway stays visible
+        /// while the walking tower stays on-screen.</summary>
+        public float TopStructuralX => _topLocalX;
+        public float TopStructuralY => _tuning != null ? _tuning.floorHeight * (_topFloorIndex + 1) : 0f;
 
         GameTuning _tuning;
         Transform _topBlock;
+        float _topLocalX;
+        int _topFloorIndex;
+        float _baseTopFaceY;
         int _floorCount;
         float _lean;
         float _time;
@@ -36,39 +37,51 @@ namespace Towerpolis.Game.Gameplay
         public void Init(GameTuning tuning, Transform baseBlock, float baseTopY, float topWidth)
         {
             _tuning = tuning;
-            // The tower root must be unit-scaled at origin: children (base + welded floors) inherit this,
-            // and a zero/odd scale on the host GameObject would shrink them to nothing (invisible).
+            // Unit-scaled, at origin, upright: children inherit this; a zero/odd host scale would shrink
+            // the whole tower to nothing (invisible).
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
-            if (baseBlock != null) baseBlock.SetParent(transform, true);
+            transform.localRotation = Quaternion.identity;
+            if (baseBlock != null)
+            {
+                baseBlock.SetParent(transform, true);
+                baseBlock.localPosition = Vector3.zero;       // base root at local origin → top face at floorHeight
+                baseBlock.localRotation = Quaternion.identity;
+            }
             _topBlock = baseBlock;
-            TopY = baseTopY;
-            TopX = 0f;
+            _topLocalX = 0f;
+            _topFloorIndex = 0;
+            _baseTopFaceY = baseTopY;
             TopWidth = topWidth;
             _initialWidth = topWidth;
             _floorCount = 0;
             _lean = 0f;
             _time = 0f;
             _active = true;
-            transform.localRotation = Quaternion.identity;
         }
 
-        /// <summary>Weld a placed block where it landed (whole, overhanging) and advance the top.</summary>
-        public void WeldPlaced(Transform block, float newTopX, float newTopWidth, int floorCount, float lean)
+        /// <summary>Weld a placed block FLUSH onto the stack in local space, offset horizontally by
+        /// <paramref name="offsetApplied"/> from the floor below (0 for a Perfect/magnet snap).</summary>
+        public void WeldPlaced(Transform block, float offsetApplied, float newTopWidth, int floorCount, float lean)
         {
-            if (block != null) block.SetParent(transform, true);
+            _topFloorIndex += 1;
+            _topLocalX += offsetApplied;
+            if (block != null)
+            {
+                block.SetParent(transform, true);
+                block.localPosition = new Vector3(_topLocalX, _tuning.floorHeight * _topFloorIndex, 0f);
+                // localRotation keeps the fall tilt; SettleUpright rights it.
+            }
             _topBlock = block;
-            TopX = newTopX;
             TopWidth = newTopWidth;
-            TopY += _tuning.floorHeight;
             _floorCount = floorCount;
-            _lean = lean; // drives the sway amplitude; Perfect drops shrink it
+            _lean = lean;
         }
 
         void Update()
         {
             if (!_active || _tuning == null) return;
-            _time += Time.deltaTime; // continuous phase — the sway is perpetual, never reset
+            _time += Time.deltaTime; // continuous phase — perpetual sway, never reset
             float angle = WobbleAngle(_time);
             transform.localRotation = Quaternion.Euler(0f, 0f, -angle); // +lean → top leans toward +X
         }
@@ -84,7 +97,6 @@ namespace Towerpolis.Game.Gameplay
                 _tuning.wobblePeriodBase + _tuning.wobblePeriodPerFloor * _floorCount,
                 _tuning.wobblePeriodMin, _tuning.wobblePeriodMax);
 
-            // Centre the sway around the lean direction so it visibly leans the overhang way.
             float equilibrium = (_initialWidth > 0f ? _lean / _initialWidth : 0f) * _tuning.maxLeanBiasAngle;
             return equilibrium + amplitude * Mathf.Sin(2f * Mathf.PI * t / Mathf.Max(0.01f, period));
         }

@@ -20,7 +20,7 @@ namespace Towerpolis.Game.Gameplay
             _tuning = tuning;
             _tower = tower;
             if (cam == null) cam = Camera.main;
-            _look = tower != null ? new Vector3(tower.TopX, tower.TopY, 0f) : Vector3.zero;
+            _look = tower != null ? new Vector3(tower.TopStructuralX, tower.TopStructuralY, 0f) : Vector3.zero;
         }
 
         void LateUpdate()
@@ -28,9 +28,9 @@ namespace Towerpolis.Game.Gameplay
             if (_tuning == null || _tower == null || cam == null) return;
 
             // Aim between the tower top and the swinging crane block (so the player sees where to drop),
-            // and follow the tower's X drift as it leans/walks.
-            float aimY = _tower.TopY + _tuning.craneHeight * 0.5f;
-            Vector3 targetLook = new Vector3(_tower.TopX, aimY, 0f);
+            // following the STRUCTURAL top (the lean/walk, not the sway) so the wobble stays visible.
+            float aimY = _tower.TopStructuralY + _tuning.craneHeight * 0.5f;
+            Vector3 targetLook = new Vector3(_tower.TopStructuralX, aimY, 0f);
             _look = Vector3.SmoothDamp(_look, targetLook, ref _lookVel, _tuning.cameraFollowSmoothTime);
 
             // Frame a window: the crane block above + the top floor + a couple of floors below.

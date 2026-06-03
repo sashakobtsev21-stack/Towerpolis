@@ -21,6 +21,8 @@ namespace Towerpolis.Game.Gameplay
         public float swingHalfArc = 1.4f;
         [Tooltip("Pendulum cable length — longer = gentler arc; the block hangs and swings on this.")]
         public float craneCableLength = 4.0f;
+        [Tooltip("How much the block tilts with the swing (0 = stays upright, 1 = full pendulum tilt).")]
+        public float craneTiltFactor = 0.4f;
         public float periodFloor1 = 2.8f;
         public float periodMinClamp = 2.0f;
         public float periodRampFactor = 0.012f;

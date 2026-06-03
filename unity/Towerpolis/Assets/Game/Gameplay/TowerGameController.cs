@@ -76,7 +76,7 @@ namespace Towerpolis.Game.Gameplay
             int nextFloor = _run.FloorCount + 1;
             _pendingBlock = spawner.CreateBlock(_pendingType, tower.TopWidth, "Floor_" + nextFloor);
             float period = tuning.SwingPeriod(nextFloor);
-            crane.BeginSwing(_pendingBlock, tower, tuning.craneHeight, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength);
+            crane.BeginSwing(_pendingBlock, tower, tuning.craneHeight, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength, tuning.craneTiltFactor);
             _state = State.Swinging;
         }
 
@@ -117,11 +117,10 @@ namespace Towerpolis.Game.Gameplay
 
             if (outcome.FloorPlaced)
             {
-                // Perfect → MAGNET-snap to the floor-below's centre (counts as a clean hit); Good → the
-                // block stays WHOLE where it landed (overhanging). No slice. Overhang shows as sway.
-                float placeX = outcome.Grade == Grade.Perfect ? tower.TopWorldX : contactX;
-                _pendingBlock.position = new Vector3(placeX, tower.TopY, 0f);
-                tower.WeldPlaced(_pendingBlock, placeX, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
+                // Perfect → MAGNET-snap directly above the floor below (offset 0); Good → keep the landed
+                // overhang. The tower welds it FLUSH in local space (no gaps/overlaps under the sway).
+                float offsetApplied = outcome.Grade == Grade.Perfect ? 0f : offsetX;
+                tower.WeldPlaced(_pendingBlock, offsetApplied, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
                 spawner.SetColliderEnabled(_pendingBlock, true); // now a solid obstacle in the tower
                 _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt
             }
