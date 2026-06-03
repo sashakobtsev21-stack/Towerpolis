@@ -2,7 +2,8 @@
     "name": "Towerpolis.Game",
     "rootNamespace": "Towerpolis.Game",
     "references": [
-        "Towerpolis.Core"
+        "Towerpolis.Core",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
