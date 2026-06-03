@@ -80,7 +80,8 @@ namespace Towerpolis.Core.Gameplay
                     break;
 
                 case Grade.Good:
-                    Slice(offsetX);
+                    // Tower-Bloxx pivot: the block stays WHOLE (no slice). Top width is constant;
+                    // the overhang accumulates as lean that drives the building's sway.
                     LeanOffset += offsetX * _cfg.GoodLeanFactor;
                     PerfectChain = 0;
                     residentsAdded = Scoring.BaseResidents(_cfg, type);
@@ -89,7 +90,6 @@ namespace Towerpolis.Core.Gameplay
                     break;
 
                 case Grade.Sloppy:
-                    Slice(offsetX);
                     LeanOffset += offsetX * _cfg.SloppyLeanFactor;
                     PerfectChain = 0;
                     residentsAdded = Scoring.BaseResidents(_cfg, type);
@@ -112,12 +112,6 @@ namespace Towerpolis.Core.Gameplay
 
             return new DropOutcome(grade, floorPlaced, scoreGained, residentsAdded,
                 CurrentTopWidth, LeanOffset, MissStrikes, PerfectChain, toppled);
-        }
-
-        void Slice(float offsetX)
-        {
-            float overlap = CurrentTopWidth - Math.Abs(offsetX);
-            CurrentTopWidth = Math.Max(overlap, _cfg.MinBlockWidth);
         }
     }
 }

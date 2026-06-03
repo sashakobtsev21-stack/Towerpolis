@@ -45,24 +45,26 @@ namespace Towerpolis.Core.Tests.Gameplay
         }
 
         [Test]
-        public void Good_SlicesWidth_NoStrike()
+        public void Good_KeepsWholeBlock_NoStrike()
         {
             var run = new TowerRun(new CoreConfig());
             var o = run.PlaceBlock(FloorType.Standard, 0.40f); // r=0.20 → Good
             Assert.That(o.Grade, Is.EqualTo(Grade.Good));
-            Assert.That(run.CurrentTopWidth, Is.EqualTo(1.6f).Within(Tol)); // 2.0 - 0.4
+            Assert.That(run.CurrentTopWidth, Is.EqualTo(2.0f).Within(Tol)); // Tower-Bloxx: no slice
+            Assert.That(run.LeanOffset, Is.EqualTo(0.40f * 0.15f).Within(Tol)); // overhang → lean
             Assert.That(o.ScoreGained, Is.EqualTo(100));
             Assert.That(run.MissStrikes, Is.Zero);
             Assert.That(run.PerfectChain, Is.Zero);
         }
 
         [Test]
-        public void Sloppy_SlicesWidth_AddsStrike()
+        public void Sloppy_KeepsWholeBlock_AddsStrike()
         {
             var run = new TowerRun(new CoreConfig());
             var o = run.PlaceBlock(FloorType.Standard, 0.80f); // r=0.40 → Sloppy
             Assert.That(o.Grade, Is.EqualTo(Grade.Sloppy));
-            Assert.That(run.CurrentTopWidth, Is.EqualTo(1.2f).Within(Tol)); // 2.0 - 0.8
+            Assert.That(run.CurrentTopWidth, Is.EqualTo(2.0f).Within(Tol)); // no slice
+            Assert.That(run.LeanOffset, Is.EqualTo(0.80f * 0.35f).Within(Tol)); // bigger overhang → more lean
             Assert.That(o.ScoreGained, Is.EqualTo(50));                     // 100 × 0.5
             Assert.That(run.MissStrikes, Is.EqualTo(1));
         }
@@ -126,16 +128,15 @@ namespace Towerpolis.Core.Tests.Gameplay
         }
 
         [Test]
-        public void SliceNeverGoesBelowMinBlockWidth()
+        public void TopWidth_StaysConstant_NoSlicing()
         {
             var cfg = new CoreConfig { SloppyCostsStrike = false, StrikeLimit = 999 };
             var run = new TowerRun(cfg);
             for (int i = 0; i < 40; i++)
             {
                 Place(run, FloorType.Standard, Grade.Sloppy);
-                Assert.That(run.CurrentTopWidth, Is.GreaterThanOrEqualTo(cfg.MinBlockWidth - Tol));
+                Assert.That(run.CurrentTopWidth, Is.EqualTo(cfg.InitialBlockWidth).Within(Tol));
             }
-            Assert.That(run.CurrentTopWidth, Is.EqualTo(cfg.MinBlockWidth).Within(Tol));
         }
 
         [Test]

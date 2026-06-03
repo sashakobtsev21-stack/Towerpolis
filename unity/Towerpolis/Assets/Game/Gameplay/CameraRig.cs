@@ -12,37 +12,37 @@ namespace Towerpolis.Game.Gameplay
 
         GameTuning _tuning;
         TowerController _tower;
-        float _lookY;
-        float _velY;
+        Vector3 _look;
+        Vector3 _lookVel;
 
         public void Init(GameTuning tuning, TowerController tower)
         {
             _tuning = tuning;
             _tower = tower;
             if (cam == null) cam = Camera.main;
-            _lookY = tower != null ? tower.TopY : 0f;
+            _look = tower != null ? new Vector3(tower.TopX, tower.TopY, 0f) : Vector3.zero;
         }
 
         void LateUpdate()
         {
             if (_tuning == null || _tower == null || cam == null) return;
 
-            // Frame the whole tower: look at its vertical centre and zoom out to fit base..top plus
-            // headroom for the swinging block, so the base never scrolls off as the tower grows.
-            float topY = _tower.TopY;
-            float fitHeight = Mathf.Max(6f, topY + _tuning.cameraTargetOffsetY + 3f);
-            float targetLookY = topY * 0.5f + 1.0f;
-            _lookY = Mathf.SmoothDamp(_lookY, targetLookY, ref _velY, _tuning.cameraFollowSmoothTime);
+            // Aim between the tower top and the swinging crane block (so the player sees where to drop),
+            // and follow the tower's X drift as it leans/walks.
+            float aimY = _tower.TopY + _tuning.craneHeight * 0.5f;
+            Vector3 targetLook = new Vector3(_tower.TopX, aimY, 0f);
+            _look = Vector3.SmoothDamp(_look, targetLook, ref _lookVel, _tuning.cameraFollowSmoothTime);
 
+            // Frame a window: the crane block above + the top floor + a couple of floors below.
+            float window = _tuning.craneHeight + 7f;
             float vFov = cam.fieldOfView * Mathf.Deg2Rad;
-            float dist = (fitHeight * 0.5f) / Mathf.Tan(vFov * 0.5f);
+            float dist = (window * 0.5f) / Mathf.Tan(vFov * 0.5f);
             dist = Mathf.Clamp(dist, 8f, _tuning.maxCameraDistance);
 
             float rad = _tuning.cameraAngleX * Mathf.Deg2Rad;
-            Vector3 look = new Vector3(0f, _lookY, 0f);
             Vector3 offset = new Vector3(0f, dist * Mathf.Sin(rad), -dist * Mathf.Cos(rad));
-            cam.transform.position = look + offset;
-            cam.transform.rotation = Quaternion.LookRotation(look - cam.transform.position, Vector3.up);
+            cam.transform.position = _look + offset;
+            cam.transform.rotation = Quaternion.LookRotation(_look - cam.transform.position, Vector3.up);
         }
     }
 }
