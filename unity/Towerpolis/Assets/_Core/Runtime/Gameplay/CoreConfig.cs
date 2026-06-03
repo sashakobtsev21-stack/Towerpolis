@@ -7,10 +7,11 @@ namespace Towerpolis.Core.Gameplay
     /// </summary>
     public sealed class CoreConfig
     {
-        // --- Grading: thresholds are fractions of the CURRENT top width, not a constant (spec §3, R2) ---
-        public float PerfectThreshold = 0.10f;
-        public float GoodThreshold = 0.30f;
-        public float SloppyThreshold = 0.50f;
+        // --- Grading (Tower-Bloxx): Perfect = snap-to-centre zone, Good = caught (overhangs), Miss =
+        //     too little overlap so it bounces off. Thresholds are fractions of block width. ---
+        public float PerfectThreshold = 0.15f; // within 15% of centre → snaps to centre, counts Perfect
+        public float GoodThreshold = 0.90f;    // caught up to 90% offset (≥10% overlap); beyond → Miss
+        public float SloppyThreshold = 0.90f;  // Sloppy band collapsed into Good (kept for enum compat)
         public float InitialBlockWidth = 2.0f;
         public float MinBlockWidth = 0.4f;
 

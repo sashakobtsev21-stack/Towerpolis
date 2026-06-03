@@ -20,7 +20,13 @@ namespace Towerpolis.Game.Gameplay
         public float TopX { get; private set; }
         public float TopWidth { get; private set; }
 
+        /// <summary>The CURRENT world X of the top block's centre — it sways with the wobble. Grading and
+        /// the crane aim at this (not the frozen logical TopX) so a clean hit on the swaying tower
+        /// doesn't read as off-centre.</summary>
+        public float TopWorldX => _topBlock != null ? _topBlock.position.x : TopX;
+
         GameTuning _tuning;
+        Transform _topBlock;
         int _floorCount;
         float _lean;
         float _time;
@@ -35,6 +41,7 @@ namespace Towerpolis.Game.Gameplay
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
             if (baseBlock != null) baseBlock.SetParent(transform, true);
+            _topBlock = baseBlock;
             TopY = baseTopY;
             TopX = 0f;
             TopWidth = topWidth;
@@ -50,6 +57,7 @@ namespace Towerpolis.Game.Gameplay
         public void WeldPlaced(Transform block, float newTopX, float newTopWidth, int floorCount, float lean)
         {
             if (block != null) block.SetParent(transform, true);
+            _topBlock = block;
             TopX = newTopX;
             TopWidth = newTopWidth;
             TopY += _tuning.floorHeight;

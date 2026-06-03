@@ -75,10 +75,8 @@ namespace Towerpolis.Game.Gameplay
             _pendingType = _sequence.Next();
             int nextFloor = _run.FloorCount + 1;
             _pendingBlock = spawner.CreateBlock(_pendingType, tower.TopWidth, "Floor_" + nextFloor);
-            float holdY = tower.TopY + tuning.craneHeight;
-            _pendingBlock.position = new Vector3(tower.TopX, holdY, 0f);
             float period = tuning.SwingPeriod(nextFloor);
-            crane.BeginSwing(_pendingBlock, tower.TopX, holdY, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength);
+            crane.BeginSwing(_pendingBlock, tower, tuning.craneHeight, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength);
             _state = State.Swinging;
         }
 
@@ -111,17 +109,19 @@ namespace Towerpolis.Game.Gameplay
 
         void OnBlockContact(float contactX)
         {
-            float offsetX = contactX - tower.TopX;
+            // Measure the offset against the CURRENT (swaying) top, so a clean hit on a leaning tower
+            // doesn't read as off-centre.
+            float offsetX = contactX - tower.TopWorldX;
             DropOutcome outcome = _run.PlaceBlock(_pendingType, offsetX);
             if (_falling != null) _falling.enabled = false; // its job is done either way
 
             if (outcome.FloorPlaced)
             {
-                // Tower-Bloxx: the block stays WHOLE where it landed (overhanging the floor below) — no
-                // slice, no reposition jump, no per-block squash. The tower top follows it; the overhang
-                // shows up as the building's lean/sway (TowerController), not as a cut.
-                _pendingBlock.position = new Vector3(contactX, tower.TopY, 0f);
-                tower.WeldPlaced(_pendingBlock, contactX, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
+                // Perfect → MAGNET-snap to the floor-below's centre (counts as a clean hit); Good → the
+                // block stays WHOLE where it landed (overhanging). No slice. Overhang shows as sway.
+                float placeX = outcome.Grade == Grade.Perfect ? tower.TopWorldX : contactX;
+                _pendingBlock.position = new Vector3(placeX, tower.TopY, 0f);
+                tower.WeldPlaced(_pendingBlock, placeX, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
                 spawner.SetColliderEnabled(_pendingBlock, true); // now a solid obstacle in the tower
                 _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt
             }
@@ -159,7 +159,7 @@ namespace Towerpolis.Game.Gameplay
                 // bounces off the building and tumbles down).
                 float dir = offsetX >= 0f ? 1f : -1f;
                 rb.linearVelocity = new Vector3(dir * 2.5f, 0.5f, 0f);
-                rb.angularVelocity = new Vector3(0f, 0f, -dir * 5f);
+                rb.angularVelocity = new Vector3(0f, 0f, -dir * 2.0f); // gentler spin
             }
             Destroy(block.gameObject, 3f);
         }
