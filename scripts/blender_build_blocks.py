@@ -187,8 +187,11 @@ m_brickL= mat('TP_BrickLine',(0.62,0.30,0.23,1), rough=0.75)
 m_dbrown= mat('TP_DarkBrown',(0.34,0.22,0.13,1), rough=0.45)
 m_steps = mat('TP_Steps', (0.60,0.62,0.65,1), rough=0.6)
 m_gold  = mat('TP_Gold',  (1.00,0.82,0.30,1), rough=0.2, metal=1.0)
+m_orange= mat('TP_Orange',(1.00,0.52,0.12,1), rough=0.25)    # balcony variant 2
+m_brick2= mat('TP_Brick2',(0.86,0.74,0.54,1), rough=0.65)    # base variant 2 (sandstone)
+m_brick2L=mat('TP_Brick2L',(0.72,0.60,0.42,1), rough=0.75)
 
-NAMES=['Floor_Standard','Floor_Balcony','Floor_Premium','Base_Ground']  # NO roof
+NAMES=['Floor_Standard','Floor_Balcony','Floor_Balcony_2','Floor_Premium','Base_Ground','Base_Ground_2']  # NO roof
 for n in NAMES+['Roof_Cap']: clear(n)
 log=[]; CZ=FH/2.0
 def safe(l,f):
@@ -201,35 +204,37 @@ def b1():  # Standard green; windows F/L/R; ONE full-width canopy per window-fac
     join(o,p)
 safe('Floor_Standard',b1)
 
-def b2():  # Balcony yellow; wooden balcony+door front; windows L/R + full-width canopy
-    o=body('Floor_Balcony',2,2,FH,3,m_yellow)
-    p=rim(3,m_white)+windows(3,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
-    p+=balcony(3,'F',m_wood,1.3)+door_unit(3,'F',0.0,0.62,1.25,m_white,m_glass,m_gold)
-    p+=awn(3,'F',0.0,1.38,1.7,m_canlb)                # awning above balcony door — wide (a bit narrower)
+def build_balcony(name,bx,body_mat):  # wooden balcony + door front; windows L/R; door a bit lower
+    o=body(name,2,2,FH,bx,body_mat)
+    p=rim(bx,m_white)+windows(bx,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
+    p+=balcony(bx,'F',m_wood,1.3)+door_unit(bx,'F',0.0,0.62,1.1,m_white,m_glass,m_gold)   # dh 1.25->1.1
+    p+=awn(bx,'F',0.0,1.23,1.7,m_canlb)               # awning above balcony door (lowered with door)
     join(o,p)
-safe('Floor_Balcony',b2)
+safe('Floor_Balcony',   lambda: build_balcony('Floor_Balcony',   3,  m_yellow))
+safe('Floor_Balcony_2', lambda: build_balcony('Floor_Balcony_2', 15, m_orange))
 
 def b3():  # Premium blue; FULL-WIDTH marble balcony + door + 2 windows + ONE continuous canopy; big side windows
     o=body('Floor_Premium',2,2,FH,6,m_blue)
     p=rim(6,m_white)
     p+=balcony(6,'F',m_marble,1.92,d=0.5)
-    p+=door_unit(6,'F',0.0,0.6,1.3,m_white,m_glass,m_gold)
+    p+=door_unit(6,'F',0.0,0.6,1.15,m_white,m_glass,m_gold)   # door a bit lower (1.3->1.15)
     for s in (-0.74,0.74):
         p+=win(6,'F',s,0.82,0.28,1.0,m_white,m_glass,vm=0,hm=2,canopy=m_marble)
-    p+=awn(6,'F',0.0,1.43,0.92,m_marble)              # awning above premium door
+    p+=awn(6,'F',0.0,1.28,0.92,m_marble)              # awning above premium door (lowered)
     p+=win(6,'L',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
     p+=win(6,'R',0.0,CZ,1.0,1.1,m_white,m_glass,vm=1,hm=0,canopy=m_marble)
     join(o,p)   # (premium corner posts removed)
 safe('Floor_Premium',b3)
 
-def b5():  # Base brick, no windows, entrance (dark-brown canopy + grey steps)
-    o=body('Base_Ground',2.0,2.0,1.5,12,m_brick)
-    p=[box(2.08,2.08,0.1,(12,0,1.45),m_white)]
+def build_base(name,bx,brick_mat,line_mat):  # brick base, no windows, entrance
+    o=body(name,2.0,2.0,1.5,bx,brick_mat)
+    p=[box(2.08,2.08,0.1,(bx,0,1.45),m_white)]
     for z in (0.4,0.75,1.1):
-        p.append(box(2.04,2.04,0.02,(12,0,z),m_brickL))
-    p+=entrance(12,m_white,m_dbrown,m_gold,m_dbrown,m_steps,m_white)
+        p.append(box(2.04,2.04,0.02,(bx,0,z),line_mat))
+    p+=entrance(bx,m_white,m_dbrown,m_gold,m_dbrown,m_steps,m_white)
     join(o,p)
-safe('Base_Ground',b5)
+safe('Base_Ground',   lambda: build_base('Base_Ground',   12, m_brick,  m_brickL))
+safe('Base_Ground_2', lambda: build_base('Base_Ground_2', 18, m_brick2, m_brick2L))
 
 def stage():
     clear('TP_GroundPlane')
