@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Towerpolis.Game::Towerpolis.Game.Gameplay.GameTuning
   floorHeight: 1.5
   craneHeight: 3
-  swingHalfArc: 1.8
+  swingHalfArc: 2.07
   craneCableLength: 6
   periodFloor1: 3
   periodMinClamp: 2
