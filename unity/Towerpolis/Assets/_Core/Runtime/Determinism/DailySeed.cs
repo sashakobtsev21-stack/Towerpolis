@@ -16,7 +16,7 @@ namespace Towerpolis.Core.Determinism
             // Pack as YYYYMMDD, then run SplitMix64 so adjacent days yield well-separated seeds
             // (a raw incrementing key would give visibly similar sequences day to day).
             ulong key = (ulong)(year * 10000 + month * 100 + day);
-            return SplitMix64(key ^ 0xA24BAED4963EE407UL);
+            return SeedMix.SplitMix64(key ^ 0xA24BAED4963EE407UL);
         }
 
         /// <summary>Stable seed for the date component (Y/M/D) of a UTC DateTime.</summary>
@@ -29,15 +29,5 @@ namespace Towerpolis.Core.Determinism
         /// <summary>A ready-to-use RNG seeded for the date component of a UTC DateTime.</summary>
         public static XorShiftRng RngForDateUtc(DateTime utc)
             => new XorShiftRng(ForDateUtc(utc));
-
-        // SplitMix64 (Vigna) — a strong finalizer that turns a small, structured key into a
-        // well-distributed 64-bit seed.
-        static ulong SplitMix64(ulong x)
-        {
-            x += 0x9E3779B97F4A7C15UL;
-            x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9UL;
-            x = (x ^ (x >> 27)) * 0x94D049BB133111EBUL;
-            return x ^ (x >> 31);
-        }
     }
 }
