@@ -13,13 +13,13 @@ namespace Towerpolis.Core.Tests.Gameplay
             Assert.That(Grading.Evaluate(Cfg(), 0f, 2.0f), Is.EqualTo(Grade.Perfect));
         }
 
-        // Bands at the full 2.0 m top: Perfect ≤0.30 (snap), Good ≤1.80 (caught), Miss above (bounce).
+        // Bands at the full 2.0 m top: Perfect ≤0.30 (snap), Good ≤1.60 (caught), Miss above (bounce).
         [TestCase(0.00f, Grade.Perfect)]
         [TestCase(0.30f, Grade.Perfect)]
         [TestCase(0.3001f, Grade.Good)]
         [TestCase(1.00f, Grade.Good)]
-        [TestCase(1.80f, Grade.Good)]
-        [TestCase(1.8001f, Grade.Miss)]
+        [TestCase(1.60f, Grade.Good)]
+        [TestCase(1.6001f, Grade.Miss)]
         [TestCase(1.95f, Grade.Miss)]
         public void Bands_AtFullWidth(float offset, Grade expected)
         {

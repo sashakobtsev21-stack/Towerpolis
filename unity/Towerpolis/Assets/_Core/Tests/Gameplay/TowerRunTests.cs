@@ -67,8 +67,8 @@ namespace Towerpolis.Core.Tests.Gameplay
         public void Miss_OnlyWhenOverlapTiny_BouncesStrikes()
         {
             var run = new TowerRun(new CoreConfig());
-            // ~90% offset still catches (Good); beyond that it misses
-            Assert.That(run.PlaceBlock(FloorType.Standard, 1.70f).Grade, Is.EqualTo(Grade.Good));
+            // ~80% offset still catches (Good); beyond that it misses
+            Assert.That(run.PlaceBlock(FloorType.Standard, 1.50f).Grade, Is.EqualTo(Grade.Good));
             var o = run.PlaceBlock(FloorType.Premium, 1.90f); // r=0.95 → Miss
             Assert.That(o.Grade, Is.EqualTo(Grade.Miss));
             Assert.That(o.FloorPlaced, Is.False);
