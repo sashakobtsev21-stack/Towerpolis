@@ -75,11 +75,10 @@ namespace Towerpolis.Game.Gameplay
 
         float WobbleAngle(float t)
         {
-            float baseAmp = Mathf.Clamp(
-                _tuning.wobbleAmpBase + _tuning.wobbleAmpPerFloor * _floorCount,
-                _tuning.wobbleAmpMin, _tuning.wobbleAmpMax);
-            float amplitude = Mathf.Min(baseAmp + _tuning.wobbleLeanBias * Mathf.Abs(_lean),
-                _tuning.wobbleAmpMax);
+            // Amplitude comes ONLY from accumulated overhang (lean): a centred tower does not sway, an
+            // off-centre one sways toward the lean side, and a Perfect/magnet drop shrinks the lean which
+            // calms it. Perpetual — it never decays with idle time, only via clean play.
+            float amplitude = Mathf.Min(_tuning.wobbleLeanBias * Mathf.Abs(_lean), _tuning.wobbleAmpMax);
 
             float period = Mathf.Clamp(
                 _tuning.wobblePeriodBase + _tuning.wobblePeriodPerFloor * _floorCount,
