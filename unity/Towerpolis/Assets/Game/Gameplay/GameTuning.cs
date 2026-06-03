@@ -19,6 +19,8 @@ namespace Towerpolis.Game.Gameplay
 
         [Header("Crane swing (spec §1)")]
         public float swingHalfArc = 1.4f;
+        [Tooltip("Pendulum cable length — longer = gentler arc; the block hangs and swings on this.")]
+        public float craneCableLength = 4.0f;
         public float periodFloor1 = 2.8f;
         public float periodMinClamp = 2.0f;
         public float periodRampFactor = 0.012f;
@@ -32,10 +34,10 @@ namespace Towerpolis.Game.Gameplay
         public float wobbleAmpMax = 6.0f;
         public float wobbleAmpMin = 0.5f;
         public float wobbleLeanBias = 1.2f;
-        public float wobblePeriodBase = 0.6f;
-        public float wobblePeriodPerFloor = 0.015f;
-        public float wobblePeriodMax = 2.0f;
-        public float wobblePeriodMin = 0.5f;
+        public float wobblePeriodBase = 2.5f;   // slower, weightier sway (was 0.6 — too fast)
+        public float wobblePeriodPerFloor = 0.03f;
+        public float wobblePeriodMax = 5.0f;
+        public float wobblePeriodMin = 1.5f;
         public float idleWobbleScale = 0.30f;
         public float dampingRate = 2.0f;
         public float dampingRateMin = 0.5f;

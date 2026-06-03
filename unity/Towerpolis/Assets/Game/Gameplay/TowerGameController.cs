@@ -78,7 +78,7 @@ namespace Towerpolis.Game.Gameplay
             float holdY = tower.TopY + tuning.craneHeight;
             _pendingBlock.position = new Vector3(tower.TopX, holdY, 0f);
             float period = tuning.SwingPeriod(nextFloor);
-            crane.BeginSwing(_pendingBlock, tower.TopX, holdY, tuning.swingHalfArc, period, _swingPhase);
+            crane.BeginSwing(_pendingBlock, tower.TopX, holdY, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength);
             _state = State.Swinging;
         }
 
@@ -122,6 +122,7 @@ namespace Towerpolis.Game.Gameplay
                 // shows up as the building's lean/sway (TowerController), not as a cut.
                 _pendingBlock.position = new Vector3(contactX, tower.TopY, 0f);
                 tower.WeldPlaced(_pendingBlock, contactX, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
+                _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt
             }
             else
             {

@@ -15,12 +15,14 @@ namespace Towerpolis.Game.Gameplay
         float _phase;
         float _centerX;
         float _holdY;
+        float _cableLength;
+        float _thetaMax;
         bool _swinging;
 
         public float Phase => _phase;
         public float CurrentX => _block != null ? _block.position.x : _centerX;
 
-        public void BeginSwing(Transform block, float centerX, float holdY, float halfArc, float period, float phase)
+        public void BeginSwing(Transform block, float centerX, float holdY, float halfArc, float period, float phase, float cableLength)
         {
             _block = block;
             _centerX = centerX;
@@ -28,6 +30,8 @@ namespace Towerpolis.Game.Gameplay
             _halfArc = halfArc;
             _period = Mathf.Max(0.01f, period);
             _phase = phase;
+            _cableLength = Mathf.Max(0.5f, cableLength);
+            _thetaMax = Mathf.Asin(Mathf.Clamp(_halfArc / _cableLength, -1f, 1f));
             _swinging = true;
             Apply();
         }
@@ -49,8 +53,14 @@ namespace Towerpolis.Game.Gameplay
 
         void Apply()
         {
-            float x = _centerX + _halfArc * Mathf.Cos(_phase);
-            _block.position = new Vector3(x, _holdY, 0f);
+            // Pendulum: the block hangs from a pivot and swings on an arc — low & fast at centre, high &
+            // slow at the edges — and tilts with the swing. Far more natural than a horizontal slide.
+            float theta = _thetaMax * Mathf.Cos(_phase);   // angle from vertical
+            float pivotY = _holdY + _cableLength;
+            float x = _centerX + _cableLength * Mathf.Sin(theta);
+            float y = pivotY - _cableLength * Mathf.Cos(theta);
+            _block.SetPositionAndRotation(new Vector3(x, y, 0f),
+                Quaternion.Euler(0f, 0f, -theta * Mathf.Rad2Deg));
         }
     }
 }
