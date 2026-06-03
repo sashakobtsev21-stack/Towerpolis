@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Towerpolis.Game::Towerpolis.Game.Gameplay.GameTuning
   floorHeight: 1.5
   craneHeight: 5
-  swingHalfArc: 1.4
-  periodFloor1: 2.8
+  swingHalfArc: 0.6
+  periodFloor1: 3.5
   periodMinClamp: 2
   periodRampFactor: 0.012
   gravityScale: 2.5
@@ -33,9 +33,9 @@ MonoBehaviour:
   dampingRateMin: 0.5
   dampingDecayPerFloor: 0.025
   maxLeanBiasAngle: 4
-  cameraTargetOffsetY: 4
+  cameraTargetOffsetY: 1.5
   cameraFollowSmoothTime: 0.4
-  cameraDistance: 10
+  cameraDistance: 13
   cameraDistancePerFloor: 0.08
   maxCameraDistance: 18
   cameraAngleX: 25
