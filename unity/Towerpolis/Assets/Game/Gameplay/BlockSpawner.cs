@@ -43,7 +43,9 @@ namespace Towerpolis.Game.Gameplay
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = "Mesh";
             var col = cube.GetComponent<Collider>();
-            if (col != null) Destroy(col); // contact is scripted, not physics
+            // Off during the crane/controlled-fall phase (landing uses the scripted swept check, not
+            // physics); switched ON once the block is welded (a solid obstacle) or tumbling (a miss).
+            if (col != null) col.enabled = false;
             cube.transform.SetParent(root.transform, false);
             cube.transform.localScale = new Vector3(width, floorHeight, depth);
             cube.transform.localPosition = new Vector3(0f, floorHeight * 0.5f, 0f); // root = bottom-center
@@ -58,12 +60,24 @@ namespace Towerpolis.Game.Gameplay
             if (mesh != null)
             {
                 mesh.GetComponent<MeshRenderer>().sharedMaterial = _matBase;
+                var col = mesh.GetComponent<Collider>();
+                if (col != null) col.enabled = true; // the base is a solid obstacle from the start
                 Vector3 s = mesh.localScale; // a wider plinth so the foundation reads clearly
                 s.x *= 1.2f;
                 s.z *= 1.2f;
                 mesh.localScale = s;
             }
             return root;
+        }
+
+        /// <summary>Enable/disable a block's collider (off during the scripted fall; on once it is a
+        /// welded obstacle or a tumbling miss).</summary>
+        public void SetColliderEnabled(Transform blockRoot, bool on)
+        {
+            var mesh = blockRoot.Find("Mesh");
+            if (mesh == null) return;
+            var col = mesh.GetComponent<Collider>();
+            if (col != null) col.enabled = on;
         }
 
         /// <summary>Resize a block's mesh width in place (the visual "slice" — Stack-style narrowing).</summary>

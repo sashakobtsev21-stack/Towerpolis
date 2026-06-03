@@ -122,10 +122,12 @@ namespace Towerpolis.Game.Gameplay
                 // shows up as the building's lean/sway (TowerController), not as a cut.
                 _pendingBlock.position = new Vector3(contactX, tower.TopY, 0f);
                 tower.WeldPlaced(_pendingBlock, contactX, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
+                spawner.SetColliderEnabled(_pendingBlock, true); // now a solid obstacle in the tower
                 _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt
             }
             else
             {
+                spawner.SetColliderEnabled(_pendingBlock, true); // so it physically bounces off the tower
                 TumbleAway(_pendingBlock, offsetX);
             }
 
@@ -153,11 +155,11 @@ namespace Towerpolis.Game.Gameplay
                 rb.isKinematic = false;
                 rb.useGravity = true;
                 rb.constraints = RigidbodyConstraints.None;
-                // Fling it OUT to the side it missed toward (plus a little up + spin) so it falls clear
-                // of the leaning tower instead of clipping straight down through the floors below.
+                // Nudge it toward the side it missed (physics + the tower's colliders do the rest — it
+                // bounces off the building and tumbles down).
                 float dir = offsetX >= 0f ? 1f : -1f;
-                rb.linearVelocity = new Vector3(dir * 5f, 1.0f, 0f);
-                rb.angularVelocity = new Vector3(0f, 0f, -dir * 6f);
+                rb.linearVelocity = new Vector3(dir * 2.5f, 0.5f, 0f);
+                rb.angularVelocity = new Vector3(0f, 0f, -dir * 5f);
             }
             Destroy(block.gameObject, 3f);
         }
