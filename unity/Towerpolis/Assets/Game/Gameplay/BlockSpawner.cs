@@ -76,6 +76,23 @@ namespace Towerpolis.Game.Gameplay
             mesh.localScale = s;
         }
 
+        /// <summary>The sliced-off overhang as a free-falling fragment (the "roof falls away" — §3.2/§7.3).</summary>
+        public void SpawnFragment(Vector3 center, Vector3 size, FloorType type, float pushX)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = "Slice";
+            go.transform.position = center;
+            go.transform.localScale = size;
+            go.GetComponent<MeshRenderer>().sharedMaterial = MaterialFor(type);
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col); // must not collide with the welded tower
+            var rb = go.AddComponent<Rigidbody>();
+            rb.useGravity = true;
+            rb.linearVelocity = new Vector3(pushX, 1.0f, 0f);
+            rb.angularVelocity = new Vector3(0f, 0f, -pushX * 3f);
+            Object.Destroy(go, 3f);
+        }
+
         Material MaterialFor(FloorType type) => type switch
         {
             FloorType.Standard => _matStandard,

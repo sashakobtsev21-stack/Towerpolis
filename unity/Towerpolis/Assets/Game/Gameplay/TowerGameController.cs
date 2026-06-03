@@ -117,10 +117,31 @@ namespace Towerpolis.Game.Gameplay
 
             if (outcome.FloorPlaced)
             {
-                float newTopX = tower.TopX + offsetX * 0.5f; // overlap center (Stack model)
+                float oldWidth = tower.TopWidth;                 // block's full width before the slice
+                float newTopX = tower.TopX + offsetX * 0.5f;     // overlap centre (Stack model)
+
+                // Slice the overhang off as a falling fragment so the cut reads clearly.
+                if (outcome.TopWidth < oldWidth - 0.01f)
+                {
+                    float blockLeft = contactX - oldWidth * 0.5f;
+                    float blockRight = contactX + oldWidth * 0.5f;
+                    float keptLeft = newTopX - outcome.TopWidth * 0.5f;
+                    float keptRight = newTopX + outcome.TopWidth * 0.5f;
+                    float fragW, fragCx;
+                    if (offsetX >= 0f) { fragW = blockRight - keptRight; fragCx = (keptRight + blockRight) * 0.5f; }
+                    else { fragW = keptLeft - blockLeft; fragCx = (blockLeft + keptLeft) * 0.5f; }
+                    if (fragW > 0.01f)
+                    {
+                        float cy = tower.TopY + tuning.floorHeight * 0.5f;
+                        spawner.SpawnFragment(new Vector3(fragCx, cy, 0f),
+                            new Vector3(fragW, tuning.floorHeight, 2.0f), _pendingType, Mathf.Sign(offsetX) * 1.5f);
+                    }
+                }
+
                 spawner.SetWidth(_pendingBlock, outcome.TopWidth);
                 _pendingBlock.position = new Vector3(newTopX, tower.TopY, 0f);
                 tower.WeldPlaced(_pendingBlock, newTopX, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
+                _pendingBlock.gameObject.AddComponent<LandSquash>().Play(); // squash-stretch impact (§7.1)
             }
             else
             {

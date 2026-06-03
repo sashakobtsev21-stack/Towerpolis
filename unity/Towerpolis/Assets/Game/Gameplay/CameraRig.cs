@@ -25,16 +25,24 @@ namespace Towerpolis.Game.Gameplay
 
         void LateUpdate()
         {
-            if (cam == null) return;
+            if (_tuning == null || _tower == null || cam == null) return;
 
-            // TEMP DEBUG: fixed camera aimed at the origin where the base lives, so visibility no longer
-            // depends on any follow logic. If the base is created, it MUST be visible here. We'll
-            // restore the auto-fit follow once visibility is confirmed.
-            Vector3 look = new Vector3(0f, 4f, 0f);
-            cam.transform.position = new Vector3(0f, 6f, -16f);
+            // Frame the whole tower: look at its vertical centre and zoom out to fit base..top plus
+            // headroom for the swinging block, so the base never scrolls off as the tower grows.
+            float topY = _tower.TopY;
+            float fitHeight = Mathf.Max(6f, topY + _tuning.cameraTargetOffsetY + 3f);
+            float targetLookY = topY * 0.5f + 1.0f;
+            _lookY = Mathf.SmoothDamp(_lookY, targetLookY, ref _velY, _tuning.cameraFollowSmoothTime);
+
+            float vFov = cam.fieldOfView * Mathf.Deg2Rad;
+            float dist = (fitHeight * 0.5f) / Mathf.Tan(vFov * 0.5f);
+            dist = Mathf.Clamp(dist, 8f, _tuning.maxCameraDistance);
+
+            float rad = _tuning.cameraAngleX * Mathf.Deg2Rad;
+            Vector3 look = new Vector3(0f, _lookY, 0f);
+            Vector3 offset = new Vector3(0f, dist * Mathf.Sin(rad), -dist * Mathf.Cos(rad));
+            cam.transform.position = look + offset;
             cam.transform.rotation = Quaternion.LookRotation(look - cam.transform.position, Vector3.up);
-
-            _ = _tuning; _ = _tower; _ = _lookY; _ = _velY; // keep fields referenced
         }
     }
 }
