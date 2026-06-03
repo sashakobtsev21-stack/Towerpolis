@@ -175,7 +175,9 @@ namespace Towerpolis.Game.Gameplay
                 // Nudge it toward the side it missed (physics + the tower's colliders do the rest — it
                 // bounces off the building and tumbles down).
                 float dir = offsetX >= 0f ? 1f : -1f;
-                rb.linearVelocity = new Vector3(dir * 4.0f, 0f, 0f); // straight out to the side, then it just falls
+                // Keep falling (don't pause at the contact line — that pause read as a "bounce off the
+                // top block"): carry strong downward speed plus a sideways fling so it sails on past.
+                rb.linearVelocity = new Vector3(dir * 4.0f, -9f, 0f);
                 rb.angularVelocity = new Vector3(0f, 0f, -dir * 2.0f);
             }
             Destroy(block.gameObject, 3f); // no collider — it just falls clear and is cleaned up
