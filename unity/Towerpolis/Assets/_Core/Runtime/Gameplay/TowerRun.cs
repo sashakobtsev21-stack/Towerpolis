@@ -67,7 +67,8 @@ namespace Towerpolis.Core.Gameplay
             Grade grade = Grading.Evaluate(_cfg, offsetX, CurrentTopWidth);
             int scoreGained = 0;
             int residentsAdded = 0;
-            bool floorPlaced = grade != Grade.Miss;
+            // Tower-Bloxx: only a clean-enough catch (Perfect/Good) lands; Sloppy & Miss tip off and fall.
+            bool floorPlaced = grade == Grade.Perfect || grade == Grade.Good;
 
             switch (grade)
             {
@@ -90,15 +91,12 @@ namespace Towerpolis.Core.Gameplay
                     break;
 
                 case Grade.Sloppy:
-                    LeanOffset += offsetX * _cfg.SloppyLeanFactor;
+                    // Too much overhang — the block tips off (not placed). Costs a strike.
                     PerfectChain = 0;
-                    residentsAdded = Scoring.BaseResidents(_cfg, type);
-                    scoreGained = Scoring.FloorScore(_cfg, type, grade, PerfectChain);
-                    FloorCount += 1;
                     if (_cfg.SloppyCostsStrike) MissStrikes += 1;
                     break;
 
-                default: // Miss — block tumbles, nothing welded, top width unchanged
+                default: // Miss — block misses entirely and falls. Costs a strike.
                     PerfectChain = 0;
                     MissStrikes += 1;
                     break;

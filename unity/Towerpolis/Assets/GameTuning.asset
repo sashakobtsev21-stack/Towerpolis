@@ -13,26 +13,27 @@ MonoBehaviour:
   m_Name: GameTuning
   m_EditorClassIdentifier: Towerpolis.Game::Towerpolis.Game.Gameplay.GameTuning
   floorHeight: 1.5
-  craneHeight: 5
-  swingHalfArc: 0.6
-  periodFloor1: 3.5
+  craneHeight: 3
+  swingHalfArc: 1.4
+  craneCableLength: 6
+  periodFloor1: 4.5
   periodMinClamp: 2
   periodRampFactor: 0.012
   gravityScale: 2.5
-  wobbleAmpBase: 0.5
+  wobbleAmpBase: 0.3
   wobbleAmpPerFloor: 0.08
   wobbleAmpMax: 6
-  wobbleAmpMin: 0.5
+  wobbleAmpMin: 0.3
   wobbleLeanBias: 1.2
-  wobblePeriodBase: 0.6
-  wobblePeriodPerFloor: 0.015
-  wobblePeriodMax: 2
-  wobblePeriodMin: 0.5
+  wobblePeriodBase: 4
+  wobblePeriodPerFloor: 0.04
+  wobblePeriodMax: 7
+  wobblePeriodMin: 2.5
   idleWobbleScale: 0.3
   dampingRate: 2
   dampingRateMin: 0.5
   dampingDecayPerFloor: 0.025
-  maxLeanBiasAngle: 4
+  maxLeanBiasAngle: 3
   cameraTargetOffsetY: 1.5
   cameraFollowSmoothTime: 0.4
   cameraDistance: 13

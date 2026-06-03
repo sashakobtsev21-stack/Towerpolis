@@ -58,14 +58,15 @@ namespace Towerpolis.Core.Tests.Gameplay
         }
 
         [Test]
-        public void Sloppy_KeepsWholeBlock_AddsStrike()
+        public void Sloppy_TipsOff_AddsStrike_NotPlaced()
         {
             var run = new TowerRun(new CoreConfig());
             var o = run.PlaceBlock(FloorType.Standard, 0.80f); // r=0.40 → Sloppy
             Assert.That(o.Grade, Is.EqualTo(Grade.Sloppy));
-            Assert.That(run.CurrentTopWidth, Is.EqualTo(2.0f).Within(Tol)); // no slice
-            Assert.That(run.LeanOffset, Is.EqualTo(0.80f * 0.35f).Within(Tol)); // bigger overhang → more lean
-            Assert.That(o.ScoreGained, Is.EqualTo(50));                     // 100 × 0.5
+            Assert.That(o.FloorPlaced, Is.False);   // too much overhang → tips off, not welded
+            Assert.That(o.ScoreGained, Is.Zero);
+            Assert.That(run.LeanOffset, Is.Zero);   // nothing placed → no lean added
+            Assert.That(run.FloorCount, Is.Zero);
             Assert.That(run.MissStrikes, Is.EqualTo(1));
         }
 
@@ -112,9 +113,9 @@ namespace Towerpolis.Core.Tests.Gameplay
             for (int i = 0; i < 10; i++) Place(run, FloorType.Standard, Grade.Sloppy);
             Assert.That(run.MissStrikes, Is.Zero);
             Assert.That(run.IsOver, Is.False);
-            // scoring/residents are independent of the strike flag
-            Assert.That(run.Score, Is.GreaterThan(0));
-            Assert.That(run.TotalResidents, Is.GreaterThan(0));
+            // Sloppy tips off regardless of the strike flag — nothing is placed or scored
+            Assert.That(run.FloorCount, Is.Zero);
+            Assert.That(run.Score, Is.Zero);
         }
 
         [Test]
@@ -161,10 +162,12 @@ namespace Towerpolis.Core.Tests.Gameplay
             };
             foreach (var g in script) Place(run, FloorType.Standard, g);
 
-            Assert.That(run.Score, Is.EqualTo(2150), "sum of floor scores");
-            Assert.That(run.TotalResidents, Is.EqualTo(26));
-            Assert.That(run.RunScore, Is.EqualTo(2410), "floor scores 2150 + residents 260");
+            // F9 Sloppy now tips off (scores nothing); the rest are placed.
+            Assert.That(run.Score, Is.EqualTo(2100), "floor scores, Sloppy F9 tipped off");
+            Assert.That(run.TotalResidents, Is.EqualTo(24));
+            Assert.That(run.RunScore, Is.EqualTo(2340), "2100 + residents 240");
             Assert.That(run.MissStrikes, Is.EqualTo(1)); // the single Sloppy
+            Assert.That(run.FloorCount, Is.EqualTo(9));  // F1-8 + F10 (F9 tipped off)
             Assert.That(run.IsOver, Is.False);
             Assert.That(run.PerfectChain, Is.EqualTo(1)); // last drop restarted the chain
         }
@@ -201,14 +204,14 @@ namespace Towerpolis.Core.Tests.Gameplay
         }
 
         [Test]
-        public void ToppleDrop_StillScoresThatFloor()
+        public void ToppleDrop_TipsOff_ScoresNothing()
         {
             var run = new TowerRun(new CoreConfig());
-            Place(run, FloorType.Standard, Grade.Sloppy);          // strike 1, +50
-            var second = Place(run, FloorType.Standard, Grade.Sloppy); // strike 2 → topple, +50
+            Place(run, FloorType.Standard, Grade.Sloppy);             // strike 1, tips off
+            var second = Place(run, FloorType.Standard, Grade.Sloppy); // strike 2 → topple, tips off
             Assert.That(second.Toppled, Is.True);
-            Assert.That(second.ScoreGained, Is.EqualTo(50));
-            Assert.That(run.Score, Is.EqualTo(100)); // both Sloppy floors are scored before topple
+            Assert.That(second.ScoreGained, Is.Zero);
+            Assert.That(run.Score, Is.Zero); // both Sloppy drops tipped off, nothing scored
         }
 
         [Test]
