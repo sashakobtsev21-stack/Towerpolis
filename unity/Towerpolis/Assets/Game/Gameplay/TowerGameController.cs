@@ -180,7 +180,8 @@ namespace Towerpolis.Game.Gameplay
                 rb.linearVelocity = new Vector3(dir * 2.5f, 0.5f, 0f);
                 rb.angularVelocity = new Vector3(0f, 0f, -dir * 2.0f); // gentler spin
             }
-            Destroy(block.gameObject, 3f);
+            // Brief bounce off the tower, then collider off + self-destroy (no snagging on far blocks/air).
+            block.gameObject.AddComponent<TumbleDebris>();
         }
 
         static bool TapPressed()
