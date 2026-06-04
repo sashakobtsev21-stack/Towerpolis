@@ -191,7 +191,15 @@ namespace Towerpolis.Game.UI
             const float baseY = 380f;
 
             float e = 0f;
-            while (e < 0.18f) { e += Time.deltaTime; SetToast(lbl, t.Color, e / 0.18f, baseY); yield return null; }
+            while (e < 0.18f)
+            {
+                e += Time.deltaTime;
+                float k = e / 0.18f;
+                SetToast(lbl, t.Color, k, baseY);
+                rt.localScale = Vector3.one * Mathf.Lerp(0.7f, 1f, k); // pop in
+                yield return null;
+            }
+            rt.localScale = Vector3.one;
             e = 0f;
             while (e < 1.1f) { e += Time.deltaTime; SetToast(lbl, t.Color, 1f, baseY); yield return null; }
             e = 0f;
@@ -204,6 +212,40 @@ namespace Towerpolis.Game.UI
             c.a = Mathf.Clamp01(alpha);
             lbl.color = c;
             lbl.rectTransform.anchoredPosition = new Vector2(0f, y);
+        }
+
+        // ---------- panel show/hide animation ----------
+
+        void ShowPanel(GameObject panel)
+        {
+            if (panel == null) return;
+            panel.SetActive(true);
+            InputGate.Suppress = true; // a modal is up → don't drop a block
+            StartCoroutine(FadePanel(panel, 1f, 0.16f, false));
+        }
+
+        void HidePanel(GameObject panel)
+        {
+            InputGate.Suppress = false;
+            if (panel == null) return;
+            StartCoroutine(FadePanel(panel, 0f, 0.12f, true));
+        }
+
+        IEnumerator FadePanel(GameObject panel, float to, float dur, bool deactivateAtEnd)
+        {
+            CanvasGroup cg = panel.GetComponent<CanvasGroup>();
+            if (cg == null) cg = panel.AddComponent<CanvasGroup>();
+            float from = deactivateAtEnd ? cg.alpha : 0f;
+            float e = 0f;
+            cg.alpha = from;
+            while (e < dur)
+            {
+                e += Time.deltaTime;
+                cg.alpha = Mathf.Lerp(from, to, e / dur);
+                yield return null;
+            }
+            cg.alpha = to;
+            if (deactivateAtEnd) panel.SetActive(false);
         }
 
         void OnFloorLive(int floors) => RefreshTopBar();
@@ -245,15 +287,10 @@ namespace Towerpolis.Game.UI
         {
             if (_cityPanel == null) return;
             PopulateCity();
-            _cityPanel.SetActive(true);
-            InputGate.Suppress = true; // don't drop a block while the city view is up
+            ShowPanel(_cityPanel);
         }
 
-        void CloseCity()
-        {
-            if (_cityPanel != null) _cityPanel.SetActive(false);
-            InputGate.Suppress = false;
-        }
+        void CloseCity() => HidePanel(_cityPanel);
 
         void DistrictButtons(Transform parent)
         {
@@ -350,15 +387,10 @@ namespace Towerpolis.Game.UI
         {
             if (_upgPanel == null) return;
             PopulateUpgrades();
-            _upgPanel.SetActive(true);
-            InputGate.Suppress = true; // don't drop a block while the shop is up
+            ShowPanel(_upgPanel);
         }
 
-        void CloseUpgrades()
-        {
-            if (_upgPanel != null) _upgPanel.SetActive(false);
-            InputGate.Suppress = false;
-        }
+        void CloseUpgrades() => HidePanel(_upgPanel);
 
         void BuyUpgrade(UpgradeKind kind)
         {
@@ -426,15 +458,10 @@ namespace Towerpolis.Game.UI
         {
             if (_skinPanel == null) return;
             PopulateSkins();
-            _skinPanel.SetActive(true);
-            InputGate.Suppress = true;
+            ShowPanel(_skinPanel);
         }
 
-        void CloseSkins()
-        {
-            if (_skinPanel != null) _skinPanel.SetActive(false);
-            InputGate.Suppress = false;
-        }
+        void CloseSkins() => HidePanel(_skinPanel);
 
         void TapBlockSkin(string id)
         {
@@ -498,15 +525,10 @@ namespace Towerpolis.Game.UI
             if (_missionPanel == null) return;
             if (_meta != null) _meta.EnsureWeek(); // ensure this week's set is drawn
             PopulateMissions();
-            _missionPanel.SetActive(true);
-            InputGate.Suppress = true;
+            ShowPanel(_missionPanel);
         }
 
-        void CloseMissions()
-        {
-            if (_missionPanel != null) _missionPanel.SetActive(false);
-            InputGate.Suppress = false;
-        }
+        void CloseMissions() => HidePanel(_missionPanel);
 
         void PopulateMissions()
         {
