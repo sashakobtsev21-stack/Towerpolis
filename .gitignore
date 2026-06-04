@@ -74,3 +74,7 @@ google-services.json
 GoogleService-Info.plist
 secrets.*
 fastlane/.env*
+
+# Unity crash/recovery auto-backup (not source)
+unity/Towerpolis/Assets/_Recovery/
+unity/Towerpolis/Assets/_Recovery.meta
