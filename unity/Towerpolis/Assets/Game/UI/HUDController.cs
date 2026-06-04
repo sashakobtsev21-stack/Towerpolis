@@ -40,7 +40,7 @@ namespace Towerpolis.Game.UI
 
         TMP_Text _summitLabel;
         bool _summitShown;
-        const int SummitHeight = 50; // TESTING: low so the beat is reachable (design = 200) — restore before launch
+        const int SummitHeight = 15; // TESTING: low so the beat is reachable (design = 200) — restore before launch
 
         int _highScore;
 
