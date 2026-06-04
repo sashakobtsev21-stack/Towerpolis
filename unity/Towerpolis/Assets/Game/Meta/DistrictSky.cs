@@ -9,8 +9,6 @@ namespace Towerpolis.Game.Meta
     /// </summary>
     public static class DistrictSky
     {
-        const float FullAscentFloors = 30f; // TESTING: low so the ascent is obvious in a short run (raise later)
-
         static readonly Color SpaceTop = new Color(0.012f, 0.012f, 0.05f);
         static readonly Color SpaceHorizon = new Color(0.06f, 0.05f, 0.16f);
         static readonly Color SpaceBottom = new Color(0.02f, 0.02f, 0.08f);
@@ -25,16 +23,18 @@ namespace Towerpolis.Game.Meta
             _gTop = t.SkyTop;
             _gHorizon = t.SkyHorizon;
             _gBottom = t.SkyBottom;
-            UpdateAltitude(0);
+            UpdateAltitude(0f);
         }
 
-        /// <summary>Blend the sky/ambient toward space for the current floor count.</summary>
-        public static void UpdateAltitude(int floors)
+        /// <summary>Blend the sky/ambient toward space. <paramref name="t"/> is a smoothed 0 (ground) → 1
+        /// (space) altitude — the <see cref="Atmosphere"/> driver eases it every frame so the sky glides
+        /// continuously instead of stepping on each floor.</summary>
+        public static void UpdateAltitude(float t)
         {
             if (_runtime == null) EnsureRuntime();
             if (_runtime == null) return;
 
-            float t = Mathf.Clamp01(floors / FullAscentFloors);
+            t = Mathf.Clamp01(t);
             Color top = Color.Lerp(_gTop, SpaceTop, t);
             Color horizon = Color.Lerp(_gHorizon, SpaceHorizon, t);
             Color bottom = Color.Lerp(_gBottom, SpaceBottom, t);
@@ -48,9 +48,6 @@ namespace Towerpolis.Game.Meta
             RenderSettings.ambientEquatorColor = Color.Lerp(horizon, bottom, 0.5f) * 0.85f;
             RenderSettings.ambientGroundColor = bottom * 0.7f;
         }
-
-        /// <summary>0 (ground) → 1 (space) for the given floor count — used to dim the key light too.</summary>
-        public static float Altitude(int floors) => Mathf.Clamp01(floors / FullAscentFloors);
 
         static void EnsureRuntime()
         {

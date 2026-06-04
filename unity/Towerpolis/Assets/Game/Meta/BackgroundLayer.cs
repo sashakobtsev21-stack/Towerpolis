@@ -1,5 +1,4 @@
 using UnityEngine;
-using Towerpolis.Game.Gameplay;
 
 namespace Towerpolis.Game.Meta
 {
@@ -14,7 +13,6 @@ namespace Towerpolis.Game.Meta
     public sealed class BackgroundLayer : MonoBehaviour
     {
         const float Distance = 45f;
-        const float AscentFloors = 30f; // matches the DistrictSky test value
 
         enum Kind { Blob, Star, City, Aurora }
 
@@ -24,7 +22,8 @@ namespace Towerpolis.Game.Meta
             public Kind Kind;
             public float InA, InB, OutA, OutB;     // altitude fade band (0..1)
             public int Count;
-            public float SizeMin, SizeMax;
+            public float SizeMin, SizeMax;         // quad WIDTH
+            public float Aspect;                   // width / height (1 = square; >1 = wide & short)
             public float DriftMin, DriftMax;       // horizontal drift (units/s); 0 = static
             public float YMin, YMax, XSpread;      // placement
             public bool Twinkle;
@@ -34,22 +33,23 @@ namespace Towerpolis.Game.Meta
 
         static readonly Def[] Defs =
         {
-            // name      kind          in    inB   outA  outB   n   szmin szmax dmin dmax  ymin  ymax  xspr  twk  tint(rgba)                              depth
-            D("city",    Kind.City,    0f,   0f,   0.12f,0.22f, 2,  48f,  48f,  0f,  0f,  -32f, -26f, 0f,  false, new Color(0.10f,0.12f,0.18f,0.95f), 3.0f),
-            D("cloud",   Kind.Blob,    0.04f,0.18f,0.42f,0.58f, 8,  11f,  20f,  1.0f,2.6f,-10f, 16f, 22f, false, new Color(1f,1f,1f,0.55f),          1.6f),
-            D("balloon", Kind.Blob,    0.06f,0.18f,0.34f,0.44f, 5,  2.4f, 3.6f, 0.4f,1.0f,-6f,  16f, 20f, false, new Color(1f,0.85f,0.55f,0.85f),    1.3f),
-            D("plane",   Kind.Blob,    0.40f,0.50f,0.66f,0.76f, 3,  1.8f, 2.6f, 3.2f,5.0f,-2f,  18f, 22f, false, new Color(0.85f,0.88f,0.95f,0.9f),  1.1f),
-            D("aurora",  Kind.Aurora,  0.58f,0.70f,0.88f,0.96f, 2,  44f,  44f,  0.3f,0.6f, 12f, 24f, 0f,  false, new Color(0.35f,0.95f,0.6f,0.4f),   2.6f),
-            D("star",    Kind.Star,    0.48f,0.62f,1.2f, 1.3f,  52, 0.5f, 1.3f, 0f,  0f,  -28f, 28f, 24f, true,  new Color(1f,1f,0.97f,1f),          3.2f),
-            D("moon",    Kind.Blob,    0.80f,0.90f,1.2f, 1.3f,  1,  9f,   9f,   0f,  0f,   18f, 22f, 0f,  false, new Color(0.95f,0.95f,0.88f,0.95f), 3.1f),
+            // name      kind          in    inB   outA  outB   n   szmin szmax aspect dmin dmax ymin  ymax  xspr  twk  tint(rgba)                              depth
+            D("city",    Kind.City,    0f,   0f,   0.16f,0.30f, 1,  34f,  34f,  4.2f,  0f,  0f,  -22f, -22f, 0f,  false, new Color(0.10f,0.12f,0.18f,0.95f), 3.0f),
+            D("cloud",   Kind.Blob,    0.04f,0.18f,0.42f,0.58f, 8,  11f,  20f,  1.6f,  1.0f,2.6f,-10f, 16f, 22f, false, new Color(1f,1f,1f,0.55f),          1.6f),
+            D("balloon", Kind.Blob,    0.06f,0.18f,0.34f,0.44f, 5,  2.4f, 3.6f, 0.85f, 0.4f,1.0f,-6f,  16f, 20f, false, new Color(1f,0.85f,0.55f,0.85f),    1.3f),
+            D("plane",   Kind.Blob,    0.40f,0.50f,0.66f,0.76f, 3,  1.8f, 2.6f, 2.2f,  3.2f,5.0f,-2f,  18f, 22f, false, new Color(0.85f,0.88f,0.95f,0.9f),  1.1f),
+            D("aurora",  Kind.Aurora,  0.58f,0.72f,0.90f,0.98f, 1,  46f,  46f,  3.6f,  0.0f,0.0f, 14f, 14f, 0f,  false, new Color(0.35f,0.95f,0.6f,0.22f),  2.6f),
+            D("star",    Kind.Star,    0.48f,0.62f,1.2f, 1.3f,  52, 0.5f, 1.3f, 1.0f,  0f,  0f,  -28f, 28f, 24f, true,  new Color(1f,1f,0.97f,1f),          3.2f),
+            D("moon",    Kind.Blob,    0.80f,0.90f,1.2f, 1.3f,  1,  9f,   9f,   1.0f,  0f,  0f,   17f, 21f, 7f,  false, new Color(0.95f,0.95f,0.88f,0.95f), 3.1f),
         };
 
         static Def D(string res, Kind kind, float inA, float inB, float outA, float outB, int count,
-            float szMin, float szMax, float dMin, float dMax, float yMin, float yMax, float xSpr,
+            float szMin, float szMax, float aspect, float dMin, float dMax, float yMin, float yMax, float xSpr,
             bool twk, Color tint, float depth) => new Def
         {
             Res = res, Kind = kind, InA = inA, InB = inB, OutA = outA, OutB = outB, Count = count,
-            SizeMin = szMin, SizeMax = szMax, DriftMin = dMin, DriftMax = dMax, YMin = yMin, YMax = yMax,
+            SizeMin = szMin, SizeMax = szMax, Aspect = aspect <= 0f ? 1f : aspect,
+            DriftMin = dMin, DriftMax = dMax, YMin = yMin, YMax = yMax,
             XSpread = xSpr, Twinkle = twk, Tint = tint, Depth = depth,
         };
 
@@ -61,14 +61,12 @@ namespace Towerpolis.Game.Meta
             public float[] Speed, Phase, BaseSize;
         }
 
-        TowerGameController _controller;
         Transform _root;
         Runtime[] _layers;
         Texture2D _blob, _star, _city, _aurora;
 
         void Start()
         {
-            _controller = FindFirstObjectByType<TowerGameController>();
             Camera cam = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
             if (cam == null) { enabled = false; return; }
 
@@ -85,7 +83,7 @@ namespace Towerpolis.Game.Meta
 
         void Update()
         {
-            float t = _controller != null ? Mathf.Clamp01(_controller.Floors / AscentFloors) : 0f;
+            float t = Atmosphere.Altitude01; // shared smoothed altitude (eased per frame → no stepping/freeze)
             float time = Time.time;
             float dt = Time.deltaTime;
 
@@ -132,17 +130,17 @@ namespace Towerpolis.Game.Meta
             {
                 float h1 = Hash(seed++), h2 = Hash(seed++), h3 = Hash(seed++), h4 = Hash(seed++);
                 float size = Mathf.Lerp(def.SizeMin, def.SizeMax, h1);
-                float x = def.XSpread > 0f ? (h2 - 0.5f) * def.XSpread * 2f : (def.Count > 1 ? (i / (float)(def.Count - 1) - 0.5f) * 30f : 8f);
+                float x = def.XSpread > 0f ? (h2 - 0.5f) * def.XSpread * 2f : (def.Count > 1 ? (i / (float)(def.Count - 1) - 0.5f) * 30f : 0f);
                 float y = Mathf.Lerp(def.YMin, def.YMax, h3);
                 L.BaseSize[i] = size;
                 L.Phase[i] = h4 * 6.283f;
                 L.Speed[i] = def.DriftMax > 0f ? Mathf.Lerp(def.DriftMin, def.DriftMax, h2) * (h3 > 0.5f ? 1f : -1f) : 0f;
-                L.Items[i] = MakeQuad(L.Mat, new Vector3(x, y, def.Depth), size);
+                L.Items[i] = MakeQuad(L.Mat, new Vector3(x, y, def.Depth), size, size / def.Aspect);
             }
             return L;
         }
 
-        Transform MakeQuad(Material mat, Vector3 localPos, float size)
+        Transform MakeQuad(Material mat, Vector3 localPos, float width, float height)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
             go.name = "BgSprite";
@@ -151,7 +149,7 @@ namespace Towerpolis.Game.Meta
             var t = go.transform;
             t.SetParent(_root, false);
             t.localPosition = localPos;
-            t.localScale = new Vector3(size, size, 1f);
+            t.localScale = new Vector3(width, height, 1f);
             var r = go.GetComponent<MeshRenderer>();
             r.sharedMaterial = mat;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -197,18 +195,18 @@ namespace Towerpolis.Game.Meta
 
         static Texture2D CitySilhouette()
         {
-            int w = 256, h = 64;
+            int w = 256, h = 72;
             var tex = NewTex(w, h);
             var px = new Color32[w * h]; // transparent
             int x = 0, b = 1;
             while (x < w)
             {
-                int bw = 10 + (int)(Hash(b++) * 22f);
-                int bh = 14 + (int)(Hash(b++) * 42f);
+                int bw = 12 + (int)(Hash(b++) * 24f);          // building width
+                int bh = 26 + (int)(Hash(b++) * 42f);          // tall enough to read on a short strip
                 for (int yy = 0; yy < bh && yy < h; yy++)
                     for (int xx = x; xx < x + bw && xx < w; xx++)
                         px[yy * w + xx] = new Color32(255, 255, 255, 255);
-                x += bw + 3 + (int)(Hash(b++) * 5f);
+                x += bw + 2 + (int)(Hash(b++) * 4f);           // small gap between buildings
             }
             tex.SetPixels32(px); tex.Apply();
             return tex;
@@ -216,16 +214,17 @@ namespace Towerpolis.Game.Meta
 
         static Texture2D AuroraBand()
         {
-            int w = 128, h = 64;
+            int w = 160, h = 64;
             var tex = NewTex(w, h);
             var px = new Color32[w * h];
             for (int y = 0; y < h; y++)
             {
-                float vy = Mathf.Sin((y / (float)h) * Mathf.PI); // soft top/bottom fade
+                float fy = Mathf.Sin((y / (float)h) * Mathf.PI);   // soft top/bottom fade
                 for (int x = 0; x < w; x++)
                 {
-                    float vx = 0.6f + 0.4f * Mathf.Sin(x / (float)w * 6.283f * 1.5f);
-                    byte a = (byte)(Mathf.Clamp01(vy * vx) * 255f);
+                    float fx = Mathf.Sin((x / (float)w) * Mathf.PI); // soft left/right fade → no hard box
+                    float streak = 0.72f + 0.28f * Mathf.Sin(x / (float)w * 6.283f * 3f); // faint curtains
+                    byte a = (byte)(Mathf.Clamp01(fy * fx * streak) * 255f);
                     px[y * w + x] = new Color32(255, 255, 255, a);
                 }
             }
