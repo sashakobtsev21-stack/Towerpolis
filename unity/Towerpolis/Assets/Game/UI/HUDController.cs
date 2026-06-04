@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Towerpolis.Game.Gameplay;
+using Towerpolis.Game.Meta;
 
 namespace Towerpolis.Game.UI
 {
@@ -37,6 +38,7 @@ namespace Towerpolis.Game.UI
         GameObject _restartPanel;
         TMP_Text _restartScore;
         TMP_Text _restartBest;
+        TMP_Text _restartCoins;
 
         TMP_Text _summitLabel;
         bool _summitShown;
@@ -262,6 +264,18 @@ namespace Towerpolis.Game.UI
                 _restartBest.text = newBest ? "РЕКОРД!" : "ЛУЧШЕЕ  " + _highScore;
                 _restartBest.color = newBest ? Mint : Navy;
             }
+            // Coins banked this run + the running total — so the reward is visible (coins are otherwise
+            // only shown inside the shop panels).
+            if (_restartCoins != null)
+            {
+                MetaService meta = MetaService.Instance;
+                if (meta != null && _game != null)
+                {
+                    int earned = meta.PreviewCoins(_game.BuildRunResult());
+                    _restartCoins.text = "+" + earned + " МОНЕТ   (всего " + meta.Coins + ")";
+                }
+                else _restartCoins.text = "";
+            }
             if (_restartPanel != null) _restartPanel.SetActive(true);
         }
 
@@ -335,6 +349,10 @@ namespace Towerpolis.Game.UI
 
             _restartBest = NewText("Best", prt, 40, FontStyles.Normal, TextAlignmentOptions.Center);
             Place(_restartBest.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -180f), new Vector2(700f, 60f));
+
+            _restartCoins = NewText("Coins", prt, 36, FontStyles.Bold, TextAlignmentOptions.Center);
+            _restartCoins.color = Yellow;
+            Place(_restartCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -250f), new Vector2(700f, 54f));
 
             var btnGo = new GameObject("RetryButton", typeof(RectTransform), typeof(Image), typeof(Button));
             btnGo.transform.SetParent(prt, false);

@@ -298,7 +298,7 @@ namespace Towerpolis.Game.Gameplay
             t.SetParent(meshParent, false);
             t.localPosition = new Vector3(0f, floorHeight * 0.92f, -(depth * 0.5f) - 0.13f); // just in front of the front face
             t.localRotation = Quaternion.Euler(-22f, 0f, 0f);                                // slope down-and-out
-            t.localScale = new Vector3(blockWidth * 0.85f, 0.05f, 0.30f);                     // wide, thin, short projection
+            t.localScale = new Vector3(blockWidth * 0.85f, 0.05f, 0.22f);                     // wide, thin, short projection
             go.GetComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
