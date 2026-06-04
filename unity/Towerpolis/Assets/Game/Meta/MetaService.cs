@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 using Towerpolis.Core.Gameplay;
 using Towerpolis.Core.Meta;
@@ -25,6 +26,20 @@ namespace Towerpolis.Game.Meta
         public int Gems => _city != null ? _city.Gems : 0;
         public int TotalPopulation => _city != null ? _city.TotalPopulation : 0;
         public string ActiveDistrictId => _city != null ? _city.ActiveDistrictId : "downtown";
+        public int StreakCurrent => _city != null ? _city.Streak.Current : 0;
+
+        static string TodayKey => DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        public bool HasPlayedDailyToday()
+            => _city != null && DailyStreak.HasPlayed(_city.Streak, TodayKey);
+
+        /// <summary>Begin today's daily-seed run if it hasn't been played yet. Returns false if already used.</summary>
+        public bool TryStartDaily()
+        {
+            if (_controller == null || HasPlayedDailyToday()) return false;
+            _controller.StartDaily();
+            return true;
+        }
 
         /// <summary>Fires after a finished run is banked into the city — carries what changed (coins,
         /// population, district-complete) for the HUD / city view to animate.</summary>
@@ -62,7 +77,9 @@ namespace Towerpolis.Game.Meta
             DistrictInfo district = DistrictCatalog.Get(_city.ActiveDistrictId);
             long ticks = DateTime.UtcNow.Ticks;
 
-            RunEndOutcome outcome = _city.EndEndlessRun(district, result, ticks); // daily mode wires in later
+            RunEndOutcome outcome = _controller.Mode == TowerGameController.RunMode.Daily
+                ? _city.EndDailyRun(district, result, ticks, _controller.DailyDateKey)
+                : _city.EndEndlessRun(district, result, ticks);
             SaveManager.Save(SaveData.From(_city));
 
             RunBanked?.Invoke(outcome);

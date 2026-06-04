@@ -1,5 +1,7 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using Towerpolis.Core.Meta;
 using Towerpolis.Game.Gameplay;
@@ -26,6 +28,9 @@ namespace Towerpolis.Game.UI
 
         TMP_Text _coinsLabel;
         TMP_Text _popLabel;
+        TMP_Text _streakLabel;
+        Image _dailyButtonImg;
+        TMP_Text _dailyLabel;
 
         GameObject _cityPanel;
         TMP_Text _cityTitle;
@@ -36,9 +41,18 @@ namespace Towerpolis.Game.UI
         void Start()
         {
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
+            EnsureEventSystem(); // UGUI buttons need one to receive clicks
             BuildUI();
             if (_meta != null) _meta.RunBanked += OnBanked;
             RefreshTopBar();
+        }
+
+        static void EnsureEventSystem()
+        {
+            if (FindFirstObjectByType<EventSystem>() != null) return;
+            var go = new GameObject("EventSystem");
+            go.AddComponent<EventSystem>();
+            go.AddComponent<InputSystemUIInputModule>(); // project uses the Input System package
         }
 
         void OnDestroy()
@@ -57,6 +71,27 @@ namespace Towerpolis.Game.UI
             if (_meta == null) return;
             if (_coinsLabel != null) _coinsLabel.text = "COINS  " + _meta.Coins;
             if (_popLabel != null) _popLabel.text = "CITY  " + _meta.TotalPopulation;
+            RefreshDaily();
+        }
+
+        void OnDailyTapped()
+        {
+            if (_meta == null) return;
+            _meta.TryStartDaily(); // no-op if already played today
+            RefreshDaily();
+        }
+
+        void RefreshDaily()
+        {
+            if (_meta == null) return;
+            bool played = _meta.HasPlayedDailyToday();
+            if (_dailyLabel != null)
+            {
+                _dailyLabel.text = played ? "DONE" : "DAILY";
+                _dailyLabel.color = played ? OffWhite : Navy;
+            }
+            if (_dailyButtonImg != null) _dailyButtonImg.color = played ? Navy : Gold;
+            if (_streakLabel != null) _streakLabel.text = "STREAK  " + _meta.StreakCurrent;
         }
 
         // ---------- city view ----------
@@ -140,7 +175,11 @@ namespace Towerpolis.Game.UI
             _popLabel = NewText("CityPop", canvasGo.transform, 34, FontStyles.Normal, TextAlignmentOptions.TopLeft);
             Place(_popLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -92f), new Vector2(420f, 50f));
 
+            _streakLabel = NewText("Streak", canvasGo.transform, 30, FontStyles.Normal, TextAlignmentOptions.TopLeft);
+            Place(_streakLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -140f), new Vector2(420f, 46f));
+
             CityButton(canvasGo.transform);
+            DailyButton(canvasGo.transform);
             BuildCityPanel(canvasGo.transform);
         }
 
@@ -150,14 +189,32 @@ namespace Towerpolis.Game.UI
             btnGo.transform.SetParent(parent, false);
             var rt = (RectTransform)btnGo.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(28f, -150f);
-            rt.sizeDelta = new Vector2(180f, 70f);
+            rt.anchoredPosition = new Vector2(28f, -200f);
+            rt.sizeDelta = new Vector2(180f, 72f);
             btnGo.GetComponent<Image>().color = Navy;
             btnGo.GetComponent<Button>().onClick.AddListener(OpenCity);
 
             var label = NewText("Label", rt, 32, FontStyles.Bold, TextAlignmentOptions.Center);
             label.text = "CITY";
             Stretch(label.rectTransform);
+        }
+
+        void DailyButton(Transform parent)
+        {
+            var btnGo = new GameObject("DailyButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            btnGo.transform.SetParent(parent, false);
+            var rt = (RectTransform)btnGo.transform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(224f, -200f);
+            rt.sizeDelta = new Vector2(180f, 72f);
+            _dailyButtonImg = btnGo.GetComponent<Image>();
+            _dailyButtonImg.color = Gold;
+            btnGo.GetComponent<Button>().onClick.AddListener(OnDailyTapped);
+
+            _dailyLabel = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            _dailyLabel.color = Navy;
+            _dailyLabel.text = "DAILY";
+            Stretch(_dailyLabel.rectTransform);
         }
 
         void BuildCityPanel(Transform parent)

@@ -1,5 +1,7 @@
 using System;
+using System.Globalization;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Towerpolis.Core.Determinism;
 using Towerpolis.Core.Gameplay;
@@ -81,14 +83,38 @@ namespace Towerpolis.Game.Gameplay
                 gameObject.AddComponent<Towerpolis.Game.UI.MetaHud>();
         }
 
+        public enum RunMode { Endless, Daily }
+        public RunMode Mode { get; private set; } = RunMode.Endless;
+        public string DailyDateKey { get; private set; } = "";
+
+        /// <summary>Start a fresh ENDLESS run (also the retry path). Each one gets a new random seed.</summary>
         public void NewRun()
+        {
+            Mode = RunMode.Endless;
+            BeginRun();
+        }
+
+        /// <summary>Start today's DAILY-seed run (same crane/sequence for everyone on this UTC day). The UI
+        /// gates it to one attempt per day.</summary>
+        public void StartDaily()
+        {
+            Mode = RunMode.Daily;
+            DailyDateKey = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            BeginRun();
+        }
+
+        void BeginRun()
         {
             ClearTower();
 
             _coreConfig = tuning != null ? tuning.BuildCoreConfig() : new CoreConfig();
             _run = new TowerRun(_coreConfig);
-            _sequence = new BlockSequence(RunSeeds.SeedMvp);
-            XorShiftRng swingRng = RunSeeds.SwingRng(RunSeeds.SeedMvp);
+
+            ulong seed = Mode == RunMode.Daily
+                ? DailySeed.ForDateUtc(DateTime.UtcNow)                            // shared global daily seed
+                : SeedMix.SplitMix64(unchecked((ulong)DateTime.UtcNow.Ticks));     // fresh random endless seed
+            _sequence = new BlockSequence(seed);
+            XorShiftRng swingRng = RunSeeds.SwingRng(seed);
             _swingPhase = (float)(swingRng.NextDouble() * 2.0 * Mathf.PI);
 
             Transform baseBlock = spawner.CreateBase(_coreConfig.InitialBlockWidth);
@@ -219,6 +245,8 @@ namespace Towerpolis.Game.Gameplay
         static bool TapPressed()
         {
             if (InputGate.Suppress) return false; // a modal UI (e.g. the city view) is open
+            var es = EventSystem.current;
+            if (es != null && es.IsPointerOverGameObject()) return false; // tap landed on a UI button
             Pointer p = Pointer.current;
             return p != null && p.press.wasPressedThisFrame;
         }
