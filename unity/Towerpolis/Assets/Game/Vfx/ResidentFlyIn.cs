@@ -18,6 +18,7 @@ namespace Towerpolis.Game.Vfx
         const int MaxPerPlacement = 8; // safety cap on simultaneous figures
 
         TowerGameController _controller;
+        TowerController _tower;
         GameObject[] _models;
 
         void Awake()
@@ -43,6 +44,7 @@ namespace Towerpolis.Game.Vfx
 
         void Bind()
         {
+            if (_tower == null) _tower = FindFirstObjectByType<TowerController>(); // residents ride the tower
             if (_controller != null) return;
             _controller = FindFirstObjectByType<TowerGameController>();
             if (_controller != null) _controller.FloorPlacedAt += OnPlaced;
@@ -56,27 +58,31 @@ namespace Towerpolis.Game.Vfx
 
         IEnumerator FlyOne(Vector3 basePos, int index)
         {
-            yield return new WaitForSeconds(index * 0.13f); // staggered arrivals
+            yield return new WaitForSeconds(index * 0.10f); // staggered arrivals
 
             GameObject template = _models[Random.Range(0, _models.Length)];
             GameObject go = Instantiate(template);
             go.SetActive(true);
             foreach (Collider c in go.GetComponentsInChildren<Collider>()) Destroy(c); // cosmetic — never collide
             Transform t = go.transform;
+
+            // Ride the tower: parent to it + animate in LOCAL space, so the resident rises and sways WITH the
+            // building (no camera lag / floating below) and is auto-cleaned when the tower clears on restart.
+            Transform parent = _tower != null ? _tower.transform : null;
+            Vector3 localBase = parent != null ? parent.InverseTransformPoint(basePos) : basePos;
+            if (parent != null) t.SetParent(parent, false);
             Vector3 baseScale = t.localScale;
             TintUmbrella(go, index);
 
-            // From FAR to the SIDE at roughly roof height + in front of the block; glide in mostly
-            // HORIZONTALLY (a gentle umbrella descent, NOT dropping through the roof) and settle INTO the
-            // block body at mid-height.
+            // From the SIDE at ~roof height + in front; glide in mostly HORIZONTALLY and vanish passing
+            // THROUGH the side wall (end on the approach side, ~half block width).
             float dir = (index % 2 == 0) ? 1f : -1f;
-            float side = dir * (2.4f + 0.25f * index + Random.Range(0f, 0.6f));
-            Vector3 start = basePos + new Vector3(side, FloorHeight * 0.85f + Random.Range(0f, 0.45f), -1.2f + Random.Range(-0.2f, 0.2f));
-            // End AT the side wall on the approach side (block half-width ~1), so they vanish passing THROUGH
-            // the wall, not at the centre. Slight y/z jitter so they don't all hit the same point.
-            Vector3 end = basePos + new Vector3(dir * 0.92f, FloorHeight * 0.55f + Random.Range(-0.15f, 0.2f), -0.55f + Random.Range(-0.2f, 0.2f));
+            Vector3 start = localBase + new Vector3(dir * (2.2f + 0.2f * index + Random.Range(0f, 0.5f)),
+                FloorHeight * 0.85f + Random.Range(0f, 0.35f), -1.2f + Random.Range(-0.2f, 0.2f));
+            Vector3 end = localBase + new Vector3(dir * 0.92f, FloorHeight * 0.55f + Random.Range(-0.1f, 0.2f), -0.55f + Random.Range(-0.15f, 0.15f));
 
-            float dur = 1.35f + Random.Range(0f, 0.5f);
+            float dur = 0.95f + Random.Range(0f, 0.35f);
+            Destroy(go, dur + 0.4f); // hard safety — a resident never lingers, even if this coroutine is cut
             float swayPhase = Random.Range(0f, 6.283f);
             float e = 0f;
             while (e < dur)
@@ -84,12 +90,12 @@ namespace Towerpolis.Game.Vfx
                 if (t == null) yield break;
                 e += Time.deltaTime;
                 float p = Mathf.Clamp01(e / dur);
-                float ease = 1f - (1f - p) * (1f - p);                              // ease-out glide
+                float ease = 1f - (1f - p) * (1f - p);                               // ease-out glide
                 Vector3 pos = Vector3.Lerp(start, end, ease);
-                pos.y += Mathf.Sin(Time.time * 2.3f + swayPhase) * 0.10f * (1f - p); // gentle umbrella bob, settles
-                t.position = pos;
-                t.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 2.3f + swayPhase) * 9f * (1f - p));
-                if (p > 0.72f) t.localScale = baseScale * Mathf.Clamp01(1f - (p - 0.72f) / 0.28f); // shrink out AT the wall
+                pos.y += Mathf.Sin(Time.time * 2.3f + swayPhase) * 0.10f * (1f - p);  // gentle umbrella bob
+                if (parent != null) t.localPosition = pos; else t.position = pos;
+                t.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 2.3f + swayPhase) * 9f * (1f - p));
+                if (p > 0.5f) t.localScale = baseScale * Mathf.Clamp01(1f - (p - 0.5f) / 0.5f); // shrink through the 2nd half
                 yield return null;
             }
             if (go != null) Destroy(go);
