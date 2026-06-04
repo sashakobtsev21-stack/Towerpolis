@@ -42,7 +42,9 @@ namespace Towerpolis.Game.Gameplay
             _craneHeight = craneHeight;
             _halfArc = halfArc;
             _period = Mathf.Max(0.01f, period);
-            _phase = phase;
+            // Continuous: if the hook is already swinging (between floors), KEEP the current phase so the
+            // new block attaches exactly where the hook is right now. Only a cold start (new run) seeds it.
+            if (!_swinging) _phase = phase;
             _cableLength = Mathf.Max(0.5f, cableLength);
             _thetaMax = Mathf.Asin(Mathf.Clamp(_halfArc / _cableLength, -1f, 1f));
             _tiltFactor = tiltFactor;
@@ -55,17 +57,25 @@ namespace Towerpolis.Game.Gameplay
 
         public Transform Release()
         {
-            _swinging = false;
             Transform released = _block;
             _block = null;
-            // Keep the hook + rope visible (frozen at the release point) while the block falls — they
-            // re-engage with the next block on BeginSwing, rather than blinking out.
+            // DON'T stop: the empty hook keeps swinging (no freeze on release) and the next block attaches
+            // at the hook's current position. The rope stays live for a future tear-off animation.
             return released;
+        }
+
+        /// <summary>Stop and hide the crane (call when the run ends so a lone hook doesn't swing over the
+        /// toppled tower). The next <see cref="BeginSwing"/> seeds a fresh phase and shows it again.</summary>
+        public void EndSwing()
+        {
+            _swinging = false;
+            _block = null;
+            SetVisible(false);
         }
 
         void Update()
         {
-            if (!_swinging || _block == null) return;
+            if (!_swinging) return;
             _phase += 2f * Mathf.PI / _period * Time.deltaTime;
             Apply();
         }
@@ -78,19 +88,23 @@ namespace Towerpolis.Game.Gameplay
             float pivotY = holdY + _cableLength;
             float x = centerX + _cableLength * Mathf.Sin(theta);
             float y = pivotY - _cableLength * Mathf.Cos(theta);
-            // Position follows the full arc; the visible block tilt is scaled down by the tilt factor.
-            _block.SetPositionAndRotation(new Vector3(x, y, 0f),
-                Quaternion.Euler(0f, 0f, -theta * Mathf.Rad2Deg * _tiltFactor));
+            // The bob is where a block CENTRE hangs; the visible tilt is scaled down by the tilt factor.
+            Vector3 bob = new Vector3(x, y, 0f);
+            Quaternion tilt = Quaternion.Euler(0f, 0f, -theta * Mathf.Rad2Deg * _tiltFactor);
+            Vector3 up = tilt * Vector3.up;
 
-            UpdateRope(new Vector3(centerX, pivotY, 0f));
+            // Position the block ON the bob when one is attached; the hook/rope swing regardless (no freeze).
+            if (_block != null) _block.SetPositionAndRotation(bob, tilt);
+
+            Vector3 attach = bob + up * _attachHeight; // top-centre of where a block hangs from the hook
+            UpdateRope(new Vector3(centerX, pivotY, 0f), attach);
         }
 
         const float HookTopOffset = 0.5f; // height of the hook (cable meets it at the pulley on top)
 
-        void UpdateRope(Vector3 pivot)
+        void UpdateRope(Vector3 pivot, Vector3 attach)
         {
-            if (_rope == null || _block == null) return;
-            Vector3 attach = _block.position + _block.up * _attachHeight; // top-centre of the swinging block
+            if (_rope == null) return;
             Vector3 dir = pivot - attach;
             Vector3 hookUp = dir.sqrMagnitude > 1e-6f ? dir.normalized : Vector3.up;
             _rope.SetPosition(0, pivot);

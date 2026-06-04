@@ -233,6 +233,7 @@ namespace Towerpolis.Game.Gameplay
             {
                 _state = State.Over;
                 _overSince = Time.time;
+                crane.EndSwing(); // stop the empty hook swinging over the toppled tower
                 RunToppled?.Invoke();
                 Debug.Log("[Towerpolis] Run over — floors " + Floors + ", score " + Score);
             }
