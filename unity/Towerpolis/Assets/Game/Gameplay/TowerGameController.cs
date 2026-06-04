@@ -109,6 +109,7 @@ namespace Towerpolis.Game.Gameplay
         void BeginRun()
         {
             ClearTower();
+            DiscardLooseBlock(); // drop any in-flight crane/falling block (e.g. switching districts mid-run)
 
             // Dress the run for the active district (block palette + sky).
             string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
@@ -141,6 +142,16 @@ namespace Towerpolis.Game.Gameplay
             for (int i = tower.transform.childCount - 1; i >= 0; i--)
                 Destroy(tower.transform.GetChild(i).gameObject);
             tower.transform.localRotation = Quaternion.identity;
+        }
+
+        // Destroy the block currently on the crane or mid-fall (not yet welded → not a tower child), so a
+        // mid-run restart/district-switch doesn't leave a stray block the new tower builds through.
+        void DiscardLooseBlock()
+        {
+            if (_pendingBlock != null) Destroy(_pendingBlock.gameObject);
+            _pendingBlock = null;
+            if (_falling != null) Destroy(_falling.gameObject);
+            _falling = null;
         }
 
         void SpawnNext()
