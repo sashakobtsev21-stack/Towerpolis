@@ -90,9 +90,19 @@ namespace Towerpolis.Core.Meta
                 StreakCurrent = s.Streak.Current,
                 StreakLongest = s.Streak.Longest,
                 StreakLastDate = s.Streak.LastDate,
+                StreakFreezeCharges = s.Streak.FreezeCharges,
                 RewardedDistricts = new List<string>(s.RewardedDistricts),
                 Districts = new List<DistrictSave>(),
                 Leaderboard = new List<IntEntry>(),
+                MagnetLevel = s.Upgrades.MagnetLevel,
+                SlowMoLevel = s.Upgrades.SlowMoLevel,
+                CityBonusLevel = s.Upgrades.CityBonusLevel,
+                OwnedBlockSkins = new List<string>(s.OwnedBlockSkins),
+                EquippedBlockSkin = s.EquippedBlockSkin,
+                OwnedCraneSkins = new List<string>(s.OwnedCraneSkins),
+                EquippedCraneSkin = s.EquippedCraneSkin,
+                LoginCalendarDay = s.Login.Day,
+                LoginCalendarLastClaim = s.Login.LastClaim,
             };
 
             foreach (KeyValuePair<string, int> rec in s.Leaderboard.Records)

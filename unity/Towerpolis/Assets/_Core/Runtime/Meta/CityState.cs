@@ -49,11 +49,15 @@ namespace Towerpolis.Core.Meta
         }
     }
 
+    /// <summary>The three purchasable upgrade tracks (progression-spec §2).</summary>
+    public enum UpgradeKind { Magnet, SlowMo, CityBonus }
+
     /// <summary>
     /// The aggregate, save-able player meta-state (ADR-0007): per-district city grids, currency, daily
-    /// streak, local leaderboard, and which districts have already paid out their completion reward. Owns
-    /// the deterministic run-end flow (deposit → coins → daily bonus/streak → fill-goal reward). Unity-free
-    /// and NUnit-tested; the Unity <c>SaveManager</c> only does file I/O around it.
+    /// streak, local leaderboard, which districts have paid out, and the Phase-4 progression (upgrades,
+    /// cosmetics, streak freeze, login calendar). Owns the deterministic run-end flow (deposit → coins →
+    /// daily bonus/streak → fill-goal reward with City Bonus) and all coin spends. Unity-free and
+    /// NUnit-tested; the Unity <c>SaveManager</c> only does file I/O around it.
     /// </summary>
     public sealed class CityState
     {
@@ -66,6 +70,19 @@ namespace Towerpolis.Core.Meta
         public DailyStreakState Streak { get; private set; } = DailyStreakState.Empty;
         public LocalLeaderboard Leaderboard { get; private set; } = new();
         public string ActiveDistrictId { get; set; } = "downtown";
+
+        // --- Phase 4 progression (progression-spec §2/§3) ---
+        public UpgradeState Upgrades { get; private set; } = UpgradeState.Default;
+        public int FreezeCharges => Streak.FreezeCharges;
+
+        readonly List<string> _ownedBlockSkins = new() { "skin_default" };
+        readonly List<string> _ownedCraneSkins = new() { "crane_default" };
+        public string EquippedBlockSkin { get; private set; } = "skin_default";
+        public string EquippedCraneSkin { get; private set; } = "crane_default";
+        public IReadOnlyList<string> OwnedBlockSkins => _ownedBlockSkins;
+        public IReadOnlyList<string> OwnedCraneSkins => _ownedCraneSkins;
+
+        public LoginCalendarState Login { get; private set; } = LoginCalendarState.Empty;
 
         public CityState(CoreConfig cfg) => _cfg = cfg ?? throw new ArgumentNullException(nameof(cfg));
 
@@ -91,6 +108,89 @@ namespace Towerpolis.Core.Meta
             var grid = new CityGrid(Math.Max(1, d.GridCapacity));
             _grids[d.Id] = grid;
             return grid;
+        }
+
+        // --- Phase 4 purchases & claims (all spend Coins; mutate only on success) ---
+
+        /// <summary>Buy the next level of an upgrade track. Returns false if maxed or unaffordable.</summary>
+        public bool TryBuyUpgrade(UpgradeKind kind)
+        {
+            int level;
+            int[] costs;
+            switch (kind)
+            {
+                case UpgradeKind.Magnet:    level = Upgrades.MagnetLevel;    costs = _cfg.MagnetUpgradeCosts;    break;
+                case UpgradeKind.SlowMo:    level = Upgrades.SlowMoLevel;    costs = _cfg.SlowMoUpgradeCosts;    break;
+                case UpgradeKind.CityBonus: level = Upgrades.CityBonusLevel; costs = _cfg.CityBonusUpgradeCosts; break;
+                default: return false;
+            }
+            (bool ok, int newCoins, int newLevel) = UpgradeService.TryPurchase(kind.ToString(), level, costs, costs.Length, Coins);
+            if (!ok) return false;
+            Coins = newCoins;
+            Upgrades = kind switch
+            {
+                UpgradeKind.Magnet => Upgrades.WithMagnet(newLevel),
+                UpgradeKind.SlowMo => Upgrades.WithSlowMo(newLevel),
+                _ => Upgrades.WithCityBonus(newLevel),
+            };
+            return true;
+        }
+
+        public bool TryBuyBlockSkin(string skinId, int cost, string requiredDistrictId = "")
+            => TryBuySkin(_ownedBlockSkins, skinId, cost, requiredDistrictId);
+
+        public bool TryBuyCraneSkin(string skinId, int cost, string requiredDistrictId = "")
+            => TryBuySkin(_ownedCraneSkins, skinId, cost, requiredDistrictId);
+
+        bool TryBuySkin(List<string> owned, string skinId, int cost, string requiredDistrictId)
+        {
+            if (string.IsNullOrEmpty(skinId) || owned.Contains(skinId)) return false;        // invalid / already owned
+            if (!string.IsNullOrEmpty(requiredDistrictId) && !_rewarded.Contains(requiredDistrictId)) return false; // gate
+            if (Coins < cost) return false;
+            Coins -= cost;
+            owned.Add(skinId);
+            return true;
+        }
+
+        public bool EquipBlockSkin(string skinId)
+        {
+            if (!_ownedBlockSkins.Contains(skinId)) return false;
+            EquippedBlockSkin = skinId;
+            return true;
+        }
+
+        public bool EquipCraneSkin(string skinId)
+        {
+            if (!_ownedCraneSkins.Contains(skinId)) return false;
+            EquippedCraneSkin = skinId;
+            return true;
+        }
+
+        /// <summary>Buy one streak-freeze charge (up to the cap).</summary>
+        public bool TryBuyFreezeCharge()
+        {
+            int charges = Streak.FreezeCharges;
+            if (charges >= _cfg.StreakFreezeMaxCharges || Coins < _cfg.StreakFreezeCost) return false;
+            Coins -= _cfg.StreakFreezeCost;
+            Streak = Streak.WithFreezeCharges(charges + 1);
+            return true;
+        }
+
+        public bool CanClaimLogin(string todayKey) => LoginCalendar.CanClaim(Login, todayKey);
+
+        /// <summary>Claim today's login-calendar slot, banking its coins/freeze. Returns the reward (Coins=0
+        /// if already claimed today).</summary>
+        public LoginCalendarReward ClaimLogin(string todayKey)
+        {
+            (LoginCalendarState next, LoginCalendarReward reward) = LoginCalendar.Claim(Login, todayKey, _cfg);
+            Login = next;
+            Coins += reward.Coins;
+            if (reward.FreezeCharges > 0)
+            {
+                int c = Math.Min(_cfg.StreakFreezeMaxCharges, Streak.FreezeCharges + reward.FreezeCharges);
+                Streak = Streak.WithFreezeCharges(c);
+            }
+            return reward;
         }
 
         public RunEndOutcome EndEndlessRun(in DistrictInfo d, in RunResult r, long timestampUtcTicks)
@@ -123,7 +223,7 @@ namespace Towerpolis.Core.Meta
             if (!_rewarded.Contains(d.Id) && DistrictGoal.IsReached(grid.Population, d.FillGoal))
             {
                 _rewarded.Add(d.Id);
-                coins += d.RewardCoins;
+                coins += CoinEarnCalculator.CityBonusedReward(d.RewardCoins, Upgrades.CityBonusLevel, _cfg); // City Bonus upgrade
                 gemsEarned = d.RewardGems;
                 completedNow = true;
             }
@@ -142,8 +242,16 @@ namespace Towerpolis.Core.Meta
             state.Coins = save.Coins;
             state.Gems = save.Gems;
             state.ActiveDistrictId = string.IsNullOrEmpty(save.ActiveDistrictId) ? "downtown" : save.ActiveDistrictId;
-            state.Streak = new DailyStreakState(save.StreakCurrent, save.StreakLongest, save.StreakLastDate);
+            state.Streak = new DailyStreakState(save.StreakCurrent, save.StreakLongest, save.StreakLastDate, save.StreakFreezeCharges);
             state.Leaderboard = new LocalLeaderboard(save.LeaderboardMap());
+
+            // Phase 4 progression.
+            state.Upgrades = new UpgradeState(save.MagnetLevel, save.SlowMoLevel, save.CityBonusLevel);
+            LoadSkins(state._ownedBlockSkins, save.OwnedBlockSkins, "skin_default");
+            LoadSkins(state._ownedCraneSkins, save.OwnedCraneSkins, "crane_default");
+            state.EquippedBlockSkin = string.IsNullOrEmpty(save.EquippedBlockSkin) ? "skin_default" : save.EquippedBlockSkin;
+            state.EquippedCraneSkin = string.IsNullOrEmpty(save.EquippedCraneSkin) ? "crane_default" : save.EquippedCraneSkin;
+            state.Login = new LoginCalendarState(save.LoginCalendarDay, save.LoginCalendarLastClaim);
 
             foreach (string id in save.RewardedDistricts) state._rewarded.Add(id);
 
@@ -154,6 +262,16 @@ namespace Towerpolis.Core.Meta
                 state._grids[ds.Id] = grid;
             }
             return state;
+        }
+
+        // Replace a skin list from the save, de-duping and guaranteeing the free default is always owned.
+        static void LoadSkins(List<string> dst, List<string>? src, string fallback)
+        {
+            dst.Clear();
+            if (src != null)
+                foreach (string id in src)
+                    if (!string.IsNullOrEmpty(id) && !dst.Contains(id)) dst.Add(id);
+            if (!dst.Contains(fallback)) dst.Insert(0, fallback);
         }
     }
 }
