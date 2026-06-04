@@ -78,6 +78,9 @@ namespace Towerpolis.Core.Meta
 
         public List<string> CompletedAchievementIds = new();
 
+        public int LifetimePerfects;            // achievement stat (cumulative Perfect drops)
+        public int BestFloorCount;              // achievement stat (best single-run height)
+
         /// <summary>Snapshot the current meta-state for saving. Inverse of <see cref="CityState.FromSave"/>.</summary>
         public static SaveData From(CityState s)
         {
@@ -103,7 +106,16 @@ namespace Towerpolis.Core.Meta
                 EquippedCraneSkin = s.EquippedCraneSkin,
                 LoginCalendarDay = s.Login.Day,
                 LoginCalendarLastClaim = s.Login.LastClaim,
+                ActiveWeekKey = s.ActiveWeekKey,
+                ActiveMissionIds = new List<string>(s.ActiveMissionIds),
+                CompletedMissionIds = new List<string>(s.CompletedMissionIds),
+                CompletedAchievementIds = new List<string>(s.CompletedAchievementIds),
+                LifetimePerfects = s.LifetimePerfects,
+                BestFloorCount = s.BestFloorCount,
             };
+
+            foreach (KeyValuePair<string, int> mp in s.MissionProgress)
+                save.MissionProgress.Add(new IntEntry(mp.Key, mp.Value));
 
             foreach (KeyValuePair<string, int> rec in s.Leaderboard.Records)
                 save.Leaderboard.Add(new IntEntry(rec.Key, rec.Value));

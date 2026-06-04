@@ -49,6 +49,22 @@ namespace Towerpolis.Core.Meta
         }
     }
 
+    /// <summary>What the weekly-mission + achievement pass produced at run-end (progression-spec §4): the ids
+    /// that newly completed/unlocked this run and the coins they paid (already added to the wallet).</summary>
+    public readonly struct RunSystemsOutcome
+    {
+        public readonly IReadOnlyList<string> CompletedMissions;
+        public readonly IReadOnlyList<string> UnlockedAchievements;
+        public readonly int BonusCoins;
+
+        public RunSystemsOutcome(IReadOnlyList<string> missions, IReadOnlyList<string> achievements, int bonusCoins)
+        {
+            CompletedMissions = missions;
+            UnlockedAchievements = achievements;
+            BonusCoins = bonusCoins;
+        }
+    }
+
     /// <summary>The three purchasable upgrade tracks (progression-spec §2).</summary>
     public enum UpgradeKind { Magnet, SlowMo, CityBonus }
 
@@ -83,6 +99,25 @@ namespace Towerpolis.Core.Meta
         public IReadOnlyList<string> OwnedCraneSkins => _ownedCraneSkins;
 
         public LoginCalendarState Login { get; private set; } = LoginCalendarState.Empty;
+
+        // --- Weekly missions, achievements & lifetime stats (progression-spec §4) ---
+        public int LifetimePerfects { get; private set; }
+        public int BestFloorCount { get; private set; }
+        public string ActiveWeekKey { get; private set; } = "";
+        readonly List<string> _activeMissionIds = new();
+        readonly Dictionary<string, int> _missionProgress = new();
+        readonly HashSet<string> _completedMissionIds = new();
+        readonly HashSet<string> _completedAchievements = new();
+        public IReadOnlyList<string> ActiveMissionIds => _activeMissionIds;
+        public IReadOnlyDictionary<string, int> MissionProgress => _missionProgress;
+        public IReadOnlyCollection<string> CompletedMissionIds => _completedMissionIds;
+        public IReadOnlyCollection<string> CompletedAchievementIds => _completedAchievements;
+
+        /// <summary>Lifetime count of deposited towers across every district (achievement stat).</summary>
+        public int TotalTowers
+        {
+            get { int n = 0; foreach (CityGrid g in _grids.Values) n += g.OccupiedCount; return n; }
+        }
 
         public CityState(CoreConfig cfg) => _cfg = cfg ?? throw new ArgumentNullException(nameof(cfg));
 
@@ -230,7 +265,95 @@ namespace Towerpolis.Core.Meta
 
             Coins += coins;
             Gems += gemsEarned;
+            LifetimePerfects += r.PerfectDrops;
+            if (r.FloorCount > BestFloorCount) BestFloorCount = r.FloorCount;
             return new RunEndOutcome(deposited, coins, gemsEarned, completedNow, newBest, grid.Population, milestoneCoins);
+        }
+
+        // --- Weekly missions & achievements (progression-spec §4) ---
+
+        /// <summary>Ensure this week's 3 missions are drawn for <paramref name="weekKey"/>. On a new week,
+        /// redraw (seeded by <paramref name="weekSeed"/>) and reset progress/completions. Safe to call any
+        /// time (e.g. when the missions screen opens).</summary>
+        public void EnsureWeeklyMissions(string weekKey, ulong weekSeed, IReadOnlyList<MissionInfo> allMissions)
+        {
+            if (allMissions == null) return;
+            if (weekKey == ActiveWeekKey && _activeMissionIds.Count > 0) return; // already drawn this week
+
+            ActiveWeekKey = weekKey;
+            var ids = new List<string>(allMissions.Count);
+            foreach (MissionInfo m in allMissions) ids.Add(m.MissionId);
+            _activeMissionIds.Clear();
+            _activeMissionIds.AddRange(MissionTracker.DrawWeeklyMissions(ids, weekSeed, 3));
+            _missionProgress.Clear();
+            _completedMissionIds.Clear();
+        }
+
+        /// <summary>Fold a finished run into the weekly missions + achievements: advance mission progress,
+        /// bank any newly completed mission/achievement rewards (added to <see cref="Coins"/>), and report
+        /// what unlocked. Call AFTER <see cref="EndEndlessRun"/>/<see cref="EndDailyRun"/> so the streak and
+        /// lifetime stats are current.</summary>
+        public RunSystemsOutcome ProcessRunSystems(in RunResult r, bool isDaily, string districtId,
+            string weekKey, ulong weekSeed,
+            IReadOnlyList<MissionInfo> allMissions, IReadOnlyList<AchievementInfo> achievements)
+        {
+            EnsureWeeklyMissions(weekKey, weekSeed, allMissions);
+
+            int bonus = 0;
+            var completedMissions = new List<string>();
+            List<MissionInfo> active = ActiveMissionInfos(allMissions);
+
+            var evt = new MissionEvent(r.FloorCount, r.PerfectDrops, r.TotalResidents, r.MaxPerfectChain,
+                isDaily, districtId, Streak.Current);
+            Dictionary<string, int> progress = MissionTracker.Record(in evt, active, _missionProgress);
+            _missionProgress.Clear();
+            foreach (KeyValuePair<string, int> kv in progress) _missionProgress[kv.Key] = kv.Value;
+
+            foreach (MissionInfo m in active)
+            {
+                if (_completedMissionIds.Contains(m.MissionId)) continue;
+                if (MissionTracker.IsComplete(m.MissionId, _missionProgress, m.Target))
+                {
+                    _completedMissionIds.Add(m.MissionId);
+                    Coins += m.RewardCoins;
+                    bonus += m.RewardCoins;
+                    completedMissions.Add(m.MissionId);
+                }
+            }
+
+            var unlocked = new List<string>();
+            if (achievements != null)
+            {
+                var snap = new AchievementSnapshot(TotalTowers, TotalPopulation, LifetimePerfects,
+                    Streak.Longest, BestFloorCount, _rewarded.Count);
+                IReadOnlyList<string> newAch = AchievementEvaluator.Evaluate(in snap, achievements, _completedAchievements);
+                foreach (string id in newAch)
+                {
+                    _completedAchievements.Add(id);
+                    int reward = AchievementReward(achievements, id);
+                    Coins += reward;
+                    bonus += reward;
+                    unlocked.Add(id);
+                }
+            }
+
+            return new RunSystemsOutcome(completedMissions, unlocked, bonus);
+        }
+
+        List<MissionInfo> ActiveMissionInfos(IReadOnlyList<MissionInfo> allMissions)
+        {
+            var list = new List<MissionInfo>();
+            if (allMissions == null) return list;
+            foreach (string id in _activeMissionIds)
+                foreach (MissionInfo m in allMissions)
+                    if (m.MissionId == id) { list.Add(m); break; }
+            return list;
+        }
+
+        static int AchievementReward(IReadOnlyList<AchievementInfo> defs, string id)
+        {
+            foreach (AchievementInfo a in defs) if (a.AchievementId == id) return a.RewardCoins;
+            return 0;
         }
 
         /// <summary>Rebuild meta-state from a loaded save (ADR-0007). Inverse of <see cref="SaveData.From"/>.</summary>
@@ -252,6 +375,19 @@ namespace Towerpolis.Core.Meta
             state.EquippedBlockSkin = string.IsNullOrEmpty(save.EquippedBlockSkin) ? "skin_default" : save.EquippedBlockSkin;
             state.EquippedCraneSkin = string.IsNullOrEmpty(save.EquippedCraneSkin) ? "crane_default" : save.EquippedCraneSkin;
             state.Login = new LoginCalendarState(save.LoginCalendarDay, save.LoginCalendarLastClaim);
+
+            // Weekly missions, achievements & lifetime stats.
+            state.LifetimePerfects = save.LifetimePerfects;
+            state.BestFloorCount = save.BestFloorCount;
+            state.ActiveWeekKey = save.ActiveWeekKey ?? "";
+            if (save.ActiveMissionIds != null) state._activeMissionIds.AddRange(save.ActiveMissionIds);
+            if (save.MissionProgress != null)
+                foreach (IntEntry e in save.MissionProgress)
+                    if (!string.IsNullOrEmpty(e.Key)) state._missionProgress[e.Key] = e.Value;
+            if (save.CompletedMissionIds != null)
+                foreach (string id in save.CompletedMissionIds) state._completedMissionIds.Add(id);
+            if (save.CompletedAchievementIds != null)
+                foreach (string id in save.CompletedAchievementIds) state._completedAchievements.Add(id);
 
             foreach (string id in save.RewardedDistricts) state._rewarded.Add(id);
 
