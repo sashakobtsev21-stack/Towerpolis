@@ -204,11 +204,11 @@ def b1():  # Standard green; windows F/L/R; ONE full-width canopy per window-fac
     join(o,p)
 safe('Floor_Standard',b1)
 
-def build_balcony(name,bx,body_mat):  # wooden balcony + door front; windows L/R; door a bit lower
+def build_balcony(name,bx,body_mat):  # wooden balcony + door front; windows L/R; NO canopies (removed)
     o=body(name,2,2,FH,bx,body_mat)
-    p=rim(bx,m_white)+windows(bx,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
+    p=rim(bx,m_white)+windows(bx,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,None)
     p+=balcony(bx,'F',m_wood,1.3)+door_unit(bx,'F',0.0,0.62,1.1,m_white,m_glass,m_gold)   # dh 1.25->1.1
-    p+=awn(bx,'F',0.0,1.40,1.7,m_canlb)               # awning above balcony door — raised (was 1.23)
+    # (balcony-door + window canopies removed entirely — owner request)
     join(o,p)
 safe('Floor_Balcony',   lambda: build_balcony('Floor_Balcony',   3,  m_yellow))
 safe('Floor_Balcony_2', lambda: build_balcony('Floor_Balcony_2', 15, m_orange))

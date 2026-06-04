@@ -91,7 +91,7 @@ namespace Towerpolis.Game.Gameplay
         readonly Dictionary<string, GameObject> _models = new Dictionary<string, GameObject>();
         readonly Dictionary<string, Material> _palette = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase);
         Shader _lit;
-        Material _matStandard, _matBalcony, _matPremium, _matBrick;
+        Material _matStandard, _matBalcony, _matPremium, _matBrick, _hiddenMat;
         Material[] _standardBodies, _balconyBodies, _premiumBodies;
         Texture2D _wallTex, _brickTex;
         Dictionary<string, Material> _baseOverrides;
@@ -122,6 +122,7 @@ namespace Towerpolis.Game.Gameplay
             _matStandard = MakeMaterial(ColStandard);
             _matBalcony = MakeMaterial(ColBalcony);
             _matPremium = MakeMaterial(ColPremium);
+            _hiddenMat = MakeHidden(); // fully transparent → "removes" a slot's geometry at runtime
 
             _standardBodies = MakeBodies(StandardVariants);
             _balconyBodies = MakeBodies(BalconyVariants);
@@ -145,14 +146,17 @@ namespace Towerpolis.Game.Gameplay
         public Transform CreateBlock(FloorType type, float blockWidth, string label)
         {
             Material body = BodyVariant(type, label); // one of 3 colours for this type → varied city
-            return Build(label, ModelName(type, label), blockWidth, body, colliderOn: false, body, slotOverrides: null);
+            // Balcony block: its canopies/awnings are removed (owner request) — hidden at runtime so it works
+            // without re-importing the FBX; also removed in the Blender source.
+            return Build(label, ModelName(type, label), blockWidth, body, colliderOn: false, body, slotOverrides: null,
+                hideCanopy: type == FloorType.Balcony);
         }
 
         public Transform CreateBase(float blockWidth)
-            => Build("Base", "Base_Ground", blockWidth, _matBrick, colliderOn: true, bodyOverride: null, slotOverrides: _baseOverrides);
+            => Build("Base", "Base_Ground", blockWidth, _matBrick, colliderOn: true, bodyOverride: null, slotOverrides: _baseOverrides, hideCanopy: false);
 
         Transform Build(string label, string modelName, float blockWidth, Material bodyFallback, bool colliderOn,
-            Material bodyOverride, IDictionary<string, Material> slotOverrides)
+            Material bodyOverride, IDictionary<string, Material> slotOverrides, bool hideCanopy)
         {
             var root = new GameObject(label);
             var mesh = new GameObject("Mesh");
@@ -173,7 +177,7 @@ namespace Towerpolis.Game.Gameplay
                 model.transform.localRotation = Quaternion.Euler(0f, modelFacingYaw, 0f);
                 model.transform.localPosition = Vector3.zero;
                 FitToGrid(model, floorHeight, mesh.transform);
-                Recolor(model, bodyFallback, bodyOverride, slotOverrides);
+                Recolor(model, bodyFallback, bodyOverride, slotOverrides, hideCanopy);
             }
             else
             {
@@ -193,7 +197,7 @@ namespace Towerpolis.Game.Gameplay
         /// <summary>Repaint each material slot from the authored palette (matched by the imported slot
         /// name, e.g. <c>TP_Green</c>). Unmatched slots get the solid body colour, so a house is never
         /// left white even if the FBX imported with a single default material.</summary>
-        void Recolor(GameObject model, Material bodyFallback, Material bodyOverride, IDictionary<string, Material> slotOverrides)
+        void Recolor(GameObject model, Material bodyFallback, Material bodyOverride, IDictionary<string, Material> slotOverrides, bool hideCanopy)
         {
             foreach (var r in model.GetComponentsInChildren<MeshRenderer>())
             {
@@ -202,7 +206,9 @@ namespace Towerpolis.Game.Gameplay
                 for (int i = 0; i < src.Length; i++)
                 {
                     string name = src[i] != null ? src[i].name : null;
-                    if (bodyOverride != null && name != null && BodyNames.Contains(name))
+                    if (hideCanopy && name != null && name.IndexOf("CanopyLB", StringComparison.OrdinalIgnoreCase) >= 0)
+                        dst[i] = _hiddenMat;                                     // canopy removed (balcony) → invisible
+                    else if (bodyOverride != null && name != null && BodyNames.Contains(name))
                         dst[i] = bodyOverride;                                   // the wall → this block's variant colour
                     else if (name != null && slotOverrides != null && slotOverrides.TryGetValue(name, out Material ov))
                         dst[i] = ov;                                             // base-only slot recolours
@@ -276,6 +282,18 @@ namespace Towerpolis.Game.Gameplay
                 if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", color * emission);
             }
             return mat;
+        }
+
+        // A fully transparent material — assigning it to a slot "removes" that submesh visually at runtime
+        // (alpha 0, no shadow), without editing the mesh.
+        Material MakeHidden()
+        {
+            Shader sh = Shader.Find("Sprites/Default"); // alpha-blended; alpha 0 → draws nothing
+            if (sh == null) sh = Shader.Find("Universal Render Pipeline/Unlit");
+            var clear = new Color(1f, 1f, 1f, 0f);
+            var m = new Material(sh) { color = clear };
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", clear);
+            return m;
         }
 
         Material[] MakeBodies(Color[] colors)
