@@ -147,7 +147,7 @@ namespace Towerpolis.Game.Gameplay
             int nextFloor = _run.FloorCount + 1;
             _pendingBlock = spawner.CreateBlock(_pendingType, tower.TopWidth, "Floor_" + nextFloor);
             float period = tuning.SwingPeriod(nextFloor);
-            crane.BeginSwing(_pendingBlock, tower, tuning.craneHeight, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength, tuning.craneTiltFactor, tuning.floorHeight);
+            crane.BeginSwing(_pendingBlock, tower, tuning.craneHeight, tuning.SwingArc(nextFloor), period, _swingPhase, tuning.craneCableLength, tuning.craneTiltFactor, tuning.floorHeight);
             _state = State.Swinging;
         }
 

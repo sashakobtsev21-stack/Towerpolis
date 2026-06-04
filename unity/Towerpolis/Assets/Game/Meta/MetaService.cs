@@ -37,18 +37,12 @@ namespace Towerpolis.Game.Meta
         /// <summary>Coins the in-progress run would bank (for a live HUD preview).</summary>
         public int PreviewCoins(in RunResult r) => CoinEarnCalculator.RunCoins(in r, _config);
 
-        /// <summary>Is the district available to play? Linear unlock: downtown → neon → winter.</summary>
+        /// <summary>Is the district available to play? TEMP for testing: all 3 are open so the looks can
+        /// be previewed. Re-enable the linear gate (downtown → neon → winter) before launch.</summary>
         public bool IsDistrictUnlocked(string id)
-        {
-            if (_city == null) return id == "downtown";
-            return id switch
-            {
-                "downtown" => true,
-                "neon" => _city.IsRewarded("downtown"),
-                "winter" => _city.IsRewarded("neon"),
-                _ => false,
-            };
-        }
+            => id == "downtown" || id == "neon" || id == "winter";
+        // Launch gate:
+        //   "downtown" => true, "neon" => _city.IsRewarded("downtown"), "winter" => _city.IsRewarded("neon")
 
         /// <summary>Switch the active district (if unlocked) and persist. The next run uses its look.</summary>
         public bool SetActiveDistrict(string id)

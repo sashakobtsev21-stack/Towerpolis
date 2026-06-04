@@ -30,6 +30,10 @@ namespace Towerpolis.Game.Gameplay
         public float periodMinClamp = 2.0f;
         [Tooltip("How many seconds shorter the period gets per floor (slight speed-up with height).")]
         public float periodRampFactor = 0.012f;
+        [Tooltip("How much wider the swing arc gets per floor (rope swings a bit more with height).")]
+        public float swingArcPerFloor = 0.06f;
+        [Tooltip("Widest the swing arc can ever get (m) — capped so it can't exceed the cable / go off-screen.")]
+        public float swingArcMax = 4.2f;
 
         [Header("Drop")]
         [Tooltip("Gravity multiplier while falling. Bigger = faster, snappier drop.")]
@@ -64,5 +68,9 @@ namespace Towerpolis.Game.Gameplay
 
         public float SwingPeriod(int floor) =>
             Mathf.Max(periodMinClamp, periodFloor1 - periodRampFactor * (floor - 1));
+
+        /// <summary>Swing half-arc for a floor — grows with height so the crane swings wider as you climb.</summary>
+        public float SwingArc(int floor) =>
+            Mathf.Min(swingArcMax, swingHalfArc + swingArcPerFloor * (floor - 1));
     }
 }
