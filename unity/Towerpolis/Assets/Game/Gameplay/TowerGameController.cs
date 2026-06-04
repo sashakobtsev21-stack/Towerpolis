@@ -113,11 +113,22 @@ namespace Towerpolis.Game.Gameplay
             ClearTower();
             DiscardLooseBlock(); // drop any in-flight crane/falling block (e.g. switching districts mid-run)
 
-            // Dress the run for the active district (block palette + sky).
+            // Dress the run for the active district (block palette + sky) + the equipped cosmetic skins.
             string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
             DistrictTheme theme = DistrictThemes.For(district);
-            if (spawner != null) spawner.ApplyTheme(theme);
+            if (spawner != null)
+            {
+                spawner.ApplyTheme(theme);
+                string blockSkinId = MetaService.Instance != null ? MetaService.Instance.EquippedBlockSkin : "skin_default";
+                spawner.ApplyBlockSkin(CosmeticCatalog.GetBlockSkin(blockSkinId)); // overrides body colours if non-default
+            }
             DistrictSky.SetDistrict(theme); // ground sky; the Atmosphere driver lerps it toward space with height
+            if (crane != null)
+            {
+                string craneSkinId = MetaService.Instance != null ? MetaService.Instance.EquippedCraneSkin : "crane_default";
+                CraneSkin cs = CosmeticCatalog.GetCraneSkin(craneSkinId);
+                crane.ApplySkin(cs.RopeColor, cs.HookColor);
+            }
 
             _coreConfig = tuning != null ? tuning.BuildCoreConfig() : new CoreConfig();
             _run = new TowerRun(_coreConfig);

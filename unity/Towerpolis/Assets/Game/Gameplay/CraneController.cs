@@ -30,6 +30,7 @@ namespace Towerpolis.Game.Gameplay
 
         LineRenderer _rope;
         Transform _hook;
+        Material _hookMat;
 
         public float Phase => _phase;
         public float CurrentX => _block != null ? _block.position.x : (_tower != null ? _tower.TopWorldX : 0f);
@@ -136,7 +137,31 @@ namespace Towerpolis.Game.Gameplay
                 _rope.material = UnlitMaterial(cableColor);
                 _rope.startColor = _rope.endColor = cableColor;
             }
-            if (_hook == null) _hook = BuildHook(LitMetal(hookColor));
+            if (_hook == null) _hook = BuildHook(_hookMat = LitMetal(hookColor));
+        }
+
+        /// <summary>Recolour the rope + hook for an equipped crane skin (progression-spec §5.2). Safe before
+        /// the visuals exist (just stores the colours) or after (recolours the live materials). No gameplay
+        /// effect, so it's fine in Daily too.</summary>
+        public void ApplySkin(Color rope, Color hook)
+        {
+            cableColor = rope;
+            hookColor = hook;
+            if (_rope != null)
+            {
+                _rope.startColor = _rope.endColor = rope;
+                Material m = _rope.material;
+                if (m != null)
+                {
+                    m.color = rope;
+                    if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", rope);
+                }
+            }
+            if (_hookMat != null)
+            {
+                _hookMat.color = hook;
+                if (_hookMat.HasProperty("_BaseColor")) _hookMat.SetColor("_BaseColor", hook);
+            }
         }
 
         // A recognizable crane hook (local +Y points up the cable): a pulley block on top, a straight

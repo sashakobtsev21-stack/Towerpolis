@@ -93,6 +93,41 @@ namespace Towerpolis.Game.Meta
             return r;
         }
 
+        // --- cosmetics (purchase-or-equip in one tap; persist + notify) ---
+        public bool IsBlockSkinOwned(string id) => _city != null && Contains(_city.OwnedBlockSkins, id);
+        public bool IsCraneSkinOwned(string id) => _city != null && Contains(_city.OwnedCraneSkins, id);
+        public bool IsBlockSkinEquipped(string id) => _city != null && _city.EquippedBlockSkin == id;
+        public bool IsCraneSkinEquipped(string id) => _city != null && _city.EquippedCraneSkin == id;
+        public bool IsDistrictRewarded(string id) => string.IsNullOrEmpty(id) || (_city != null && _city.IsRewarded(id));
+
+        /// <summary>One-tap buy-or-equip: equip if already owned, else buy (gated/affordable) and equip.</summary>
+        public bool BuyOrEquipBlockSkin(string id)
+        {
+            if (_city == null) return false;
+            if (Contains(_city.OwnedBlockSkins, id)) return EquipAndSave(_city.EquipBlockSkin(id));
+            BlockSkin s = CosmeticCatalog.GetBlockSkin(id);
+            if (_city.TryBuyBlockSkin(id, s.Cost, s.RequiredDistrictId)) { _city.EquipBlockSkin(id); Persist(); return true; }
+            return false;
+        }
+
+        public bool BuyOrEquipCraneSkin(string id)
+        {
+            if (_city == null) return false;
+            if (Contains(_city.OwnedCraneSkins, id)) return EquipAndSave(_city.EquipCraneSkin(id));
+            CraneSkin s = CosmeticCatalog.GetCraneSkin(id);
+            if (_city.TryBuyCraneSkin(id, s.Cost, s.RequiredDistrictId)) { _city.EquipCraneSkin(id); Persist(); return true; }
+            return false;
+        }
+
+        bool EquipAndSave(bool ok) { if (ok) Persist(); return ok; }
+
+        static bool Contains(System.Collections.Generic.IReadOnlyList<string> list, string id)
+        {
+            if (list == null) return false;
+            for (int i = 0; i < list.Count; i++) if (list[i] == id) return true;
+            return false;
+        }
+
         void Persist()
         {
             SaveManager.Save(SaveData.From(_city));

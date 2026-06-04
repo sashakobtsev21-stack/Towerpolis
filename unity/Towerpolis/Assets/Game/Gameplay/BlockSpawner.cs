@@ -300,6 +300,19 @@ namespace Towerpolis.Game.Gameplay
             if (_palette.TryGetValue("TP_White", out Material frame)) SetCol(frame, t.Frame, 0f);
         }
 
+        /// <summary>Override the block body/glass/frame colours with an equipped cosmetic skin
+        /// (progression-spec §5.1), applied ON TOP of the district theme. A skin that doesn't override is a
+        /// no-op (keeps the district look). Call right after <see cref="ApplyTheme"/> on run start.</summary>
+        public void ApplyBlockSkin(in BlockSkin skin)
+        {
+            if (!skin.OverridesBlocks) return;
+            Tint(_standardBodies, skin.Standard);
+            Tint(_balconyBodies, skin.Balcony);
+            Tint(_premiumBodies, skin.Premium);
+            if (_palette.TryGetValue("TP_Glass", out Material glass)) SetCol(glass, skin.Glass, 0.12f);
+            if (_palette.TryGetValue("TP_White", out Material frame)) SetCol(frame, skin.Frame, 0f);
+        }
+
         static void Tint(Material[] mats, Color[] cols)
         {
             if (mats == null || cols == null) return;
