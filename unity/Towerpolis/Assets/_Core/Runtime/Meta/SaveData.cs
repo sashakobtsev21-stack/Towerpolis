@@ -41,7 +41,7 @@ namespace Towerpolis.Core.Meta
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         public int SchemaVersion = CurrentVersion;
         public int Coins;
@@ -53,6 +53,30 @@ namespace Towerpolis.Core.Meta
         public List<DistrictSave> Districts = new();
         public List<IntEntry> Leaderboard = new();
         public List<string> RewardedDistricts = new();
+
+        // --- Phase 4 progression (schema v2; progression-spec §7). Defaults below ARE the v1→v2 values;
+        //     a v1 JSON simply leaves them at these initialisers. Not yet round-tripped through CityState
+        //     (that's the upcoming Unity integration) — added here so the schema + migration are in place. ---
+        public int MagnetLevel;     // 0–4
+        public int SlowMoLevel;     // 0–4
+        public int CityBonusLevel;  // 0–3
+
+        public List<string> OwnedBlockSkins = new() { "skin_default" };
+        public string EquippedBlockSkin = "skin_default";
+        public List<string> OwnedCraneSkins = new() { "crane_default" };
+        public string EquippedCraneSkin = "crane_default";
+
+        public int StreakFreezeCharges; // 0–StreakFreezeMaxCharges
+
+        public int LoginCalendarDay;            // 0 = not started; 1–30 last claimed slot
+        public string LoginCalendarLastClaim = "";
+
+        public string ActiveWeekKey = "";       // ISO week of the active mission set
+        public List<string> ActiveMissionIds = new();
+        public List<IntEntry> MissionProgress = new();
+        public List<string> CompletedMissionIds = new();
+
+        public List<string> CompletedAchievementIds = new();
 
         /// <summary>Snapshot the current meta-state for saving. Inverse of <see cref="CityState.FromSave"/>.</summary>
         public static SaveData From(CityState s)

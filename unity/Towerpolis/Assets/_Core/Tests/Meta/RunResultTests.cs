@@ -34,6 +34,19 @@ namespace Towerpolis.Core.Tests.Meta
         }
 
         [Test]
+        public void From_CarriesMaxPerfectChain_PeakSurvivesAReset()
+        {
+            var run = new TowerRun(new CoreConfig());
+            Place(run, FloorType.Standard, Grade.Perfect); // chain 1
+            Place(run, FloorType.Standard, Grade.Perfect); // chain 2 (peak)
+            Place(run, FloorType.Standard, Grade.Good);    // chain resets to 0
+            Place(run, FloorType.Standard, Grade.Perfect); // chain 1 again
+
+            Assert.That(run.MaxPerfectChain, Is.EqualTo(2));
+            Assert.That(RunResult.From(run).MaxPerfectChain, Is.EqualTo(2));
+        }
+
+        [Test]
         public void TotalPerfects_CountsOnlyPerfects()
         {
             var run = new TowerRun(new CoreConfig());

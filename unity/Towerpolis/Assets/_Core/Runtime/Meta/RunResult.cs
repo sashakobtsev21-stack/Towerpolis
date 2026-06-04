@@ -13,20 +13,22 @@ namespace Towerpolis.Core.Meta
         public readonly int TotalResidents;   // residents to deposit into the city
         public readonly int RunScore;         // leaderboard score (floors + resident bonus)
         public readonly int PerfectDrops;     // cumulative Perfect placements (coins + stats)
+        public readonly int MaxPerfectChain;  // longest Perfect chain this run (weekly-mission metric)
 
-        public RunResult(int floorCount, int totalResidents, int runScore, int perfectDrops)
+        public RunResult(int floorCount, int totalResidents, int runScore, int perfectDrops, int maxPerfectChain = 0)
         {
             FloorCount = floorCount;
             TotalResidents = totalResidents;
             RunScore = runScore;
             PerfectDrops = perfectDrops;
+            MaxPerfectChain = maxPerfectChain;
         }
 
         /// <summary>Snapshot the final state of a (typically ended) run.</summary>
         public static RunResult From(TowerRun run)
         {
             if (run is null) throw new System.ArgumentNullException(nameof(run));
-            return new RunResult(run.FloorCount, run.TotalResidents, run.RunScore, run.TotalPerfects);
+            return new RunResult(run.FloorCount, run.TotalResidents, run.RunScore, run.TotalPerfects, run.MaxPerfectChain);
         }
     }
 }

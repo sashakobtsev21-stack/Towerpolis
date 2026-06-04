@@ -45,6 +45,7 @@ namespace Towerpolis.Core.Gameplay
         public int MissStrikes { get; private set; }
         public int Score { get; private set; }           // sum of floor scores only (spec §6.1)
         public int PerfectChain { get; private set; }
+        public int MaxPerfectChain { get; private set; } // longest chain reached this run (mission metric)
         public int TotalPerfects { get; private set; }   // cumulative Perfect drops (coins/stats — meta §5)
         public int FloorCount { get; private set; }     // placed floors, excluding the base
         public int TotalResidents { get; private set; }
@@ -75,6 +76,7 @@ namespace Towerpolis.Core.Gameplay
             {
                 case Grade.Perfect:
                     PerfectChain += 1;
+                    if (PerfectChain > MaxPerfectChain) MaxPerfectChain = PerfectChain;
                     TotalPerfects += 1;
                     LeanOffset *= 1f - _cfg.PerfectLeanCorrectionFraction;
                     residentsAdded = Scoring.BaseResidents(_cfg, type) + Scoring.PerfectResidentBonus(_cfg, type);
