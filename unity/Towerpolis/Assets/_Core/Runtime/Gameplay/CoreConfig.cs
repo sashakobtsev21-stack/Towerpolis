@@ -43,7 +43,7 @@ namespace Towerpolis.Core.Gameplay
         public int ResidentsStandard = 2;
         public int ResidentsBalcony = 3;
         public int ResidentsPremium = 5; // owner ruling 2026-06-04 (was 4)
-        public int PerfectResidentBonus = 1;
+        public int PerfectResidentBonus = 0; // owner 2026-06-04: flat residents per type (no perfect bonus)
         public int ResidentScoreValue = 10;
 
         // --- Economy / meta (Phase 3 — meta-spec §5). Earn-only; spending is Phase 4. ---
