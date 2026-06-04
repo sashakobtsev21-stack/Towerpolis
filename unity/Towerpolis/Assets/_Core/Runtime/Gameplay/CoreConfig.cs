@@ -66,5 +66,24 @@ namespace Towerpolis.Core.Gameplay
         public float SlowMoDuration = 0.4f;     // seconds the hold slows the swing (Unity presentation)
         public float[] CityBonusMultipliers = { 1.0f, 1.15f, 1.30f, 1.50f }; // ×district-completion reward
         public int[] CityBonusUpgradeCosts = { 120, 320, 700 };
+
+        // --- Phase 4 — streak freeze (progression-spec §3.1). A freeze bridges ONE missed day. ---
+        public int StreakFreezeMaxCharges = 3;
+        public int StreakFreezeCost = 80; // coins per charge
+
+        // --- Phase 4 — login calendar (progression-spec §3.2). 30-day cycle; index = day−1. The player
+        //     claims one slot per UTC day they open the app (softer hook than the daily-run streak). ---
+        public int[] LoginCalendarCoins =
+        {
+            10, 10, 15, 15, 15, 20, 50, 20, 20, 20,
+            20, 20, 25, 25, 25, 30, 30, 30, 30, 30,
+            30, 30, 35, 35, 40, 40, 50, 50,  0, 100,
+        };
+        public int[] LoginCalendarFreezes =
+        {
+             0,  0,  1,  0,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  1,  0,
+        };
     }
 }

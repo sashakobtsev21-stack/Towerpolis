@@ -113,7 +113,7 @@ namespace Towerpolis.Core.Meta
             if (daily && !string.IsNullOrEmpty(dateKey) && !DailyStreak.HasPlayed(Streak, dateKey!))
             {
                 coins += _cfg.DailySeedFirstWinCoins;              // first daily completion of the UTC day
-                Streak = DailyStreak.Record(Streak, dateKey!);
+                Streak = DailyStreak.Record(Streak, dateKey!, Streak.FreezeCharges).next; // freeze bridges a missed day
                 milestoneCoins = DailyStreak.MilestoneCoins(Streak.Current, _cfg);
                 coins += milestoneCoins;
             }

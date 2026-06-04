@@ -12,15 +12,21 @@ namespace Towerpolis.Core.Meta
         public readonly int Current;
         public readonly int Longest;
         public readonly string LastDate;
+        public readonly int FreezeCharges; // 0–StreakFreezeMaxCharges; a freeze bridges one missed day
 
-        public DailyStreakState(int current, int longest, string? lastDate)
+        public DailyStreakState(int current, int longest, string? lastDate, int freezeCharges = 0)
         {
             Current = current;
             Longest = longest;
             LastDate = lastDate ?? "";
+            FreezeCharges = freezeCharges < 0 ? 0 : freezeCharges;
         }
 
-        public static DailyStreakState Empty => new DailyStreakState(0, 0, "");
+        public static DailyStreakState Empty => new DailyStreakState(0, 0, "", 0);
+
+        /// <summary>Copy with a new freeze-charge count (e.g. after buying a charge).</summary>
+        public DailyStreakState WithFreezeCharges(int charges)
+            => new DailyStreakState(Current, Longest, LastDate, charges);
     }
 
     /// <summary>
@@ -33,16 +39,43 @@ namespace Towerpolis.Core.Meta
             => !string.IsNullOrEmpty(todayKey) && s.LastDate == todayKey;
 
         /// <summary>Record a completed daily run for <paramref name="todayKey"/>. Idempotent within a day:
-        /// playing again the same day is a no-op. A consecutive day increments the streak; any gap (or the
-        /// first ever play) resets it to 1. <see cref="DailyStreakState.Longest"/> tracks the peak.</summary>
-        public static DailyStreakState Record(in DailyStreakState prev, string todayKey)
+        /// playing again the same day is a no-op (returns prev, freezeConsumed=false). A consecutive day
+        /// (gap 1) increments the streak. A SINGLE missed day (gap 2) is bridged if
+        /// <paramref name="freezeCharges"/> &gt; 0: one charge is consumed and the streak increments as if
+        /// consecutive (freezeConsumed=true). A larger gap, the first ever play, or no charge resets to 1.
+        /// One charge bridges at most one missed day, so a 2-day gap can never be bridged.
+        /// <see cref="DailyStreakState.Longest"/> tracks the peak; the returned state carries the remaining
+        /// charges. Pure — the caller decides whether to apply it.</summary>
+        public static (DailyStreakState next, bool freezeConsumed) Record(
+            in DailyStreakState prev, string todayKey, int freezeCharges = 0)
         {
             if (string.IsNullOrEmpty(todayKey)) throw new ArgumentException("todayKey required", nameof(todayKey));
-            if (prev.LastDate == todayKey) return prev; // already counted today
+            if (prev.LastDate == todayKey) return (prev, false); // already counted today
 
-            int current = IsNextDay(prev.LastDate, todayKey) ? prev.Current + 1 : 1;
+            if (freezeCharges < 0) freezeCharges = 0;
+            int gap = DayGap(prev.LastDate, todayKey);
+
+            int current;
+            bool freezeConsumed = false;
+            int chargesLeft = freezeCharges;
+
+            if (gap == 1)
+            {
+                current = prev.Current + 1; // consecutive day
+            }
+            else if (gap == 2 && freezeCharges > 0)
+            {
+                current = prev.Current + 1; // bridge the single missed day
+                chargesLeft = freezeCharges - 1;
+                freezeConsumed = true;
+            }
+            else
+            {
+                current = 1; // first play, gap too large, or no charge → reset
+            }
+
             int longest = Math.Max(prev.Longest, current);
-            return new DailyStreakState(current, longest, todayKey);
+            return (new DailyStreakState(current, longest, todayKey, chargesLeft), freezeConsumed);
         }
 
         /// <summary>Coins for hitting a streak milestone exactly (3/7/14/30 → 75/200/400/1000), else 0.</summary>
@@ -56,10 +89,11 @@ namespace Towerpolis.Core.Meta
             return 0;
         }
 
-        static bool IsNextDay(string prevKey, string todayKey)
+        // Whole-day difference (today − prev); -1 if either key is missing/unparseable (treated as a reset).
+        static int DayGap(string prevKey, string todayKey)
         {
-            if (!TryParse(prevKey, out DateTime prev) || !TryParse(todayKey, out DateTime today)) return false;
-            return (today.Date - prev.Date).Days == 1;
+            if (!TryParse(prevKey, out DateTime prev) || !TryParse(todayKey, out DateTime today)) return -1;
+            return (today.Date - prev.Date).Days;
         }
 
         static bool TryParse(string key, out DateTime value)
