@@ -1,7 +1,10 @@
 {
     "name": "Towerpolis.Game.Editor",
     "rootNamespace": "Towerpolis.Game.Editor",
-    "references": [],
+    "references": [
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
     "includePlatforms": [
         "Editor"
     ],

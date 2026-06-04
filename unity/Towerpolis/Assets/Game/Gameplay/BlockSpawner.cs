@@ -32,38 +32,65 @@ namespace Towerpolis.Game.Gameplay
             "Floor_Premium", "Base_Ground", "Base_Ground_2",
         };
 
-        // Authored palette (from scripts/blender_build_blocks.py) — name → (colour, smoothness, metallic).
+        // Authored palette — a muted, warm, harmonious scheme (premium feel, not primary-bright).
+        // name → (colour, smoothness, metallic).
         static readonly (string name, Color color, float smooth, float metal)[] PaletteSpec =
         {
-            ("TP_Green",    new Color(0.32f, 0.78f, 0.38f), 0.25f, 0f),
-            ("TP_Yellow",   new Color(1.00f, 0.82f, 0.15f), 0.25f, 0f),
-            ("TP_Orange",   new Color(1.00f, 0.52f, 0.12f), 0.25f, 0f),
-            ("TP_Blue",     new Color(0.18f, 0.58f, 1.00f), 0.25f, 0f),
-            ("TP_White",    new Color(0.99f, 0.99f, 0.97f), 0.30f, 0f),
-            ("TP_Glass",    new Color(0.10f, 0.40f, 1.00f), 0.90f, 0f),
-            ("TP_Wood",     new Color(0.58f, 0.40f, 0.22f), 0.20f, 0f),
-            ("TP_Marble",   new Color(0.92f, 0.92f, 0.95f), 0.60f, 0f),
-            ("TP_CanopyLB", new Color(0.74f, 0.56f, 0.36f), 0.20f, 0f),
-            ("TP_Brick",    new Color(0.78f, 0.40f, 0.32f), 0.15f, 0f),
-            ("TP_BrickLine",new Color(0.62f, 0.30f, 0.23f), 0.15f, 0f),
-            ("TP_Brick2",   new Color(0.86f, 0.74f, 0.54f), 0.15f, 0f),
-            ("TP_Brick2L",  new Color(0.72f, 0.60f, 0.42f), 0.15f, 0f),
-            ("TP_DarkBrown",new Color(0.34f, 0.22f, 0.13f), 0.20f, 0f),
-            ("TP_Steps",    new Color(0.60f, 0.62f, 0.65f), 0.30f, 0f),
-            ("TP_Gold",     new Color(1.00f, 0.82f, 0.30f), 0.80f, 1f),
-            ("TP_Ground",   new Color(0.93f, 0.95f, 0.98f), 0.30f, 0f),
+            ("TP_Green",    new Color(0.49f, 0.66f, 0.48f), 0.25f, 0f), // sage (Standard body)
+            ("TP_Yellow",   new Color(0.90f, 0.73f, 0.38f), 0.25f, 0f), // warm ochre (Balcony body)
+            ("TP_Orange",   new Color(0.84f, 0.52f, 0.35f), 0.25f, 0f), // muted terracotta (Balcony_2)
+            ("TP_Blue",     new Color(0.44f, 0.57f, 0.70f), 0.25f, 0f), // dusty slate blue (Premium body)
+            ("TP_White",    new Color(0.94f, 0.93f, 0.88f), 0.30f, 0f), // warm cream (frames)
+            ("TP_Glass",    new Color(0.28f, 0.56f, 0.95f), 0.96f, 0.40f), // bright glossy blue glass (windows)
+            ("TP_Wood",     new Color(0.51f, 0.37f, 0.26f), 0.20f, 0f), // walnut (balconies)
+            ("TP_Marble",   new Color(0.88f, 0.87f, 0.83f), 0.55f, 0f), // warm off-white
+            ("TP_CanopyLB", new Color(0.71f, 0.57f, 0.42f), 0.20f, 0f), // tan canopies
+            ("TP_Brick",    new Color(0.71f, 0.46f, 0.39f), 0.15f, 0f), // soft clay (Base body)
+            ("TP_BrickLine",new Color(0.56f, 0.35f, 0.30f), 0.15f, 0f),
+            ("TP_Brick2",   new Color(0.81f, 0.71f, 0.56f), 0.15f, 0f), // sandstone (Base_2)
+            ("TP_Brick2L",  new Color(0.67f, 0.57f, 0.44f), 0.15f, 0f),
+            ("TP_DarkBrown",new Color(0.33f, 0.24f, 0.18f), 0.20f, 0f), // espresso door
+            ("TP_Steps",    new Color(0.62f, 0.60f, 0.57f), 0.30f, 0f), // warm stone
+            ("TP_Gold",     new Color(0.82f, 0.67f, 0.39f), 0.70f, 1f), // brass handles
+            ("TP_Ground",   new Color(0.90f, 0.90f, 0.88f), 0.30f, 0f),
         };
 
         // Body-colour fallback per type (used when a model slot's name doesn't match the palette).
-        static readonly Color ColStandard = new Color(0.32f, 0.78f, 0.38f);
-        static readonly Color ColBalcony = new Color(1.00f, 0.82f, 0.15f);
-        static readonly Color ColPremium = new Color(0.18f, 0.58f, 1.00f);
-        static readonly Color ColBrick = new Color(0.78f, 0.40f, 0.32f);
+        static readonly Color ColStandard = new Color(0.49f, 0.66f, 0.48f);
+        static readonly Color ColBalcony = new Color(0.90f, 0.73f, 0.38f);
+        static readonly Color ColPremium = new Color(0.44f, 0.57f, 0.70f);
+        static readonly Color ColBrick = new Color(0.71f, 0.46f, 0.39f);
+
+        // Three muted body-colour variants per floor TYPE, so the city isn't monotone. Purely cosmetic —
+        // Core stays three-way; the variant is picked per floor for variety (see VariantIndex).
+        static readonly Color[] StandardVariants =
+        {
+            new Color(0.56f, 0.75f, 0.54f), // sage green
+            new Color(0.88f, 0.61f, 0.50f), // terracotta
+            new Color(0.58f, 0.70f, 0.83f), // soft blue
+        };
+        static readonly Color[] BalconyVariants =
+        {
+            new Color(0.95f, 0.79f, 0.46f), // warm ochre
+            new Color(0.88f, 0.63f, 0.64f), // rose
+            new Color(0.50f, 0.74f, 0.68f), // teal
+        };
+        static readonly Color[] PremiumVariants =
+        {
+            new Color(0.50f, 0.65f, 0.81f), // slate blue
+            new Color(0.66f, 0.57f, 0.74f), // mauve
+            new Color(0.82f, 0.78f, 0.69f), // warm stone
+        };
+        // The model material slots that are the BODY (wall) — these get the per-block variant colour;
+        // frames/glass/trim keep the palette. (Base brick is excluded — bases pass no override.)
+        static readonly HashSet<string> BodyNames =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TP_Green", "TP_Yellow", "TP_Orange", "TP_Blue" };
 
         readonly Dictionary<string, GameObject> _models = new Dictionary<string, GameObject>();
         readonly Dictionary<string, Material> _palette = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase);
         Shader _lit;
         Material _matStandard, _matBalcony, _matPremium, _matBrick;
+        Material[] _standardBodies, _balconyBodies, _premiumBodies;
 
         void Awake()
         {
@@ -71,12 +98,19 @@ namespace Towerpolis.Game.Gameplay
             if (_lit == null) _lit = Shader.Find("Standard");
 
             foreach (var p in PaletteSpec)
-                _palette[p.name] = MakeMaterial(p.color, p.smooth, p.metal);
+            {
+                float emis = string.Equals(p.name, "TP_Glass", StringComparison.OrdinalIgnoreCase) ? 0.5f : 0f;
+                _palette[p.name] = MakeMaterial(p.color, p.smooth, p.metal, emis);
+            }
 
             _matStandard = MakeMaterial(ColStandard);
             _matBalcony = MakeMaterial(ColBalcony);
             _matPremium = MakeMaterial(ColPremium);
             _matBrick = MakeMaterial(ColBrick);
+
+            _standardBodies = MakeBodies(StandardVariants);
+            _balconyBodies = MakeBodies(BalconyVariants);
+            _premiumBodies = MakeBodies(PremiumVariants);
 
             foreach (string n in ModelNames)
             {
@@ -86,12 +120,16 @@ namespace Towerpolis.Game.Gameplay
         }
 
         public Transform CreateBlock(FloorType type, float blockWidth, string label)
-            => Build(label, ModelName(type, label), blockWidth, MaterialFor(type), colliderOn: false);
+        {
+            Material body = BodyVariant(type, label); // one of 3 colours for this type → varied city
+            return Build(label, ModelName(type, label), blockWidth, body, colliderOn: false, body);
+        }
 
         public Transform CreateBase(float blockWidth)
-            => Build("Base", "Base_Ground", blockWidth, _matBrick, colliderOn: true);
+            => Build("Base", "Base_Ground", blockWidth, _matBrick, colliderOn: true, bodyOverride: null);
 
-        Transform Build(string label, string modelName, float blockWidth, Material bodyFallback, bool colliderOn)
+        Transform Build(string label, string modelName, float blockWidth, Material bodyFallback, bool colliderOn,
+            Material bodyOverride)
         {
             var root = new GameObject(label);
             var mesh = new GameObject("Mesh");
@@ -112,7 +150,7 @@ namespace Towerpolis.Game.Gameplay
                 model.transform.localRotation = Quaternion.Euler(0f, modelFacingYaw, 0f);
                 model.transform.localPosition = Vector3.zero;
                 FitToGrid(model, floorHeight, mesh.transform);
-                Recolor(model, bodyFallback);
+                Recolor(model, bodyFallback, bodyOverride);
             }
             else
             {
@@ -132,14 +170,19 @@ namespace Towerpolis.Game.Gameplay
         /// <summary>Repaint each material slot from the authored palette (matched by the imported slot
         /// name, e.g. <c>TP_Green</c>). Unmatched slots get the solid body colour, so a house is never
         /// left white even if the FBX imported with a single default material.</summary>
-        void Recolor(GameObject model, Material bodyFallback)
+        void Recolor(GameObject model, Material bodyFallback, Material bodyOverride)
         {
             foreach (var r in model.GetComponentsInChildren<MeshRenderer>())
             {
                 var src = r.sharedMaterials;
                 var dst = new Material[src.Length];
                 for (int i = 0; i < src.Length; i++)
-                    dst[i] = PaletteFor(src[i] != null ? src[i].name : null) ?? bodyFallback;
+                {
+                    string name = src[i] != null ? src[i].name : null;
+                    dst[i] = bodyOverride != null && name != null && BodyNames.Contains(name)
+                        ? bodyOverride                                   // the wall → this block's variant colour
+                        : PaletteFor(name) ?? bodyFallback;              // frames/glass/trim → palette
+                }
                 r.sharedMaterials = dst;
             }
         }
@@ -193,14 +236,47 @@ namespace Towerpolis.Game.Gameplay
             if (col != null) col.enabled = on;
         }
 
-        Material MakeMaterial(Color color, float smoothness = 0.25f, float metallic = 0f)
+        Material MakeMaterial(Color color, float smoothness = 0.25f, float metallic = 0f, float emission = 0f)
         {
             var mat = new Material(_lit) { color = color };
             if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", smoothness);
             if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", smoothness);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", metallic);
+            if (emission > 0f)
+            {
+                mat.EnableKeyword("_EMISSION"); // glass glows a touch so it reads bright and catches bloom
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", color * emission);
+            }
             return mat;
+        }
+
+        Material[] MakeBodies(Color[] colors)
+        {
+            var mats = new Material[colors.Length];
+            for (int i = 0; i < colors.Length; i++) mats[i] = MakeMaterial(colors[i]);
+            return mats;
+        }
+
+        // The variant body material for this floor (one of 3 per type), picked deterministically from the
+        // floor number so the city looks varied but is reproducible.
+        Material BodyVariant(FloorType type, string label)
+        {
+            Material[] set = type switch
+            {
+                FloorType.Balcony => _balconyBodies,
+                FloorType.Premium => _premiumBodies,
+                _ => _standardBodies,
+            };
+            return set[VariantIndex(label, set.Length)];
+        }
+
+        static int VariantIndex(string label, int count)
+        {
+            int n = FloorNumber(label);
+            int h = (n * 2654435) ^ (n << 3) ^ 0x5bd1e995; // cheap hash → looks shuffled, not a 1-2-3 cycle
+            return ((h % count) + count) % count;
         }
 
         // Cosmetic mesh variant chosen in the Unity layer (Core stays three-way — spec §1.5). Balcony floors
@@ -213,10 +289,12 @@ namespace Towerpolis.Game.Gameplay
             _ => "Floor_Standard",
         };
 
-        static bool FloorIsEven(string label)
+        static bool FloorIsEven(string label) => (FloorNumber(label) & 1) == 0;
+
+        static int FloorNumber(string label)
         {
             int us = label.LastIndexOf('_');
-            return us >= 0 && int.TryParse(label.Substring(us + 1), out int n) && (n & 1) == 0;
+            return us >= 0 && int.TryParse(label.Substring(us + 1), out int n) ? n : 0;
         }
 
         Material MaterialFor(FloorType type) => type switch

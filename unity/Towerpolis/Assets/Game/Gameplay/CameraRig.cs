@@ -10,10 +10,23 @@ namespace Towerpolis.Game.Gameplay
     {
         [SerializeField] Camera cam;
 
+        [Header("Shake")]
+        [Tooltip("World-units of camera offset at shake magnitude 1.")]
+        [SerializeField] float shakeMaxOffset = 0.5f;
+        [Tooltip("How fast a shake decays (magnitude/second).")]
+        [SerializeField] float shakeDecay = 2.5f;
+        [Tooltip("Shake wobble frequency.")]
+        [SerializeField] float shakeFrequency = 26f;
+
         GameTuning _tuning;
         TowerController _tower;
         Vector3 _look;
         Vector3 _lookVel;
+        float _shake;
+
+        /// <summary>Kick a transient camera shake. <paramref name="magnitude"/> ~0.2 = small punch,
+        /// ~0.8 = a heavy collapse. Takes the strongest of any overlapping kicks.</summary>
+        public void Shake(float magnitude) => _shake = Mathf.Max(_shake, magnitude);
 
         public void Init(GameTuning tuning, TowerController tower)
         {
@@ -43,6 +56,16 @@ namespace Towerpolis.Game.Gameplay
             Vector3 offset = new Vector3(0f, dist * Mathf.Sin(rad), -dist * Mathf.Cos(rad));
             cam.transform.position = _look + offset;
             cam.transform.rotation = Quaternion.LookRotation(_look - cam.transform.position, Vector3.up);
+
+            // Transient shake applied on top of the framed position (smooth Perlin, decays to 0).
+            if (_shake > 0.0001f)
+            {
+                float amp = _shake * shakeMaxOffset;
+                float sx = (Mathf.PerlinNoise(Time.time * shakeFrequency, 0.37f) - 0.5f) * 2f;
+                float sy = (Mathf.PerlinNoise(0.91f, Time.time * shakeFrequency) - 0.5f) * 2f;
+                cam.transform.position += cam.transform.right * (sx * amp) + cam.transform.up * (sy * amp);
+                _shake = Mathf.MoveTowards(_shake, 0f, shakeDecay * Time.deltaTime);
+            }
         }
     }
 }

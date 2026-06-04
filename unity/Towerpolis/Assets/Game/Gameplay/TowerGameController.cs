@@ -41,6 +41,7 @@ namespace Towerpolis.Game.Gameplay
         public int Score => _run != null ? _run.RunScore : 0;
         public int Floors => _run != null ? _run.FloorCount : 0;
         public int Strikes => _run != null ? _run.MissStrikes : 0;
+        public int PerfectChain => _run != null ? _run.PerfectChain : 0; // GameAudio climbs a scale with it
         public bool IsOver => _state == State.Over;
 
         // HUD events — the HUDController subscribes to these.
@@ -48,12 +49,29 @@ namespace Towerpolis.Game.Gameplay
         public event Action<int> FloorAdded;      // new floor count
         public event Action<int> StrikeAdded;     // strike number reached (1 or 2)
         public event Action<Vector3> PerfectHit;  // world position for the "PERFECT!" pop
+        public event Action<Vector3, bool> FloorPlacedAt; // world base pos + isPerfect — for VFX (dust/confetti)
         public event Action RunToppled;
         public event Action RunStarted;
 
         float _overSince;
 
-        void Start() => NewRun();
+        void Start()
+        {
+            EnsureJuice();
+            NewRun();
+        }
+
+        // Bring up the juice (audio + VFX) with zero scene wiring; if one was added manually (to tune it),
+        // keep that and don't add a second.
+        void EnsureJuice()
+        {
+            if (FindFirstObjectByType<Towerpolis.Game.Audio.GameAudio>() == null)
+                gameObject.AddComponent<Towerpolis.Game.Audio.GameAudio>();
+            if (FindFirstObjectByType<Towerpolis.Game.Vfx.GameVfx>() == null)
+                gameObject.AddComponent<Towerpolis.Game.Vfx.GameVfx>();
+            if (FindFirstObjectByType<Towerpolis.Game.Rendering.LookDev>() == null)
+                gameObject.AddComponent<Towerpolis.Game.Rendering.LookDev>();
+        }
 
         public void NewRun()
         {
@@ -88,7 +106,7 @@ namespace Towerpolis.Game.Gameplay
             int nextFloor = _run.FloorCount + 1;
             _pendingBlock = spawner.CreateBlock(_pendingType, tower.TopWidth, "Floor_" + nextFloor);
             float period = tuning.SwingPeriod(nextFloor);
-            crane.BeginSwing(_pendingBlock, tower, tuning.craneHeight, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength, tuning.craneTiltFactor);
+            crane.BeginSwing(_pendingBlock, tower, tuning.craneHeight, tuning.swingHalfArc, period, _swingPhase, tuning.craneCableLength, tuning.craneTiltFactor, tuning.floorHeight);
             _state = State.Swinging;
         }
 
@@ -147,7 +165,11 @@ namespace Towerpolis.Game.Gameplay
             _falling = null;
 
             ScoreChanged?.Invoke(Score);
-            if (outcome.FloorPlaced) FloorAdded?.Invoke(Floors);
+            if (outcome.FloorPlaced)
+            {
+                FloorAdded?.Invoke(Floors);
+                FloorPlacedAt?.Invoke(placedPos, outcome.Grade == Grade.Perfect);
+            }
             if (outcome.Grade == Grade.Perfect) PerfectHit?.Invoke(placedPos + Vector3.up * tuning.floorHeight);
             if (outcome.Grade == Grade.Miss) StrikeAdded?.Invoke(Strikes);
 
