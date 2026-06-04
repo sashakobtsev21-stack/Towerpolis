@@ -29,14 +29,15 @@ namespace Towerpolis.Game.Meta
             public bool Twinkle;
             public Color Tint;                     // rgb + peak alpha
             public float Depth;                    // local z (farther = more behind)
+            public bool Placeholder;               // false = reserved drop-in slot (empty until you add a PNG)
         }
 
         static readonly Def[] Defs =
         {
-            // name      kind          in    inB   outA  outB   n   szmin szmax aspect dmin dmax ymin  ymax  xspr  twk  tint(rgba)                              depth
-            D("city",    Kind.City,    0f,   0f,   0.16f,0.30f, 1,  34f,  34f,  4.2f,  0f,  0f,  -22f, -22f, 0f,  false, new Color(0.10f,0.12f,0.18f,0.95f), 3.0f),
+            // name      kind          in    inB   outA  outB   n   szmin szmax aspect dmin dmax ymin  ymax  xspr  twk  tint(rgba)                              depth  [placeholder]
+            D("city",    Kind.City,    0f,   0f,   0.16f,0.30f, 1,  34f,  34f,  4.2f,  0f,  0f,  -22f, -22f, 0f,  false, new Color(0.10f,0.12f,0.18f,0.95f), 3.0f, false),
             D("cloud",   Kind.Blob,    0.04f,0.18f,0.42f,0.58f, 8,  11f,  20f,  1.6f,  1.0f,2.6f,-10f, 16f, 22f, false, new Color(1f,1f,1f,0.55f),          1.6f),
-            D("balloon", Kind.Blob,    0.06f,0.18f,0.34f,0.44f, 5,  2.4f, 3.6f, 0.85f, 0.4f,1.0f,-6f,  16f, 20f, false, new Color(1f,0.85f,0.55f,0.85f),    1.3f),
+            D("balloon", Kind.Blob,    0.06f,0.18f,0.34f,0.44f, 5,  2.4f, 3.6f, 0.85f, 0.4f,1.0f,-6f,  16f, 20f, false, new Color(1f,0.85f,0.55f,0.85f),    1.3f, false),
             D("plane",   Kind.Blob,    0.40f,0.50f,0.66f,0.76f, 3,  1.8f, 2.6f, 2.2f,  3.2f,5.0f,-2f,  18f, 22f, false, new Color(0.85f,0.88f,0.95f,0.9f),  1.1f),
             D("aurora",  Kind.Aurora,  0.58f,0.72f,0.90f,0.98f, 1,  46f,  46f,  3.6f,  0.0f,0.0f, 14f, 14f, 0f,  false, new Color(0.35f,0.95f,0.6f,0.22f),  2.6f),
             D("star",    Kind.Star,    0.48f,0.62f,1.2f, 1.3f,  52, 0.5f, 1.3f, 1.0f,  0f,  0f,  -28f, 28f, 24f, true,  new Color(1f,1f,0.97f,1f),          3.2f),
@@ -45,12 +46,12 @@ namespace Towerpolis.Game.Meta
 
         static Def D(string res, Kind kind, float inA, float inB, float outA, float outB, int count,
             float szMin, float szMax, float aspect, float dMin, float dMax, float yMin, float yMax, float xSpr,
-            bool twk, Color tint, float depth) => new Def
+            bool twk, Color tint, float depth, bool placeholder = true) => new Def
         {
             Res = res, Kind = kind, InA = inA, InB = inB, OutA = outA, OutB = outB, Count = count,
             SizeMin = szMin, SizeMax = szMax, Aspect = aspect <= 0f ? 1f : aspect,
             DriftMin = dMin, DriftMax = dMax, YMin = yMin, YMax = yMax,
-            XSpread = xSpr, Twinkle = twk, Tint = tint, Depth = depth,
+            XSpread = xSpr, Twinkle = twk, Tint = tint, Depth = depth, Placeholder = placeholder,
         };
 
         sealed class Runtime
@@ -117,10 +118,17 @@ namespace Towerpolis.Game.Meta
 
         Runtime BuildLayer(Def def, ref int seed)
         {
+            Texture2D tex = Resources.Load<Texture2D>("Background/" + def.Res);
+            if (tex == null)
+            {
+                if (!def.Placeholder) return null; // reserved slot — shows only once you drop in your own PNG
+                tex = TextureFor(def.Kind);
+            }
+
             var L = new Runtime
             {
                 Def = def,
-                Mat = MakeMaterial(def),
+                Mat = MakeMaterial(tex, def),
                 Items = new Transform[def.Count],
                 Speed = new float[def.Count],
                 Phase = new float[def.Count],
@@ -157,10 +165,8 @@ namespace Towerpolis.Game.Meta
             return t;
         }
 
-        Material MakeMaterial(Def def)
+        Material MakeMaterial(Texture2D tex, Def def)
         {
-            Texture2D tex = Resources.Load<Texture2D>("Background/" + def.Res);
-            if (tex == null) tex = TextureFor(def.Kind);
             Shader sh = Shader.Find("Sprites/Default");
             if (sh == null) sh = Shader.Find("Universal Render Pipeline/Unlit");
             return new Material(sh) { mainTexture = tex, color = def.Tint };
