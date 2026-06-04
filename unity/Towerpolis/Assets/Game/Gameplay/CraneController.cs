@@ -108,8 +108,9 @@ namespace Towerpolis.Game.Gameplay
         {
             if (_rope == null)
             {
+                // NOT parented to the crane: the crane may be a child of the swaying tower, and the rope
+                // (world-space) + hook must stay locked to each other in world space, not be dragged apart.
                 var ropeGo = new GameObject("Rope");
-                ropeGo.transform.SetParent(transform, false);
                 _rope = ropeGo.AddComponent<LineRenderer>();
                 _rope.useWorldSpace = true;
                 _rope.positionCount = 2;
@@ -129,8 +130,7 @@ namespace Towerpolis.Game.Gameplay
         // block top; a rounded tip caps the barb.
         Transform BuildHook(Material mat)
         {
-            var root = new GameObject("Hook").transform;
-            root.SetParent(transform, false);
+            var root = new GameObject("Hook").transform; // NOT parented (world-space, see EnsureVisuals)
 
             Part(root, PrimitiveType.Cube, new Vector3(0f, 0.48f, 0f), new Vector3(0.20f, 0.12f, 0.16f), mat); // pulley
             Part(root, PrimitiveType.Sphere, new Vector3(0f, 0.42f, 0f), Vector3.one * 0.10f, mat);            // eye
