@@ -13,7 +13,7 @@ namespace Towerpolis.Game.Gameplay
     {
         [Header("Hook & rope (visual)")]
         [SerializeField] float ropeWidth = 0.06f;
-        [SerializeField] Color ropeColor = new Color(0.16f, 0.16f, 0.18f);
+        [SerializeField] Color cableColor = new Color(0.45f, 0.33f, 0.20f); // brown rope
         [SerializeField] Color hookColor = new Color(0.24f, 0.24f, 0.27f);
 
         Transform _block;
@@ -84,17 +84,20 @@ namespace Towerpolis.Game.Gameplay
             UpdateRope(new Vector3(centerX, pivotY, 0f));
         }
 
+        const float HookTopOffset = 0.5f; // height of the hook (cable meets it at the pulley on top)
+
         void UpdateRope(Vector3 pivot)
         {
             if (_rope == null || _block == null) return;
             Vector3 attach = _block.position + _block.up * _attachHeight; // top-centre of the swinging block
+            Vector3 dir = pivot - attach;
+            Vector3 hookUp = dir.sqrMagnitude > 1e-6f ? dir.normalized : Vector3.up;
             _rope.SetPosition(0, pivot);
-            _rope.SetPosition(1, attach);
+            _rope.SetPosition(1, attach + hookUp * HookTopOffset); // cable ends at the pulley atop the hook
             if (_hook != null)
             {
                 _hook.position = attach;
-                Vector3 dir = pivot - attach;
-                if (dir.sqrMagnitude > 1e-6f) _hook.up = dir.normalized; // hook shank points up along the rope
+                _hook.up = hookUp; // the hook hangs along the cable, curl sitting on the block top
             }
         }
 
@@ -112,20 +115,71 @@ namespace Towerpolis.Game.Gameplay
                 _rope.textureMode = LineTextureMode.Stretch;
                 _rope.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 _rope.receiveShadows = false;
-                _rope.material = UnlitMaterial(ropeColor);
-                _rope.startColor = _rope.endColor = ropeColor;
+                _rope.material = UnlitMaterial(cableColor);
+                _rope.startColor = _rope.endColor = cableColor;
             }
-            if (_hook == null)
+            if (_hook == null) _hook = BuildHook(LitMetal(hookColor));
+        }
+
+        // A recognizable crane hook (local +Y points up the cable): a pulley block on top, a straight
+        // shank, and a smooth curved "J" zev built from connected tube segments. The curl sits on the
+        // block top; a rounded tip caps the barb.
+        Transform BuildHook(Material mat)
+        {
+            var root = new GameObject("Hook").transform;
+            root.SetParent(transform, false);
+
+            Part(root, PrimitiveType.Cube, new Vector3(0f, 0.48f, 0f), new Vector3(0.20f, 0.12f, 0.16f), mat); // pulley
+            Part(root, PrimitiveType.Sphere, new Vector3(0f, 0.42f, 0f), Vector3.one * 0.10f, mat);            // eye
+
+            var center = new Vector3(0f, 0.18f, 0f);
+            const float r = 0.15f;
+            Vector3 top = center + Arc(90f, r);
+            Bar(root, new Vector3(0f, 0.42f, 0f), top, 0.07f, mat); // shank down to the curl
+
+            const int n = 10;
+            Vector3 prev = top;
+            for (int i = 1; i < n; i++)
             {
-                var hookGo = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                hookGo.name = "Hook";
-                var col = hookGo.GetComponent<Collider>();
-                if (col != null) Destroy(col);
-                hookGo.transform.SetParent(transform, false);
-                hookGo.transform.localScale = new Vector3(0.16f, 0.16f, 0.16f); // small clamp on the block top
-                hookGo.GetComponent<MeshRenderer>().sharedMaterial = LitMetal(hookColor);
-                _hook = hookGo.transform;
+                Vector3 cur = center + Arc(Mathf.Lerp(90f, -150f, i / (float)(n - 1)), r); // ~240° J curl
+                Bar(root, prev, cur, 0.07f, mat);
+                prev = cur;
             }
+            Part(root, PrimitiveType.Sphere, prev, Vector3.one * 0.075f, mat); // rounded barb tip
+            return root;
+        }
+
+        static Vector3 Arc(float degrees, float radius)
+        {
+            float a = degrees * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(a) * radius, Mathf.Sin(a) * radius, 0f);
+        }
+
+        void Bar(Transform parent, Vector3 a, Vector3 b, float thickness, Material mat)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            var t = go.transform;
+            t.SetParent(parent, false);
+            Vector3 dir = b - a;
+            float len = dir.magnitude;
+            t.localPosition = (a + b) * 0.5f;
+            if (len > 1e-5f) t.localRotation = Quaternion.FromToRotation(Vector3.up, dir / len);
+            t.localScale = new Vector3(thickness, Mathf.Max(0.001f, len * 0.5f), thickness); // cylinder is 2 tall
+            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+        }
+
+        void Part(Transform parent, PrimitiveType type, Vector3 localPos, Vector3 localScale, Material mat)
+        {
+            var go = GameObject.CreatePrimitive(type);
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            var t = go.transform;
+            t.SetParent(parent, false);
+            t.localPosition = localPos;
+            t.localScale = localScale;
+            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
         void SetVisible(bool on)

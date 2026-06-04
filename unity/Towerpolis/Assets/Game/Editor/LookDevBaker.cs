@@ -45,9 +45,10 @@ namespace Towerpolis.Game.Editor
             var sky = AssetDatabase.LoadAssetAtPath<Material>(SkyPath);
             if (sky == null) { sky = new Material(shader); AssetDatabase.CreateAsset(sky, SkyPath); }
             else sky.shader = shader;
-            sky.SetColor("_TopColor", new Color(0.27f, 0.50f, 0.85f));
-            sky.SetColor("_HorizonColor", new Color(0.86f, 0.91f, 0.97f));
-            sky.SetColor("_BottomColor", new Color(0.55f, 0.56f, 0.60f));
+            sky.SetColor("_TopColor", new Color(0.20f, 0.46f, 0.83f));
+            sky.SetColor("_HorizonColor", new Color(0.68f, 0.85f, 0.97f));
+            sky.SetColor("_BottomColor", new Color(0.52f, 0.68f, 0.86f));
+            if (sky.HasProperty("_Exponent")) sky.SetFloat("_Exponent", 0.95f);
             EditorUtility.SetDirty(sky);
 
             RenderSettings.skybox = sky;

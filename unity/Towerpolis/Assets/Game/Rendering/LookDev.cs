@@ -16,9 +16,9 @@ namespace Towerpolis.Game.Rendering
     public sealed class LookDev : MonoBehaviour
     {
         [Header("Sky / ambient")]
-        [SerializeField] Color skyTop = new Color(0.27f, 0.50f, 0.85f);
-        [SerializeField] Color skyHorizon = new Color(0.86f, 0.91f, 0.97f);
-        [SerializeField] Color skyBottom = new Color(0.55f, 0.56f, 0.60f);
+        [SerializeField] Color skyTop = new Color(0.20f, 0.46f, 0.83f);
+        [SerializeField] Color skyHorizon = new Color(0.68f, 0.85f, 0.97f);
+        [SerializeField] Color skyBottom = new Color(0.52f, 0.68f, 0.86f);
         [SerializeField] Color ambientSky = new Color(0.56f, 0.66f, 0.82f);
         [SerializeField] Color ambientEquator = new Color(0.70f, 0.71f, 0.72f);
         [SerializeField] Color ambientGround = new Color(0.42f, 0.40f, 0.37f);

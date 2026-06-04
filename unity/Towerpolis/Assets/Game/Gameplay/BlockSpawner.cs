@@ -41,12 +41,12 @@ namespace Towerpolis.Game.Gameplay
             ("TP_Orange",   new Color(0.84f, 0.52f, 0.35f), 0.25f, 0f), // muted terracotta (Balcony_2)
             ("TP_Blue",     new Color(0.44f, 0.57f, 0.70f), 0.25f, 0f), // dusty slate blue (Premium body)
             ("TP_White",    new Color(0.94f, 0.93f, 0.88f), 0.30f, 0f), // warm cream (frames)
-            ("TP_Glass",    new Color(0.28f, 0.56f, 0.95f), 0.96f, 0.40f), // bright glossy blue glass (windows)
-            ("TP_Wood",     new Color(0.51f, 0.37f, 0.26f), 0.20f, 0f), // walnut (balconies)
-            ("TP_Marble",   new Color(0.88f, 0.87f, 0.83f), 0.55f, 0f), // warm off-white
-            ("TP_CanopyLB", new Color(0.71f, 0.57f, 0.42f), 0.20f, 0f), // tan canopies
-            ("TP_Brick",    new Color(0.71f, 0.46f, 0.39f), 0.15f, 0f), // soft clay (Base body)
-            ("TP_BrickLine",new Color(0.56f, 0.35f, 0.30f), 0.15f, 0f),
+            ("TP_Glass",    new Color(0.46f, 0.66f, 0.86f), 0.92f, 0.45f), // soft blue glass, shine via gloss/reflection
+            ("TP_Wood",     new Color(0.95f, 0.94f, 0.90f), 0.25f, 0f), // white (Balcony-block balcony rail)
+            ("TP_Marble",   new Color(0.95f, 0.95f, 0.93f), 0.55f, 0f), // white (premium balcony + canopies)
+            ("TP_CanopyLB", new Color(0.95f, 0.94f, 0.90f), 0.25f, 0f), // white canopies over windows/doors
+            ("TP_Brick",    new Color(0.96f, 0.96f, 0.98f), 0.10f, 0f), // gray brick base (brick texture tints this)
+            ("TP_BrickLine",new Color(0.42f, 0.42f, 0.46f), 0.10f, 0f), // dark mortar lines
             ("TP_Brick2",   new Color(0.81f, 0.71f, 0.56f), 0.15f, 0f), // sandstone (Base_2)
             ("TP_Brick2L",  new Color(0.67f, 0.57f, 0.44f), 0.15f, 0f),
             ("TP_DarkBrown",new Color(0.33f, 0.24f, 0.18f), 0.20f, 0f), // espresso door
@@ -65,21 +65,21 @@ namespace Towerpolis.Game.Gameplay
         // Core stays three-way; the variant is picked per floor for variety (see VariantIndex).
         static readonly Color[] StandardVariants =
         {
-            new Color(0.56f, 0.75f, 0.54f), // sage green
-            new Color(0.88f, 0.61f, 0.50f), // terracotta
-            new Color(0.58f, 0.70f, 0.83f), // soft blue
+            new Color(0.46f, 0.88f, 0.50f), // fresh green
+            new Color(0.40f, 0.74f, 1.00f), // sky blue
+            new Color(0.20f, 0.86f, 0.80f), // teal
         };
         static readonly Color[] BalconyVariants =
         {
-            new Color(0.95f, 0.79f, 0.46f), // warm ochre
-            new Color(0.88f, 0.63f, 0.64f), // rose
-            new Color(0.50f, 0.74f, 0.68f), // teal
+            new Color(1.00f, 0.86f, 0.30f), // sunny yellow
+            new Color(1.00f, 0.40f, 0.46f), // cherry red
+            new Color(0.66f, 0.92f, 0.36f), // lime
         };
         static readonly Color[] PremiumVariants =
         {
-            new Color(0.50f, 0.65f, 0.81f), // slate blue
-            new Color(0.66f, 0.57f, 0.74f), // mauve
-            new Color(0.82f, 0.78f, 0.69f), // warm stone
+            new Color(0.34f, 0.60f, 1.00f), // royal blue
+            new Color(0.70f, 0.50f, 0.98f), // violet
+            new Color(1.00f, 0.84f, 0.36f), // gold
         };
         // The model material slots that are the BODY (wall) — these get the per-block variant colour;
         // frames/glass/trim keep the palette. (Base brick is excluded — bases pass no override.)
@@ -91,26 +91,47 @@ namespace Towerpolis.Game.Gameplay
         Shader _lit;
         Material _matStandard, _matBalcony, _matPremium, _matBrick;
         Material[] _standardBodies, _balconyBodies, _premiumBodies;
+        Texture2D _wallTex, _brickTex;
+        Dictionary<string, Material> _baseOverrides;
 
         void Awake()
         {
             _lit = Shader.Find("Universal Render Pipeline/Lit");
             if (_lit == null) _lit = Shader.Find("Standard");
 
+            _wallTex = WallTexture();
+            _brickTex = BrickTexture();
+
             foreach (var p in PaletteSpec)
             {
-                float emis = string.Equals(p.name, "TP_Glass", StringComparison.OrdinalIgnoreCase) ? 0.5f : 0f;
+                float emis = string.Equals(p.name, "TP_Glass", StringComparison.OrdinalIgnoreCase) ? 0.12f : 0f;
                 _palette[p.name] = MakeMaterial(p.color, p.smooth, p.metal, emis);
             }
+
+            // Gray brick base: one textured material shared by the base body, cornice and fallback.
+            if (_palette.TryGetValue("TP_Brick", out Material brick))
+            {
+                brick.mainTexture = _brickTex;
+                brick.mainTextureScale = new Vector2(3f, 3f); // finer brick courses (3× smaller bricks)
+                _matBrick = brick;
+            }
+            else _matBrick = MakeMaterial(ColBrick);
 
             _matStandard = MakeMaterial(ColStandard);
             _matBalcony = MakeMaterial(ColBalcony);
             _matPremium = MakeMaterial(ColPremium);
-            _matBrick = MakeMaterial(ColBrick);
 
             _standardBodies = MakeBodies(StandardVariants);
             _balconyBodies = MakeBodies(BalconyVariants);
             _premiumBodies = MakeBodies(PremiumVariants);
+
+            // Base-only slot recolours: white cornice/frame/steps → brick (no flicker); the dark-brown
+            // door + its awning → white (so the base canopy matches the white canopies elsewhere).
+            _baseOverrides = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "TP_White", _matBrick },
+                { "TP_DarkBrown", _palette["TP_White"] },
+            };
 
             foreach (string n in ModelNames)
             {
@@ -122,14 +143,14 @@ namespace Towerpolis.Game.Gameplay
         public Transform CreateBlock(FloorType type, float blockWidth, string label)
         {
             Material body = BodyVariant(type, label); // one of 3 colours for this type → varied city
-            return Build(label, ModelName(type, label), blockWidth, body, colliderOn: false, body);
+            return Build(label, ModelName(type, label), blockWidth, body, colliderOn: false, body, slotOverrides: null);
         }
 
         public Transform CreateBase(float blockWidth)
-            => Build("Base", "Base_Ground", blockWidth, _matBrick, colliderOn: true, bodyOverride: null);
+            => Build("Base", "Base_Ground", blockWidth, _matBrick, colliderOn: true, bodyOverride: null, slotOverrides: _baseOverrides);
 
         Transform Build(string label, string modelName, float blockWidth, Material bodyFallback, bool colliderOn,
-            Material bodyOverride)
+            Material bodyOverride, IDictionary<string, Material> slotOverrides)
         {
             var root = new GameObject(label);
             var mesh = new GameObject("Mesh");
@@ -150,7 +171,7 @@ namespace Towerpolis.Game.Gameplay
                 model.transform.localRotation = Quaternion.Euler(0f, modelFacingYaw, 0f);
                 model.transform.localPosition = Vector3.zero;
                 FitToGrid(model, floorHeight, mesh.transform);
-                Recolor(model, bodyFallback, bodyOverride);
+                Recolor(model, bodyFallback, bodyOverride, slotOverrides);
             }
             else
             {
@@ -170,7 +191,7 @@ namespace Towerpolis.Game.Gameplay
         /// <summary>Repaint each material slot from the authored palette (matched by the imported slot
         /// name, e.g. <c>TP_Green</c>). Unmatched slots get the solid body colour, so a house is never
         /// left white even if the FBX imported with a single default material.</summary>
-        void Recolor(GameObject model, Material bodyFallback, Material bodyOverride)
+        void Recolor(GameObject model, Material bodyFallback, Material bodyOverride, IDictionary<string, Material> slotOverrides)
         {
             foreach (var r in model.GetComponentsInChildren<MeshRenderer>())
             {
@@ -179,9 +200,12 @@ namespace Towerpolis.Game.Gameplay
                 for (int i = 0; i < src.Length; i++)
                 {
                     string name = src[i] != null ? src[i].name : null;
-                    dst[i] = bodyOverride != null && name != null && BodyNames.Contains(name)
-                        ? bodyOverride                                   // the wall → this block's variant colour
-                        : PaletteFor(name) ?? bodyFallback;              // frames/glass/trim → palette
+                    if (bodyOverride != null && name != null && BodyNames.Contains(name))
+                        dst[i] = bodyOverride;                                   // the wall → this block's variant colour
+                    else if (name != null && slotOverrides != null && slotOverrides.TryGetValue(name, out Material ov))
+                        dst[i] = ov;                                             // base-only slot recolours
+                    else
+                        dst[i] = PaletteFor(name) ?? bodyFallback;              // frames/glass/trim → palette
                 }
                 r.sharedMaterials = dst;
             }
@@ -255,8 +279,68 @@ namespace Towerpolis.Game.Gameplay
         Material[] MakeBodies(Color[] colors)
         {
             var mats = new Material[colors.Length];
-            for (int i = 0; i < colors.Length; i++) mats[i] = MakeMaterial(colors[i]);
+            for (int i = 0; i < colors.Length; i++)
+            {
+                mats[i] = MakeMaterial(colors[i]);
+                mats[i].mainTexture = _wallTex; // subtle wall fabric so the bright colour isn't dead-flat
+            }
             return mats;
+        }
+
+        // Subtle tileable value-noise so flat walls get a little life (kept near-white so colours stay bright).
+        Texture2D WallTexture()
+        {
+            const int size = 128, g = 8;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat };
+            var rng = new System.Random(12345);
+            var grid = new float[g, g];
+            for (int y = 0; y < g; y++)
+                for (int x = 0; x < g; x++) grid[y, x] = (float)rng.NextDouble();
+
+            var px = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float fx = (float)x / size * g, fy = (float)y / size * g;
+                    int x0 = (int)fx % g, y0 = (int)fy % g, x1 = (x0 + 1) % g, y1 = (y0 + 1) % g;
+                    float tx = fx - (int)fx, ty = fy - (int)fy;
+                    float n = Mathf.Lerp(Mathf.Lerp(grid[y0, x0], grid[y0, x1], tx),
+                                         Mathf.Lerp(grid[y1, x0], grid[y1, x1], tx), ty);
+                    byte b = (byte)((0.87f + 0.13f * n) * 255f);
+                    px[y * size + x] = new Color32(b, b, b, 255);
+                }
+            tex.SetPixels32(px);
+            tex.Apply();
+            return tex;
+        }
+
+        // A tileable grayscale brick-course pattern for the base (tinted by the near-white base colour → gray brick).
+        Texture2D BrickTexture()
+        {
+            const int size = 128, rows = 8, cols = 4, mortar = 2;
+            int rowH = size / rows, brickW = size / cols;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat };
+            var px = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    int row = y / rowH;
+                    int bx = (x + (row % 2) * (brickW / 2)) % size;
+                    float v;
+                    if (y % rowH < mortar || bx % brickW < mortar)
+                        v = 0.42f; // mortar
+                    else
+                    {
+                        int col = bx / brickW;
+                        int h = ((row * 73856093) ^ (col * 19349663)) & 0x7fffffff;
+                        v = 0.66f + 0.10f * ((h % 1000) / 1000f); // per-brick value jitter
+                    }
+                    byte b = (byte)(v * 255f);
+                    px[y * size + x] = new Color32(b, b, b, 255);
+                }
+            tex.SetPixels32(px);
+            tex.Apply();
+            return tex;
         }
 
         // The variant body material for this floor (one of 3 per type), picked deterministically from the
