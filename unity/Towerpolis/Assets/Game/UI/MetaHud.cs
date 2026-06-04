@@ -736,9 +736,9 @@ namespace Towerpolis.Game.UI
         {
             Button btn = MakeButton(parent, "UpgradesButton", new Vector2(0f, 1f), new Vector2(TopBarX(2), -104f), new Vector2(TopBarW, 72f), Navy, out _);
             btn.onClick.AddListener(OpenUpgrades);
-            var label = NewText("Label", btn.transform, 25, FontStyles.Bold, TextAlignmentOptions.Center);
+            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "УЛУЧШЕНИЯ";
+            label.text = "БОНУСЫ"; // short label so it fits the narrow button (panel title stays "УЛУЧШЕНИЯ")
             Stretch(label.rectTransform);
         }
 
