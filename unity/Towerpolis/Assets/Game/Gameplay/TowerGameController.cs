@@ -42,6 +42,14 @@ namespace Towerpolis.Game.Gameplay
         FallingBlock _falling;
         float _settleTimer;
 
+        // Slow-Mo upgrade (Endless): one charge per run, refreshed on a Perfect. Holding past a small
+        // deadzone slows the swing for an aim window; the block drops on release.
+        const float SlowMoDeadzone = 0.10f; // hold longer than this → slow-mo engages (and spends the charge)
+        const float SlowMoWindow = 0.40f;   // how long the slowed window lasts before speed returns
+        bool _slowMoCharge;
+        bool _pressActive, _slowMoEngaged;
+        float _pressStart, _slowMoStart, _slowMoFactor = 1f;
+
         public int Score => _run != null ? _run.RunScore : 0;
         public int Floors => _run != null ? _run.FloorCount : 0;
         public int Strikes => _run != null ? _run.MissStrikes : 0;
@@ -112,6 +120,8 @@ namespace Towerpolis.Game.Gameplay
         {
             ClearTower();
             DiscardLooseBlock(); // drop any in-flight crane/falling block (e.g. switching districts mid-run)
+            _slowMoCharge = true;     // a fresh Slow-Mo charge each run
+            _pressActive = _slowMoEngaged = false;
 
             // Dress the run for the active district (block palette + sky) + the equipped cosmetic skins.
             string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
@@ -182,7 +192,7 @@ namespace Towerpolis.Game.Gameplay
             switch (_state)
             {
                 case State.Swinging:
-                    if (TapPressed()) DropBlock();
+                    HandleSwingInput();
                     break;
                 case State.Settling:
                     _settleTimer -= Time.deltaTime;
@@ -192,6 +202,65 @@ namespace Towerpolis.Game.Gameplay
                     if (Time.time - _overSince > 1.0f && TapPressed()) NewRun();
                     break;
             }
+        }
+
+        // Swing-phase input: a plain tap drops on press (snappy). When a Slow-Mo charge is available
+        // (Endless + upgrade owned), a HOLD instead slows the swing for an aim window and drops on release.
+        void HandleSwingInput()
+        {
+            if (InputGate.Suppress) { if (_pressActive) CancelHold(); return; } // a modal UI is open
+            Pointer p = Pointer.current;
+            if (p == null) return;
+
+            if (_pressActive)
+            {
+                float held = Time.time - _pressStart;
+                if (!_slowMoEngaged && held >= SlowMoDeadzone && SlowMoReady())
+                {
+                    _slowMoEngaged = true;
+                    _slowMoCharge = false;          // spend the charge
+                    _slowMoStart = Time.time;
+                }
+                if (_slowMoEngaged && crane != null)
+                    crane.SetTimeScale(Time.time - _slowMoStart < SlowMoWindow ? _slowMoFactor : 1f);
+
+                if (!p.press.isPressed) // released → drop
+                {
+                    if (crane != null) crane.SetTimeScale(1f);
+                    _pressActive = _slowMoEngaged = false;
+                    DropBlock();
+                }
+                return;
+            }
+
+            if (!p.press.wasPressedThisFrame) return;
+            var es = EventSystem.current;
+            if (es != null && es.IsPointerOverGameObject()) return; // tap landed on a UI button
+
+            if (SlowMoReady())
+            {
+                // Begin a hold: aim while pressed, drop on release. (Charge spends only past the deadzone.)
+                _pressActive = true;
+                _slowMoEngaged = false;
+                _pressStart = Time.time;
+                _slowMoFactor = MetaService.Instance != null ? MetaService.Instance.SlowMoFactor(false) : 1f;
+            }
+            else
+            {
+                DropBlock(); // normal tap-to-drop
+            }
+        }
+
+        void CancelHold()
+        {
+            if (crane != null) crane.SetTimeScale(1f);
+            _pressActive = _slowMoEngaged = false;
+        }
+
+        bool SlowMoReady()
+        {
+            if (!_slowMoCharge || Mode != RunMode.Endless || MetaService.Instance == null) return false;
+            return MetaService.Instance.SlowMoFactor(false) < 1f; // < 1 means the upgrade is owned
         }
 
         void DropBlock()
@@ -243,7 +312,11 @@ namespace Towerpolis.Game.Gameplay
                 FloorAdded?.Invoke(Floors);
                 FloorPlacedAt?.Invoke(placedPos, outcome.Grade == Grade.Perfect);
             }
-            if (outcome.Grade == Grade.Perfect) PerfectHit?.Invoke(placedPos + Vector3.up * tuning.floorHeight);
+            if (outcome.Grade == Grade.Perfect)
+            {
+                PerfectHit?.Invoke(placedPos + Vector3.up * tuning.floorHeight);
+                if (Mode == RunMode.Endless) _slowMoCharge = true; // Slow-Mo refreshes on a Perfect
+            }
             if (outcome.Grade == Grade.Miss) StrikeAdded?.Invoke(Strikes);
 
             if (outcome.Toppled)

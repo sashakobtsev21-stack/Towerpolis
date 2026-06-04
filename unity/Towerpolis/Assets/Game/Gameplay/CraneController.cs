@@ -27,6 +27,7 @@ namespace Towerpolis.Game.Gameplay
         float _tiltFactor;
         float _attachHeight;
         bool _swinging;
+        float _timeScale = 1f; // 1 = normal; the Slow-Mo upgrade drives this below 1 while the player holds
 
         LineRenderer _rope;
         Transform _hook;
@@ -50,6 +51,7 @@ namespace Towerpolis.Game.Gameplay
             _thetaMax = Mathf.Asin(Mathf.Clamp(_halfArc / _cableLength, -1f, 1f));
             _tiltFactor = tiltFactor;
             _attachHeight = blockHeight;
+            _timeScale = 1f; // every new block starts at full swing speed
             _swinging = true;
             EnsureVisuals();
             SetVisible(true);
@@ -74,10 +76,15 @@ namespace Towerpolis.Game.Gameplay
             SetVisible(false);
         }
 
+        /// <summary>Scale the swing speed (Slow-Mo upgrade): 1 = normal, &lt;1 = slowed while the player holds.
+        /// Purely visual/timing on the crane — the dropped offset is still graded the same, so it's safe in
+        /// Daily (where the controller never calls this).</summary>
+        public void SetTimeScale(float scale) => _timeScale = Mathf.Clamp(scale, 0.05f, 1f);
+
         void Update()
         {
             if (!_swinging) return;
-            _phase += 2f * Mathf.PI / _period * Time.deltaTime;
+            _phase += 2f * Mathf.PI / _period * Time.deltaTime * _timeScale;
             Apply();
         }
 
