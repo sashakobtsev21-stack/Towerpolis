@@ -68,7 +68,7 @@ namespace Towerpolis.Game.Gameplay
         public event Action<int> FloorAdded;      // new floor count
         public event Action<int> StrikeAdded;     // strike number reached (1 or 2)
         public event Action<Vector3> PerfectHit;  // world position for the "PERFECT!" pop
-        public event Action<Vector3, bool> FloorPlacedAt; // world base pos + isPerfect — for VFX (dust/confetti)
+        public event Action<Vector3, bool, int> FloorPlacedAt; // world base pos + isPerfect + residentsAdded — for VFX (dust/confetti/residents)
         public event Action RunToppled;
         public event Action RunStarted;
 
@@ -88,6 +88,8 @@ namespace Towerpolis.Game.Gameplay
                 gameObject.AddComponent<Towerpolis.Game.Audio.GameAudio>();
             if (FindFirstObjectByType<Towerpolis.Game.Vfx.GameVfx>() == null)
                 gameObject.AddComponent<Towerpolis.Game.Vfx.GameVfx>();
+            if (FindFirstObjectByType<Towerpolis.Game.Vfx.ResidentFlyIn>() == null)
+                gameObject.AddComponent<Towerpolis.Game.Vfx.ResidentFlyIn>();
             if (FindFirstObjectByType<Towerpolis.Game.Rendering.LookDev>() == null)
                 gameObject.AddComponent<Towerpolis.Game.Rendering.LookDev>();
             if (FindFirstObjectByType<Towerpolis.Game.Meta.MetaService>() == null)
@@ -314,7 +316,7 @@ namespace Towerpolis.Game.Gameplay
             if (outcome.FloorPlaced)
             {
                 FloorAdded?.Invoke(Floors);
-                FloorPlacedAt?.Invoke(placedPos, outcome.Grade == Grade.Perfect);
+                FloorPlacedAt?.Invoke(placedPos, outcome.Grade == Grade.Perfect, outcome.ResidentsAdded);
             }
             if (outcome.Grade == Grade.Perfect)
             {

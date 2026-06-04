@@ -61,7 +61,7 @@ namespace Towerpolis.Game.Vfx
             _controller = null;
         }
 
-        void OnPlaced(Vector3 basePos, bool perfect)
+        void OnPlaced(Vector3 basePos, bool perfect, int residents)
         {
             EmitDust(basePos);
             if (perfect)
