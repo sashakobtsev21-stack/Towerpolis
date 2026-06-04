@@ -77,7 +77,7 @@ namespace Towerpolis.Core.Gameplay
                     PerfectChain += 1;
                     TotalPerfects += 1;
                     LeanOffset *= 1f - _cfg.PerfectLeanCorrectionFraction;
-                    residentsAdded = Scoring.BaseResidents(_cfg, type) + _cfg.PerfectResidentBonus;
+                    residentsAdded = Scoring.BaseResidents(_cfg, type) + Scoring.PerfectResidentBonus(_cfg, type);
                     scoreGained = Scoring.FloorScore(_cfg, type, grade, PerfectChain);
                     FloorCount += 1;
                     break;

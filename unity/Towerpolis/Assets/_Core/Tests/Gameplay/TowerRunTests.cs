@@ -38,7 +38,7 @@ namespace Towerpolis.Core.Tests.Gameplay
             Assert.That(o.Grade, Is.EqualTo(Grade.Perfect));
             Assert.That(run.PerfectChain, Is.EqualTo(1));
             Assert.That(o.ScoreGained, Is.EqualTo(100 * 2 + 50)); // base×2 + chain(1)
-            Assert.That(o.ResidentsAdded, Is.EqualTo(2));         // Standard = 2, flat (no perfect bonus)
+            Assert.That(o.ResidentsAdded, Is.EqualTo(3));         // Standard 2 + perfect bonus 1
             Assert.That(run.FloorCount, Is.EqualTo(1));
         }
 
@@ -131,8 +131,8 @@ namespace Towerpolis.Core.Tests.Gameplay
             foreach (var g in script) Place(run, FloorType.Standard, g);
 
             Assert.That(run.Score, Is.EqualTo(2100), "floor scores (Miss F9 bounced)");
-            Assert.That(run.TotalResidents, Is.EqualTo(18)); // 9 Standard floors × 2 (flat)
-            Assert.That(run.RunScore, Is.EqualTo(2280), "2100 + residents 180");
+            Assert.That(run.TotalResidents, Is.EqualTo(24)); // 9×2 base + 6 perfects ×1 bonus
+            Assert.That(run.RunScore, Is.EqualTo(2340), "2100 + residents 240");
             Assert.That(run.MissStrikes, Is.EqualTo(1));
             Assert.That(run.FloorCount, Is.EqualTo(9)); // F1-8 + F10 (F9 bounced)
             Assert.That(run.IsOver, Is.False);
@@ -146,8 +146,8 @@ namespace Towerpolis.Core.Tests.Gameplay
             var o = run.PlaceBlock(FloorType.Balcony, 0f);
             Assert.That(o.Grade, Is.EqualTo(Grade.Perfect));
             Assert.That(o.ScoreGained, Is.EqualTo(150 * 2 + 50)); // base 150 ×2 + chain(1)
-            Assert.That(o.ResidentsAdded, Is.EqualTo(3));          // Balcony = 3, flat
-            Assert.That(run.RunScore, Is.EqualTo(350 + 3 * 10));
+            Assert.That(o.ResidentsAdded, Is.EqualTo(5));          // Balcony 3 + perfect bonus 2
+            Assert.That(run.RunScore, Is.EqualTo(350 + 5 * 10));
         }
 
         [Test]
@@ -156,8 +156,8 @@ namespace Towerpolis.Core.Tests.Gameplay
             var run = new TowerRun(new CoreConfig());
             var o = run.PlaceBlock(FloorType.Premium, 0f);
             Assert.That(o.ScoreGained, Is.EqualTo(200 * 2 + 50)); // base 200 ×2 + chain(1)
-            Assert.That(o.ResidentsAdded, Is.EqualTo(5));          // Premium = 5, flat
-            Assert.That(run.RunScore, Is.EqualTo(450 + 5 * 10));
+            Assert.That(o.ResidentsAdded, Is.EqualTo(8));          // Premium 5 + perfect bonus 3
+            Assert.That(run.RunScore, Is.EqualTo(450 + 8 * 10));
         }
 
         [Test]

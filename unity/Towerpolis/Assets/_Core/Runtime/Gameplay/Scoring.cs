@@ -52,6 +52,19 @@ namespace Towerpolis.Core.Gameplay
             };
         }
 
+        /// <summary>Extra residents a Perfect drop houses, per floor type (spec §6.3).</summary>
+        public static int PerfectResidentBonus(CoreConfig cfg, FloorType type)
+        {
+            if (cfg is null) throw new ArgumentNullException(nameof(cfg));
+            return type switch
+            {
+                FloorType.Standard => cfg.PerfectBonusStandard,
+                FloorType.Balcony => cfg.PerfectBonusBalcony,
+                FloorType.Premium => cfg.PerfectBonusPremium,
+                _ => 0,
+            };
+        }
+
         /// <summary>Score for one placed floor (spec §6.1). Chain bonus applies on Perfect only;
         /// <paramref name="perfectChain"/> is the chain length AFTER this drop.</summary>
         public static int FloorScore(CoreConfig cfg, FloorType type, Grade grade, int perfectChain)
