@@ -24,12 +24,17 @@ namespace Towerpolis.Game.UI
         static readonly Color Dim = new Color(0.06f, 0.10f, 0.16f, 0.92f);
         static readonly Color EmptyPlot = new Color(1f, 1f, 1f, 0.10f);
 
+        // Top-bar buttons: a uniform evenly-spaced row (CITY · DAILY · UPGRADES · SKINS · GOALS).
+        const float TopBarW = 168f;
+        static float TopBarX(int i) => 24f + i * (TopBarW + 12f);
+
         MetaService _meta;
         TowerGameController _controller;
 
         TMP_Text _popLabel;
         Image _dailyButtonImg;
         TMP_Text _dailyLabel;
+        TMP_Text _slowMoHint; // "HOLD TO SLOW" — shown only when a Slow-Mo charge is ready
 
         static readonly string[] DistIds = { "downtown", "neon", "winter" };
         static readonly string[] DistNames = { "DOWNTOWN", "NEON", "WINTER" };
@@ -491,6 +496,25 @@ namespace Towerpolis.Game.UI
             BuildUpgradePanel(canvasGo.transform);
             BuildSkinPanel(canvasGo.transform);
             BuildMissionPanel(canvasGo.transform);
+
+            _slowMoHint = NewText("SlowMoHint", canvasGo.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
+            _slowMoHint.color = new Color(0.55f, 0.85f, 1f);
+            _slowMoHint.text = "HOLD TO SLOW";
+            Place(_slowMoHint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 220f), new Vector2(600f, 60f));
+            _slowMoHint.gameObject.SetActive(false);
+        }
+
+        void Update()
+        {
+            if (_slowMoHint == null || _controller == null) return;
+            bool show = _controller.SlowMoHintActive;
+            if (_slowMoHint.gameObject.activeSelf != show) _slowMoHint.gameObject.SetActive(show);
+            if (show)
+            {
+                Color c = _slowMoHint.color;
+                c.a = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.time * 3.2f)); // gentle pulse to catch the eye
+                _slowMoHint.color = c;
+            }
         }
 
         void CityButton(Transform parent)
@@ -499,12 +523,12 @@ namespace Towerpolis.Game.UI
             btnGo.transform.SetParent(parent, false);
             var rt = (RectTransform)btnGo.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(28f, -104f);
-            rt.sizeDelta = new Vector2(180f, 72f);
+            rt.anchoredPosition = new Vector2(TopBarX(0), -104f);
+            rt.sizeDelta = new Vector2(TopBarW, 72f);
             btnGo.GetComponent<Image>().color = Navy;
             btnGo.GetComponent<Button>().onClick.AddListener(OpenCity);
 
-            var label = NewText("Label", rt, 32, FontStyles.Bold, TextAlignmentOptions.Center);
+            var label = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.text = "CITY";
             Stretch(label.rectTransform);
         }
@@ -515,8 +539,8 @@ namespace Towerpolis.Game.UI
             btnGo.transform.SetParent(parent, false);
             var rt = (RectTransform)btnGo.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(224f, -104f);
-            rt.sizeDelta = new Vector2(180f, 72f);
+            rt.anchoredPosition = new Vector2(TopBarX(1), -104f);
+            rt.sizeDelta = new Vector2(TopBarW, 72f);
             _dailyButtonImg = btnGo.GetComponent<Image>();
             _dailyButtonImg.color = Gold;
             btnGo.GetComponent<Button>().onClick.AddListener(OnDailyTapped);
@@ -583,9 +607,9 @@ namespace Towerpolis.Game.UI
 
         void UpgradesButton(Transform parent)
         {
-            Button btn = MakeButton(parent, "UpgradesButton", new Vector2(0f, 1f), new Vector2(420f, -104f), new Vector2(220f, 72f), Navy, out _);
+            Button btn = MakeButton(parent, "UpgradesButton", new Vector2(0f, 1f), new Vector2(TopBarX(2), -104f), new Vector2(TopBarW, 72f), Navy, out _);
             btn.onClick.AddListener(OpenUpgrades);
-            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            var label = NewText("Label", btn.transform, 25, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
             label.text = "UPGRADES";
             Stretch(label.rectTransform);
@@ -653,7 +677,7 @@ namespace Towerpolis.Game.UI
 
         void SkinsButton(Transform parent)
         {
-            Button btn = MakeButton(parent, "SkinsButton", new Vector2(0f, 1f), new Vector2(660f, -104f), new Vector2(180f, 72f), Navy, out _);
+            Button btn = MakeButton(parent, "SkinsButton", new Vector2(0f, 1f), new Vector2(TopBarX(3), -104f), new Vector2(TopBarW, 72f), Navy, out _);
             btn.onClick.AddListener(OpenSkins);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
@@ -728,7 +752,7 @@ namespace Towerpolis.Game.UI
 
         void MissionsButton(Transform parent)
         {
-            Button btn = MakeButton(parent, "MissionsButton", new Vector2(0f, 1f), new Vector2(852f, -104f), new Vector2(180f, 72f), Navy, out _);
+            Button btn = MakeButton(parent, "MissionsButton", new Vector2(0f, 1f), new Vector2(TopBarX(4), -104f), new Vector2(TopBarW, 72f), Navy, out _);
             btn.onClick.AddListener(OpenMissions);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;

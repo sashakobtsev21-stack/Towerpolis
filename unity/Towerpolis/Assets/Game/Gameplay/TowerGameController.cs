@@ -56,6 +56,10 @@ namespace Towerpolis.Game.Gameplay
         public int PerfectChain => _run != null ? _run.PerfectChain : 0; // GameAudio climbs a scale with it
         public bool IsOver => _state == State.Over;
 
+        /// <summary>True while a block is swinging AND a Slow-Mo charge is ready — drives the "hold to slow"
+        /// HUD hint (only ever true for a player who owns the upgrade, in Endless).</summary>
+        public bool SlowMoHintActive => _state == State.Swinging && SlowMoReady();
+
         /// <summary>The current run's frozen result (for the meta deposit/scoring). Default if no run yet.</summary>
         public RunResult BuildRunResult() => _run != null ? RunResult.From(_run) : default;
 
