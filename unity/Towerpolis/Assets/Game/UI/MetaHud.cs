@@ -83,13 +83,10 @@ namespace Towerpolis.Game.UI
         {
             if (_meta == null) return;
 
-            // Live preview: committed city population PLUS the in-progress run's residents, so it ticks up
-            // as you build; commits on topple (IsOver → committed only).
-            int pop = _meta.TotalPopulation;
-            if (_controller != null && !_controller.IsOver)
-                pop += _controller.BuildRunResult().TotalResidents;
-
-            if (_popLabel != null) _popLabel.text = "CITY  " + pop;
+            // THIS building's residents (current run) — starts at 0 each run, grows as you stack. The
+            // cumulative city population (the meta-score) is shown in the city view.
+            int residents = _controller != null ? _controller.BuildRunResult().TotalResidents : 0;
+            if (_popLabel != null) _popLabel.text = "RESIDENTS  " + residents;
             RefreshDaily();
         }
 
