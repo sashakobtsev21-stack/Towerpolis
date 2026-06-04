@@ -18,18 +18,18 @@ MonoBehaviour:
   craneCableLength: 6
   craneTiltFactor: 0.4
   periodFloor1: 3
-  periodMinClamp: 2
-  periodRampFactor: 0.012
+  periodMinClamp: 2.6
+  periodRampFactor: 0.005
   swingArcPerFloor: 0.06
   swingArcMax: 4.2
   gravityScale: 2.5
-  wobbleAmpMax: 10
-  wobbleLeanBias: 9
+  wobbleAmpMax: 12
+  wobbleLeanBias: 12
   wobblePeriodBase: 6
   wobblePeriodPerFloor: 0.04
   wobblePeriodMax: 8
   wobblePeriodMin: 4
-  maxLeanBiasAngle: 6
+  maxLeanBiasAngle: 8
   cameraFollowSmoothTime: 0.4
   maxCameraDistance: 18
   cameraAngleX: 25

@@ -82,6 +82,8 @@ namespace Towerpolis.Game.Gameplay
                 gameObject.AddComponent<Towerpolis.Game.Meta.MetaService>();
             if (FindFirstObjectByType<Towerpolis.Game.UI.MetaHud>() == null)
                 gameObject.AddComponent<Towerpolis.Game.UI.MetaHud>();
+            if (FindFirstObjectByType<Towerpolis.Game.Meta.Atmosphere>() == null)
+                gameObject.AddComponent<Towerpolis.Game.Meta.Atmosphere>();
         }
 
         public enum RunMode { Endless, Daily }
@@ -112,7 +114,7 @@ namespace Towerpolis.Game.Gameplay
             string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
             DistrictTheme theme = DistrictThemes.For(district);
             if (spawner != null) spawner.ApplyTheme(theme);
-            DistrictSky.Apply(theme);
+            DistrictSky.SetDistrict(theme); // ground sky; the Atmosphere driver lerps it toward space with height
 
             _coreConfig = tuning != null ? tuning.BuildCoreConfig() : new CoreConfig();
             _run = new TowerRun(_coreConfig);
