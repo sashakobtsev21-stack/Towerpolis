@@ -18,6 +18,7 @@ namespace Towerpolis.Game.Meta
     {
         public static MetaService Instance { get; private set; }
 
+        readonly CoreConfig _config = new CoreConfig();
         CityState _city;
         TowerGameController _controller;
 
@@ -32,6 +33,9 @@ namespace Towerpolis.Game.Meta
 
         public bool HasPlayedDailyToday()
             => _city != null && DailyStreak.HasPlayed(_city.Streak, TodayKey);
+
+        /// <summary>Coins the in-progress run would bank (for a live HUD preview).</summary>
+        public int PreviewCoins(in RunResult r) => CoinEarnCalculator.RunCoins(in r, _config);
 
         /// <summary>Begin today's daily-seed run if it hasn't been played yet. Returns false if already used.</summary>
         public bool TryStartDaily()
@@ -49,7 +53,7 @@ namespace Towerpolis.Game.Meta
         {
             if (Instance != null && Instance != this) { Destroy(this); return; }
             Instance = this;
-            _city = CityState.FromSave(SaveManager.Load(), new CoreConfig());
+            _city = CityState.FromSave(SaveManager.Load(), _config);
         }
 
         void OnEnable() => Bind();

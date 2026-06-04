@@ -25,6 +25,7 @@ namespace Towerpolis.Game.UI
         static readonly Color EmptyPlot = new Color(1f, 1f, 1f, 0.10f);
 
         MetaService _meta;
+        TowerGameController _controller;
 
         TMP_Text _coinsLabel;
         TMP_Text _popLabel;
@@ -41,9 +42,15 @@ namespace Towerpolis.Game.UI
         void Start()
         {
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
+            _controller = FindFirstObjectByType<TowerGameController>();
             EnsureEventSystem(); // UGUI buttons need one to receive clicks
             BuildUI();
             if (_meta != null) _meta.RunBanked += OnBanked;
+            if (_controller != null)
+            {
+                _controller.FloorAdded += OnFloorLive;  // tick coins/population up as you build
+                _controller.RunStarted += OnRunStartLive;
+            }
             RefreshTopBar();
         }
 
@@ -58,6 +65,11 @@ namespace Towerpolis.Game.UI
         void OnDestroy()
         {
             if (_meta != null) _meta.RunBanked -= OnBanked;
+            if (_controller != null)
+            {
+                _controller.FloorAdded -= OnFloorLive;
+                _controller.RunStarted -= OnRunStartLive;
+            }
         }
 
         void OnBanked(RunEndOutcome outcome)
@@ -66,11 +78,26 @@ namespace Towerpolis.Game.UI
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
         }
 
+        void OnFloorLive(int floors) => RefreshTopBar();
+        void OnRunStartLive() => RefreshTopBar();
+
         void RefreshTopBar()
         {
             if (_meta == null) return;
-            if (_coinsLabel != null) _coinsLabel.text = "COINS  " + _meta.Coins;
-            if (_popLabel != null) _popLabel.text = "CITY  " + _meta.TotalPopulation;
+
+            // Live preview: show the committed totals PLUS what the in-progress run would add, so coins and
+            // city population tick up as you build. Once the run ends (banked), IsOver is true → committed only.
+            int coins = _meta.Coins;
+            int pop = _meta.TotalPopulation;
+            if (_controller != null && !_controller.IsOver)
+            {
+                RunResult r = _controller.BuildRunResult();
+                coins += _meta.PreviewCoins(in r);
+                pop += r.TotalResidents;
+            }
+
+            if (_coinsLabel != null) _coinsLabel.text = "COINS  " + coins;
+            if (_popLabel != null) _popLabel.text = "CITY  " + pop;
             RefreshDaily();
         }
 

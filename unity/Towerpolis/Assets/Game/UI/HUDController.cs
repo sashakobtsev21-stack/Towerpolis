@@ -86,13 +86,16 @@ namespace Towerpolis.Game.UI
 
         void OnScoreChanged(int score)
         {
-            if (_scoreLabel != null) _scoreLabel.text = score.ToString();
-            Punch(_scoreLabel != null ? _scoreLabel.rectTransform : null, 1.25f);
+            // Score is no longer the headline — HEIGHT is (see OnFloorAdded). Still subscribed so the
+            // leaderboard score keeps flowing through Core; only the on-screen number changed.
         }
 
         void OnFloorAdded(int floors)
         {
-            if (_floorsLabel != null) _floorsLabel.text = floors + "F";
+            // Headline = building HEIGHT (floors placed; the base floor is 0).
+            if (_scoreLabel != null) _scoreLabel.text = floors.ToString();
+            Punch(_scoreLabel != null ? _scoreLabel.rectTransform : null, 1.2f);
+            if (_floorsLabel != null) _floorsLabel.text = ""; // drop the redundant top-right counter
         }
 
         void OnStrikeAdded(int strikeNumber)
@@ -125,7 +128,7 @@ namespace Towerpolis.Game.UI
         void OnRunStarted()
         {
             if (_scoreLabel != null) _scoreLabel.text = "0";
-            if (_floorsLabel != null) _floorsLabel.text = "0F";
+            if (_floorsLabel != null) _floorsLabel.text = "";
             for (int i = 0; i < _pips.Length; i++)
                 if (_pips[i] != null) _pips[i].color = PipEmpty;
             if (_restartPanel != null) _restartPanel.SetActive(false);
@@ -210,11 +213,11 @@ namespace Towerpolis.Game.UI
         IEnumerator ShowRestartAfter(float delay)
         {
             yield return new WaitForSeconds(delay);
-            int finalScore = _game != null ? _game.Score : 0;
-            bool newBest = finalScore > _highScore;
-            if (newBest) _highScore = finalScore;
+            int finalHeight = _game != null ? _game.Floors : 0; // headline result = building height
+            bool newBest = finalHeight > _highScore;
+            if (newBest) _highScore = finalHeight;
 
-            if (_restartScore != null) _restartScore.text = finalScore.ToString();
+            if (_restartScore != null) _restartScore.text = finalHeight.ToString();
             if (_restartBest != null)
             {
                 _restartBest.text = newBest ? "NEW BEST!" : "BEST  " + _highScore;

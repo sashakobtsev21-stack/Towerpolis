@@ -58,7 +58,8 @@ namespace Towerpolis.Game.Gameplay
             _swinging = false;
             Transform released = _block;
             _block = null;
-            SetVisible(false); // the rope lets go as the block drops
+            // Keep the hook + rope visible (frozen at the release point) while the block falls — they
+            // re-engage with the next block on BeginSwing, rather than blinking out.
             return released;
         }
 
