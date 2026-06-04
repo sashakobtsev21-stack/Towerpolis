@@ -55,5 +55,16 @@ namespace Towerpolis.Core.Gameplay
         public int DailySeedFirstWinCoins = 50; // once per UTC day, any completed daily run
         public int[] StreakMilestoneDays = { 3, 7, 14, 30 };
         public int[] StreakMilestoneCoins = { 75, 200, 400, 1000 };
+
+        // --- Phase 4 — crane/meta upgrades (progression-spec §2). Index = level (0 = unupgraded). The
+        //     gameplay tracks (Magnet, Slow-Mo) are SUPPRESSED in Daily Seed for fairness; the meta track
+        //     (City Bonus) is safe everywhere. *UpgradeCosts[i] = cost to go from level i to level i+1. ---
+        public float[] MagnetFractions = { 0f, 0.15f, 0.28f, 0.38f, 0.45f }; // auto-centre correction
+        public int[] MagnetUpgradeCosts = { 80, 200, 450, 900 };
+        public float[] SlowMoFactors = { 1.0f, 0.55f, 0.45f, 0.38f, 0.32f }; // swing-speed multiplier
+        public int[] SlowMoUpgradeCosts = { 100, 250, 550, 1100 };
+        public float SlowMoDuration = 0.4f;     // seconds the hold slows the swing (Unity presentation)
+        public float[] CityBonusMultipliers = { 1.0f, 1.15f, 1.30f, 1.50f }; // ×district-completion reward
+        public int[] CityBonusUpgradeCosts = { 120, 320, 700 };
     }
 }
