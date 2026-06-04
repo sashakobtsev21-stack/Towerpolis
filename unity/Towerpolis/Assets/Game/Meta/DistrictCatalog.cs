@@ -41,9 +41,9 @@ namespace Towerpolis.Game.Meta
 
         static readonly DistrictView[] Views =
         {
-            new DistrictView("downtown", "DOWNTOWN",       5, new Color(0.40f, 0.74f, 1.00f)),
-            new DistrictView("neon",     "NEON QUARTER",   5, new Color(0.18f, 0.74f, 0.69f)),
-            new DistrictView("winter",   "WINTER HEIGHTS", 6, new Color(0.90f, 0.95f, 0.99f)),
+            new DistrictView("downtown", "ЦЕНТР",            5, new Color(0.40f, 0.74f, 1.00f)),
+            new DistrictView("neon",     "НЕОНОВЫЙ КВАРТАЛ", 5, new Color(0.18f, 0.74f, 0.69f)),
+            new DistrictView("winter",   "ЗИМНИЕ ВЫСОТЫ",    6, new Color(0.90f, 0.95f, 0.99f)),
         };
 
         public static DistrictInfo Get(string id)

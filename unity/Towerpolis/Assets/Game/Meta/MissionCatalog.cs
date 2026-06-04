@@ -20,14 +20,14 @@ namespace Towerpolis.Game.Meta
     {
         public static readonly MissionDef[] All =
         {
-            new MissionDef(new MissionInfo("m_floors_weekly",    MissionMetric.FloorsPlaced,         200, 100), "Builder",      "Place 200 floors"),
-            new MissionDef(new MissionInfo("m_perfects_weekly",  MissionMetric.PerfectDrops,         50,  120), "Sharp Week",   "Land 50 Perfect drops"),
-            new MissionDef(new MissionInfo("m_daily_runs",       MissionMetric.DailyRunsCompleted,   5,   150), "Regular",      "Play the Daily on 5 days"),
-            new MissionDef(new MissionInfo("m_tall_tower",       MissionMetric.TowerHeight,          40,  120), "High Rise",    "Reach 40 floors in one run"),
-            new MissionDef(new MissionInfo("m_perfect_chain",    MissionMetric.PerfectChainLength,   8,   150), "On a Roll",    "Get a Perfect chain of 8"),
-            new MissionDef(new MissionInfo("m_residents_weekly", MissionMetric.ResidentsHoused,      400, 100), "Landlord",     "House 400 residents"),
-            new MissionDef(new MissionInfo("m_district_runs",    MissionMetric.DistrictRunsCompleted, 6,  80),  "Local",        "Complete 6 runs"),
-            new MissionDef(new MissionInfo("m_streak_days",      MissionMetric.StreakDays,           5,   200), "Devoted",      "Reach a 5-day streak"),
+            new MissionDef(new MissionInfo("m_floors_weekly",    MissionMetric.FloorsPlaced,         200, 100), "Строитель",    "Построй 200 этажей"),
+            new MissionDef(new MissionInfo("m_perfects_weekly",  MissionMetric.PerfectDrops,         50,  120), "Меткий",       "50 идеальных постановок"),
+            new MissionDef(new MissionInfo("m_daily_runs",       MissionMetric.DailyRunsCompleted,   5,   150), "Завсегдатай",  "Сыграй «День» 5 дней"),
+            new MissionDef(new MissionInfo("m_tall_tower",       MissionMetric.TowerHeight,          40,  120), "Высотка",      "40 этажей за забег"),
+            new MissionDef(new MissionInfo("m_perfect_chain",    MissionMetric.PerfectChainLength,   8,   150), "В ударе",      "Серия из 8 идеальных"),
+            new MissionDef(new MissionInfo("m_residents_weekly", MissionMetric.ResidentsHoused,      400, 100), "Домовладелец", "Посели 400 жильцов"),
+            new MissionDef(new MissionInfo("m_district_runs",    MissionMetric.DistrictRunsCompleted, 6,  80),  "Местный",      "Заверши 6 забегов"),
+            new MissionDef(new MissionInfo("m_streak_days",      MissionMetric.StreakDays,           5,   200), "Преданный",    "Серия в 5 дней"),
         };
 
         public static readonly MissionInfo[] Infos;

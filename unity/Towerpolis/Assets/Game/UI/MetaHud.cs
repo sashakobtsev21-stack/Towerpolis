@@ -39,7 +39,7 @@ namespace Towerpolis.Game.UI
         TMP_Text _slowMoHint; // "HOLD TO SLOW" — shown only when a Slow-Mo charge is ready
 
         static readonly string[] DistIds = { "downtown", "neon", "winter" };
-        static readonly string[] DistNames = { "DOWNTOWN", "NEON", "WINTER" };
+        static readonly string[] DistNames = { "ЦЕНТР", "НЕОН", "ЗИМА" };
         static readonly Color Locked = new Color(0.22f, 0.24f, 0.30f, 0.95f);
         Image[] _distImg;
         TMP_Text[] _distLbl;
@@ -52,7 +52,7 @@ namespace Towerpolis.Game.UI
 
         // Upgrades panel
         static readonly UpgradeKind[] UpgKinds = { UpgradeKind.Magnet, UpgradeKind.SlowMo, UpgradeKind.CityBonus };
-        static readonly string[] UpgNames = { "MAGNET", "SLOW-MO", "CITY BONUS" };
+        static readonly string[] UpgNames = { "МАГНИТ", "ЗАМЕДЛЕНИЕ", "БОНУС ГОРОДА" };
         static readonly Color Disabled = new Color(0.60f, 0.62f, 0.67f);
         GameObject _upgPanel;
         TMP_Text _upgCoins;
@@ -84,6 +84,7 @@ namespace Towerpolis.Game.UI
 
         void Start()
         {
+            UiFont.EnsureCyrillic(); // render Cyrillic with the default TMP font
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
             _controller = FindFirstObjectByType<TowerGameController>();
             EnsureEventSystem(); // UGUI buttons need one to receive clicks
@@ -130,7 +131,7 @@ namespace Towerpolis.Game.UI
             RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
-            if (outcome.DistrictCompletedNow) EnqueueToast("DISTRICT COMPLETE!", Gold);
+            if (outcome.DistrictCompletedNow) EnqueueToast("РАЙОН ЗАВЕРШЁН!", Gold);
         }
 
         void OnProgressionChanged()
@@ -147,13 +148,13 @@ namespace Towerpolis.Game.UI
                 foreach (string id in sys.CompletedMissions)
                 {
                     MissionDef m = MissionCatalog.Get(id);
-                    EnqueueToast("MISSION COMPLETE\n" + m.Name + "   +" + m.Info.RewardCoins, Gold);
+                    EnqueueToast("МИССИЯ ВЫПОЛНЕНА\n" + m.Name + "   +" + m.Info.RewardCoins, Gold);
                 }
             if (sys.UnlockedAchievements != null)
                 foreach (string id in sys.UnlockedAchievements)
                 {
                     AchievementDef a = FindAchievement(id);
-                    EnqueueToast("ACHIEVEMENT\n" + a.Name + "   +" + a.Info.RewardCoins, Cyan);
+                    EnqueueToast("ДОСТИЖЕНИЕ\n" + a.Name + "   +" + a.Info.RewardCoins, Cyan);
                 }
         }
 
@@ -258,7 +259,7 @@ namespace Towerpolis.Game.UI
             // THIS building's residents (current run) — starts at 0 each run, grows as you stack. The
             // cumulative city population (the meta-score) is shown in the city view.
             int residents = _controller != null ? _controller.BuildRunResult().TotalResidents : 0;
-            if (_popLabel != null) _popLabel.text = "RESIDENTS  " + residents;
+            if (_popLabel != null) _popLabel.text = "ЖИЛЬЦЫ  " + residents;
             RefreshDaily();
         }
 
@@ -275,7 +276,7 @@ namespace Towerpolis.Game.UI
             bool played = _meta.HasPlayedDailyToday();
             if (_dailyLabel != null)
             {
-                _dailyLabel.text = played ? "DONE" : "DAILY";
+                _dailyLabel.text = played ? "ГОТОВО" : "ДЕНЬ";
                 _dailyLabel.color = played ? OffWhite : Navy;
             }
             if (_dailyButtonImg != null) _dailyButtonImg.color = played ? Navy : Gold;
@@ -349,7 +350,7 @@ namespace Towerpolis.Game.UI
             int population = grid != null ? grid.Population : 0;
 
             if (_cityTitle != null) _cityTitle.text = view.DisplayName;
-            if (_cityPop != null) _cityPop.text = "POPULATION  " + population + "  /  " + info.FillGoal;
+            if (_cityPop != null) _cityPop.text = "НАСЕЛЕНИЕ  " + population + "  /  " + info.FillGoal;
             RefreshDistrictButtons();
 
             if (_gridLayout != null) _gridLayout.constraintCount = Mathf.Max(1, view.GridWidth);
@@ -419,7 +420,7 @@ namespace Towerpolis.Game.UI
         {
             if (_meta == null) return;
             int coins = _meta.Coins;
-            if (_upgCoins != null) _upgCoins.text = "COINS  " + coins;
+            if (_upgCoins != null) _upgCoins.text = "МОНЕТЫ  " + coins;
 
             for (int i = 0; i < UpgKinds.Length; i++)
             {
@@ -428,19 +429,19 @@ namespace Towerpolis.Game.UI
                 bool maxed = _meta.IsUpgradeMaxed(k);
                 int cost = _meta.NextUpgradeCost(k);
                 bool afford = coins >= cost;
-                if (_upgInfo[i] != null) _upgInfo[i].text = UpgNames[i] + "   Lv " + lvl + " / " + max;
-                SetBuy(_upgBuyImg[i], _upgBuyLbl[i], maxed ? "MAX" : "BUY " + cost, maxed, afford);
+                if (_upgInfo[i] != null) _upgInfo[i].text = UpgNames[i] + "   Ур " + lvl + " / " + max;
+                SetBuy(_upgBuyImg[i], _upgBuyLbl[i], maxed ? "МАКС" : "КУПИТЬ " + cost, maxed, afford);
             }
 
             int charges = _meta.FreezeCharges, fmax = _meta.FreezeMax;
             bool freezeFull = charges >= fmax;
-            if (_freezeInfo != null) _freezeInfo.text = "STREAK FREEZE   x" + charges + " / " + fmax;
-            SetBuy(_freezeBuyImg, _freezeBuyLbl, freezeFull ? "FULL" : "BUY " + _meta.FreezeCost, freezeFull, coins >= _meta.FreezeCost);
+            if (_freezeInfo != null) _freezeInfo.text = "ЗАМОРОЗКА   x" + charges + " / " + fmax;
+            SetBuy(_freezeBuyImg, _freezeBuyLbl, freezeFull ? "ПОЛНО" : "КУПИТЬ " + _meta.FreezeCost, freezeFull, coins >= _meta.FreezeCost);
 
             bool canClaim = _meta.CanClaimLoginToday();
             if (_loginLbl != null)
             {
-                _loginLbl.text = canClaim ? "CLAIM DAILY GIFT" : "GIFT CLAIMED";
+                _loginLbl.text = canClaim ? "ЗАБРАТЬ ПОДАРОК" : "ПОДАРОК ВЗЯТ";
                 _loginLbl.color = canClaim ? Navy : OffWhite;
             }
             if (_loginImg != null) _loginImg.color = canClaim ? Gold : Navy;
@@ -502,7 +503,7 @@ namespace Towerpolis.Game.UI
         {
             if (_meta == null) return;
             int coins = _meta.Coins;
-            if (_skinCoins != null) _skinCoins.text = "COINS  " + coins;
+            if (_skinCoins != null) _skinCoins.text = "МОНЕТЫ  " + coins;
 
             BlockSkin[] blocks = CosmeticCatalog.BlockSkins;
             for (int i = 0; i < blocks.Length; i++)
@@ -520,13 +521,13 @@ namespace Towerpolis.Game.UI
             bool unlocked = _meta.IsDistrictRewarded(gate);
             string state;
             Color bg, fg;
-            if (equipped) { state = "EQUIPPED"; bg = Gold; fg = Navy; }
-            else if (owned) { state = "EQUIP"; bg = Navy; fg = OffWhite; }
-            else if (!unlocked) { state = "LOCKED"; bg = Locked; fg = Disabled; }
+            if (equipped) { state = "НАДЕТО"; bg = Gold; fg = Navy; }
+            else if (owned) { state = "НАДЕТЬ"; bg = Navy; fg = OffWhite; }
+            else if (!unlocked) { state = "ЗАКРЫТО"; bg = Locked; fg = Disabled; }
             else
             {
                 bool afford = coins >= cost;
-                state = "BUY " + cost;
+                state = "КУПИТЬ " + cost;
                 bg = afford ? Buyable : Locked;
                 fg = afford ? Navy : Disabled;
             }
@@ -566,7 +567,7 @@ namespace Towerpolis.Game.UI
                     int prog = Mathf.Min(_meta.MissionProgressFor(active[i]), def.Info.Target);
                     bool done = _meta.IsMissionComplete(active[i]);
                     _missionLines[i].text = def.Description + "    " + prog + "/" + def.Info.Target +
-                                            "    +" + def.Info.RewardCoins + (done ? "    DONE" : "");
+                                            "    +" + def.Info.RewardCoins + (done ? "    ГОТОВО" : "");
                     _missionLines[i].color = done ? Gold : OffWhite;
                 }
                 else _missionLines[i].text = "";
@@ -578,7 +579,7 @@ namespace Towerpolis.Game.UI
                 if (_achLines[i] == null) continue;
                 bool got = _meta.IsAchievementUnlocked(all[i].Info.AchievementId);
                 _achLines[i].text = all[i].Name + " — " + all[i].Description +
-                                    (got ? "    DONE" : "    +" + all[i].Info.RewardCoins);
+                                    (got ? "    ГОТОВО" : "    +" + all[i].Info.RewardCoins);
                 _achLines[i].color = got ? Gold : LockedText;
             }
         }
@@ -617,7 +618,7 @@ namespace Towerpolis.Game.UI
 
             _slowMoHint = NewText("SlowMoHint", canvasGo.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
             _slowMoHint.color = new Color(0.55f, 0.85f, 1f);
-            _slowMoHint.text = "HOLD TO SLOW";
+            _slowMoHint.text = "ЗАЖМИ, ЧТОБЫ ЗАМЕДЛИТЬ";
             Place(_slowMoHint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 220f), new Vector2(600f, 60f));
             _slowMoHint.gameObject.SetActive(false);
         }
@@ -647,7 +648,7 @@ namespace Towerpolis.Game.UI
             btnGo.GetComponent<Button>().onClick.AddListener(OpenCity);
 
             var label = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            label.text = "CITY";
+            label.text = "ГОРОД";
             Stretch(label.rectTransform);
         }
 
@@ -665,7 +666,7 @@ namespace Towerpolis.Game.UI
 
             _dailyLabel = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             _dailyLabel.color = Navy;
-            _dailyLabel.text = "DAILY";
+            _dailyLabel.text = "ДЕНЬ";
             Stretch(_dailyLabel.rectTransform);
         }
 
@@ -720,7 +721,7 @@ namespace Towerpolis.Game.UI
 
             var label = NewText("Label", rt, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = Navy;
-            label.text = "CLOSE";
+            label.text = "ЗАКРЫТЬ";
             Stretch(label.rectTransform);
         }
 
@@ -730,7 +731,7 @@ namespace Towerpolis.Game.UI
             btn.onClick.AddListener(OpenUpgrades);
             var label = NewText("Label", btn.transform, 25, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "UPGRADES";
+            label.text = "УЛУЧШЕНИЯ";
             Stretch(label.rectTransform);
         }
 
@@ -749,7 +750,7 @@ namespace Towerpolis.Game.UI
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
-            title.text = "UPGRADES";
+            title.text = "УЛУЧШЕНИЯ";
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
             _upgCoins = NewText("Coins", prt, 40, FontStyles.Bold, TextAlignmentOptions.Top);
@@ -776,7 +777,7 @@ namespace Towerpolis.Game.UI
             close.onClick.AddListener(CloseUpgrades);
             var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             clbl.color = Navy;
-            clbl.text = "CLOSE";
+            clbl.text = "ЗАКРЫТЬ";
             Stretch(clbl.rectTransform);
 
             _upgPanel.SetActive(false);
@@ -801,7 +802,7 @@ namespace Towerpolis.Game.UI
             btn.onClick.AddListener(OpenSkins);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "SKINS";
+            label.text = "СКИНЫ";
             Stretch(label.rectTransform);
         }
 
@@ -823,14 +824,14 @@ namespace Towerpolis.Game.UI
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
-            title.text = "SKINS";
+            title.text = "СКИНЫ";
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
             _skinCoins = NewText("Coins", prt, 40, FontStyles.Bold, TextAlignmentOptions.Top);
             _skinCoins.color = Gold;
             Place(_skinCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(900f, 60f));
 
-            SectionLabel(prt, "BLOCKS", 260f);
+            SectionLabel(prt, "БЛОКИ", 260f);
             for (int i = 0; i < blocks.Length; i++)
             {
                 string id = blocks[i].Id; // capture
@@ -838,7 +839,7 @@ namespace Towerpolis.Game.UI
                 b.onClick.AddListener(() => TapBlockSkin(id));
             }
 
-            SectionLabel(prt, "CRANE", -40f);
+            SectionLabel(prt, "КРАН", -40f);
             for (int i = 0; i < cranes.Length; i++)
             {
                 string id = cranes[i].Id; // capture
@@ -850,7 +851,7 @@ namespace Towerpolis.Game.UI
             close.onClick.AddListener(CloseSkins);
             var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             clbl.color = Navy;
-            clbl.text = "CLOSE";
+            clbl.text = "ЗАКРЫТЬ";
             Stretch(clbl.rectTransform);
 
             _skinPanel.SetActive(false);
@@ -877,7 +878,7 @@ namespace Towerpolis.Game.UI
             btn.onClick.AddListener(OpenMissions);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "GOALS";
+            label.text = "ЦЕЛИ";
             Stretch(label.rectTransform);
         }
 
@@ -895,10 +896,10 @@ namespace Towerpolis.Game.UI
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
-            title.text = "GOALS";
+            title.text = "ЦЕЛИ";
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
-            SectionLabel(prt, "WEEKLY MISSIONS", 330f);
+            SectionLabel(prt, "МИССИИ НЕДЕЛИ", 330f);
             float my = 270f;
             for (int i = 0; i < _missionLines.Length; i++)
             {
@@ -908,7 +909,7 @@ namespace Towerpolis.Game.UI
                 my -= 52f;
             }
 
-            SectionLabel(prt, "ACHIEVEMENTS", 90f);
+            SectionLabel(prt, "ДОСТИЖЕНИЯ", 90f);
             float ay = 30f;
             for (int i = 0; i < _achLines.Length; i++)
             {
@@ -922,7 +923,7 @@ namespace Towerpolis.Game.UI
             close.onClick.AddListener(CloseMissions);
             var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             clbl.color = Navy;
-            clbl.text = "CLOSE";
+            clbl.text = "ЗАКРЫТЬ";
             Stretch(clbl.rectTransform);
 
             _missionPanel.SetActive(false);

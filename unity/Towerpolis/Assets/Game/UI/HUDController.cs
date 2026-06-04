@@ -46,6 +46,7 @@ namespace Towerpolis.Game.UI
 
         void Start()
         {
+            UiFont.EnsureCyrillic(); // render Cyrillic with the default TMP font
             _game = GetComponent<TowerGameController>();
             if (_game == null) _game = FindFirstObjectByType<TowerGameController>();
             _cam = Camera.main;
@@ -199,7 +200,7 @@ namespace Towerpolis.Game.UI
         IEnumerator SummitBeat()
         {
             if (_summitLabel == null) yield break;
-            _summitLabel.text = "SUMMIT!\n" + SummitHeight + " FLOORS";
+            _summitLabel.text = "ВЕРШИНА!\n" + SummitHeight + " ЭТАЖЕЙ";
             _summitLabel.gameObject.SetActive(true);
             FlashVignette(0.35f, 1.0f, Yellow); // gold flash so it can't be missed
             RectTransform rt = _summitLabel.rectTransform;
@@ -258,7 +259,7 @@ namespace Towerpolis.Game.UI
             if (_restartScore != null) _restartScore.text = finalHeight.ToString();
             if (_restartBest != null)
             {
-                _restartBest.text = newBest ? "NEW BEST!" : "BEST  " + _highScore;
+                _restartBest.text = newBest ? "РЕКОРД!" : "ЛУЧШЕЕ  " + _highScore;
                 _restartBest.color = newBest ? Mint : Navy;
             }
             if (_restartPanel != null) _restartPanel.SetActive(true);
@@ -303,7 +304,7 @@ namespace Towerpolis.Game.UI
 
             _perfectLabel = NewText("Perfect", canvasGo.transform, 80, FontStyles.Bold, TextAlignmentOptions.Center);
             _perfectLabel.color = Yellow;
-            _perfectLabel.text = "PERFECT!";
+            _perfectLabel.text = "ИДЕАЛЬНО!";
             _perfectRect = _perfectLabel.rectTransform;
             _perfectRect.sizeDelta = new Vector2(600f, 120f);
             _perfectLabel.gameObject.SetActive(false);
@@ -346,7 +347,7 @@ namespace Towerpolis.Game.UI
 
             var label = NewText("RetryLabel", brt, 42, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "ONE MORE TRY";
+            label.text = "ЕЩЁ РАЗ";
             Stretch(label.rectTransform);
 
             _restartPanel.SetActive(false);
