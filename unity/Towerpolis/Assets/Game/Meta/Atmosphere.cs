@@ -13,8 +13,9 @@ namespace Towerpolis.Game.Meta
     /// </summary>
     public sealed class Atmosphere : MonoBehaviour
     {
-        // Floors to reach full space. At 150, floor 75 is the half-way point — space "по немногу" appears.
-        const float AscentFloors = 150f;
+        // Floors to reach full space. TESTING: 25 so a short run shows the whole ascent (city → clouds →
+        // planes → aurora → stars → moon). RESTORE to 150 before launch (then space starts ~floor 75).
+        const float AscentFloors = 25f;
         const float EaseRate = 1.6f; // how fast the displayed altitude catches its target (per second-ish)
 
         /// <summary>Smoothed 0 (ground) → 1 (space) altitude, eased toward the current height each frame.</summary>
