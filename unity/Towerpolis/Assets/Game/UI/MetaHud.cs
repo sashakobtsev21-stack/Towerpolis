@@ -53,10 +53,17 @@ namespace Towerpolis.Game.UI
         // Upgrades panel
         static readonly UpgradeKind[] UpgKinds = { UpgradeKind.Magnet, UpgradeKind.SlowMo, UpgradeKind.CityBonus };
         static readonly string[] UpgNames = { "МАГНИТ", "ЗАМЕДЛЕНИЕ", "БОНУС ГОРОДА" };
+        static readonly string[] UpgDescs =
+        {
+            "Подтягивает блок к центру (Endless)",
+            "Зажми палец — кран замедляется (Endless)",
+            "Больше монет за достройку района",
+        };
         static readonly Color Disabled = new Color(0.60f, 0.62f, 0.67f);
         GameObject _upgPanel;
         TMP_Text _upgCoins;
         TMP_Text[] _upgInfo;
+        TMP_Text[] _upgDesc;
         TMP_Text[] _upgBuyLbl;
         Image[] _upgBuyImg;
         TMP_Text _freezeInfo, _freezeBuyLbl, _loginLbl;
@@ -738,6 +745,7 @@ namespace Towerpolis.Game.UI
         void BuildUpgradePanel(Transform parent)
         {
             _upgInfo = new TMP_Text[UpgKinds.Length];
+            _upgDesc = new TMP_Text[UpgKinds.Length];
             _upgBuyLbl = new TMP_Text[UpgKinds.Length];
             _upgBuyImg = new Image[UpgKinds.Length];
 
@@ -756,6 +764,11 @@ namespace Towerpolis.Game.UI
             _upgCoins = NewText("Coins", prt, 40, FontStyles.Bold, TextAlignmentOptions.Top);
             _upgCoins.color = Gold;
             Place(_upgCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(900f, 60f));
+
+            var hint = NewText("CoinHint", prt, 24, FontStyles.Italic, TextAlignmentOptions.Top);
+            hint.color = Disabled;
+            hint.text = "Монеты: +1 за этаж · +2 за идеальную постановку · награды за район/цели";
+            Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -262f), new Vector2(980f, 36f));
 
             float[] ys = { 250f, 150f, 50f };
             for (int i = 0; i < UpgKinds.Length; i++) UpgradeRow(prt, i, ys[i]);
@@ -787,7 +800,12 @@ namespace Towerpolis.Game.UI
         {
             _upgInfo[i] = NewText("UpgInfo" + i, parent, 34, FontStyles.Bold, TextAlignmentOptions.Left);
             _upgInfo[i].color = OffWhite;
-            Place(_upgInfo[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-150f, y), new Vector2(560f, 70f));
+            Place(_upgInfo[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-150f, y + 14f), new Vector2(560f, 44f));
+
+            _upgDesc[i] = NewText("UpgDesc" + i, parent, 22, FontStyles.Italic, TextAlignmentOptions.Left);
+            _upgDesc[i].color = Disabled;
+            _upgDesc[i].text = UpgDescs[i];
+            Place(_upgDesc[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-150f, y - 22f), new Vector2(620f, 34f));
 
             int idx = i; // capture for the listener
             Button btn = MakeButton(parent, "UpgBuy" + i, new Vector2(0.5f, 0.5f), new Vector2(330f, y), new Vector2(260f, 76f), Gold, out _upgBuyImg[i]);

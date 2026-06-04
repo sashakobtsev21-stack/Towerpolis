@@ -82,10 +82,11 @@ namespace Towerpolis.Game.Gameplay
             new Color(0.70f, 0.50f, 0.98f), // violet
             new Color(1.00f, 0.84f, 0.36f), // gold
         };
-        // The model material slots that are the BODY (wall) — these get the per-block variant colour;
-        // frames/glass/trim keep the palette. (Base brick is excluded — bases pass no override.)
+        // The model material slots that take the per-block variant BODY colour; frames/glass/trim keep the
+        // palette. (Base brick is excluded — bases pass no override.) TP_CanopyLB (window/door awnings) is
+        // included so the canopies match the block's wall colour instead of staying white.
         static readonly HashSet<string> BodyNames =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TP_Green", "TP_Yellow", "TP_Orange", "TP_Blue" };
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TP_Green", "TP_Yellow", "TP_Orange", "TP_Blue", "TP_CanopyLB" };
 
         readonly Dictionary<string, GameObject> _models = new Dictionary<string, GameObject>();
         readonly Dictionary<string, Material> _palette = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase);

@@ -208,7 +208,7 @@ def build_balcony(name,bx,body_mat):  # wooden balcony + door front; windows L/R
     o=body(name,2,2,FH,bx,body_mat)
     p=rim(bx,m_white)+windows(bx,('L','R'),(-0.44,0.44),CZ,0.58,0.95,m_white,m_glass,1,1,m_canlb)
     p+=balcony(bx,'F',m_wood,1.3)+door_unit(bx,'F',0.0,0.62,1.1,m_white,m_glass,m_gold)   # dh 1.25->1.1
-    p+=awn(bx,'F',0.0,1.23,1.7,m_canlb)               # awning above balcony door (lowered with door)
+    p+=awn(bx,'F',0.0,1.40,1.7,m_canlb)               # awning above balcony door — raised (was 1.23)
     join(o,p)
 safe('Floor_Balcony',   lambda: build_balcony('Floor_Balcony',   3,  m_yellow))
 safe('Floor_Balcony_2', lambda: build_balcony('Floor_Balcony_2', 15, m_orange))
