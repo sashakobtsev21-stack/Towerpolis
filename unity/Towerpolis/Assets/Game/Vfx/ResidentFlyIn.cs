@@ -69,9 +69,12 @@ namespace Towerpolis.Game.Vfx
             // From FAR to the SIDE at roughly roof height + in front of the block; glide in mostly
             // HORIZONTALLY (a gentle umbrella descent, NOT dropping through the roof) and settle INTO the
             // block body at mid-height.
-            float side = (index % 2 == 0 ? 1f : -1f) * (2.4f + 0.25f * index + Random.Range(0f, 0.6f));
+            float dir = (index % 2 == 0) ? 1f : -1f;
+            float side = dir * (2.4f + 0.25f * index + Random.Range(0f, 0.6f));
             Vector3 start = basePos + new Vector3(side, FloorHeight * 0.85f + Random.Range(0f, 0.45f), -1.2f + Random.Range(-0.2f, 0.2f));
-            Vector3 end = basePos + new Vector3(Random.Range(-0.4f, 0.4f), FloorHeight * 0.55f, -0.6f);
+            // End AT the side wall on the approach side (block half-width ~1), so they vanish passing THROUGH
+            // the wall, not at the centre. Slight y/z jitter so they don't all hit the same point.
+            Vector3 end = basePos + new Vector3(dir * 0.92f, FloorHeight * 0.55f + Random.Range(-0.15f, 0.2f), -0.55f + Random.Range(-0.2f, 0.2f));
 
             float dur = 1.35f + Random.Range(0f, 0.5f);
             float swayPhase = Random.Range(0f, 6.283f);
@@ -86,7 +89,7 @@ namespace Towerpolis.Game.Vfx
                 pos.y += Mathf.Sin(Time.time * 2.3f + swayPhase) * 0.10f * (1f - p); // gentle umbrella bob, settles
                 t.position = pos;
                 t.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 2.3f + swayPhase) * 9f * (1f - p));
-                if (p > 0.82f) t.localScale = baseScale * (1f - 0.85f * (p - 0.82f) / 0.18f); // shrink into the block
+                if (p > 0.72f) t.localScale = baseScale * Mathf.Clamp01(1f - (p - 0.72f) / 0.28f); // shrink out AT the wall
                 yield return null;
             }
             if (go != null) Destroy(go);
