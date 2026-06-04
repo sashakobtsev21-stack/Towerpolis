@@ -1,7 +1,26 @@
+using UnityEngine;
 using Towerpolis.Core.Meta;
 
 namespace Towerpolis.Game.Meta
 {
+    /// <summary>Unity-side display data for a district (name, grid column count, accent colour) — the
+    /// city view uses this. Full palette/skybox/music land as DistrictDefinition SOs later (ADR-0007).</summary>
+    public readonly struct DistrictView
+    {
+        public readonly string Id;
+        public readonly string DisplayName;
+        public readonly int GridWidth;
+        public readonly Color Accent;
+
+        public DistrictView(string id, string displayName, int gridWidth, Color accent)
+        {
+            Id = id;
+            DisplayName = displayName;
+            GridWidth = gridWidth;
+            Accent = accent;
+        }
+    }
+
     /// <summary>
     /// The 3 starter districts' GAMEPLAY numbers (meta-spec §2.2) as Core <see cref="DistrictInfo"/> —
     /// grid capacity, fill goal, completion reward, linear unlock order. This is the code source of truth
@@ -18,11 +37,25 @@ namespace Towerpolis.Game.Meta
             new DistrictInfo("winter",   gridCapacity: 6 * 4, fillGoal: 2200, rewardCoins: 500, rewardGems: 2),
         };
 
+        static readonly DistrictView[] Views =
+        {
+            new DistrictView("downtown", "DOWNTOWN",       5, new Color(0.40f, 0.74f, 1.00f)),
+            new DistrictView("neon",     "NEON QUARTER",   5, new Color(0.18f, 0.74f, 0.69f)),
+            new DistrictView("winter",   "WINTER HEIGHTS", 6, new Color(0.90f, 0.95f, 0.99f)),
+        };
+
         public static DistrictInfo Get(string id)
         {
             foreach (DistrictInfo d in All)
                 if (d.Id == id) return d;
             return All[0]; // default to Downtown
+        }
+
+        public static DistrictView GetView(string id)
+        {
+            foreach (DistrictView v in Views)
+                if (v.Id == id) return v;
+            return Views[0];
         }
 
         /// <summary>The district unlocked AFTER the given one completes (null id if none / last).</summary>

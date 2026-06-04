@@ -77,6 +77,8 @@ namespace Towerpolis.Game.Gameplay
                 gameObject.AddComponent<Towerpolis.Game.Rendering.LookDev>();
             if (FindFirstObjectByType<Towerpolis.Game.Meta.MetaService>() == null)
                 gameObject.AddComponent<Towerpolis.Game.Meta.MetaService>();
+            if (FindFirstObjectByType<Towerpolis.Game.UI.MetaHud>() == null)
+                gameObject.AddComponent<Towerpolis.Game.UI.MetaHud>();
         }
 
         public void NewRun()
@@ -216,6 +218,7 @@ namespace Towerpolis.Game.Gameplay
 
         static bool TapPressed()
         {
+            if (InputGate.Suppress) return false; // a modal UI (e.g. the city view) is open
             Pointer p = Pointer.current;
             return p != null && p.press.wasPressedThisFrame;
         }
