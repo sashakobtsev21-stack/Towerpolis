@@ -9,7 +9,7 @@ namespace Towerpolis.Game.Meta
     /// </summary>
     public static class DistrictSky
     {
-        const float FullAscentFloors = 180f; // height at which the sky reaches full "space"
+        const float FullAscentFloors = 90f; // height at which the sky reaches full "space"
 
         static readonly Color SpaceTop = new Color(0.012f, 0.012f, 0.05f);
         static readonly Color SpaceHorizon = new Color(0.06f, 0.05f, 0.16f);
@@ -54,13 +54,26 @@ namespace Towerpolis.Game.Meta
 
         static void EnsureRuntime()
         {
-            Material current = RenderSettings.skybox;
-            if (current == null) return;
-            if (_runtime == null || current != _runtime)
+            if (_runtime != null && RenderSettings.skybox == _runtime) return;
+
+            // Own a gradient skybox material we fully control (the scene's skybox may be a different
+            // shader without _TopColor — then tinting would silently do nothing).
+            Shader sh = Shader.Find("Towerpolis/GradientSkybox");
+            if (sh != null)
             {
-                _runtime = new Material(current); // clone — never edit the baked asset
-                RenderSettings.skybox = _runtime;
+                _runtime = new Material(sh);
             }
+            else
+            {
+                Material cur = RenderSettings.skybox;
+                if (cur == null) return;
+                _runtime = new Material(cur);
+            }
+            RenderSettings.skybox = _runtime;
+
+            // Make sure the camera actually draws the skybox (not a solid colour).
+            Camera cam = Camera.main;
+            if (cam != null) cam.clearFlags = CameraClearFlags.Skybox;
         }
 
         static void SetCol(string prop, Color c)

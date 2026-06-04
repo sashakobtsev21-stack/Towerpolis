@@ -201,6 +201,7 @@ namespace Towerpolis.Game.UI
             if (_summitLabel == null) yield break;
             _summitLabel.text = "SUMMIT!\n" + SummitHeight + " FLOORS";
             _summitLabel.gameObject.SetActive(true);
+            FlashVignette(0.35f, 1.0f, Yellow); // gold flash so it can't be missed
             RectTransform rt = _summitLabel.rectTransform;
             float t = 0f, dur = 2.2f;
             while (t < dur)
@@ -218,27 +219,30 @@ namespace Towerpolis.Game.UI
             _summitLabel.gameObject.SetActive(false);
         }
 
-        void FlashVignette(float peakAlpha, float fade)
+        void FlashVignette(float peakAlpha, float fade) => FlashVignette(peakAlpha, fade, new Color(1f, 0f, 0f));
+
+        void FlashVignette(float peakAlpha, float fade, Color color)
         {
             if (_vignette == null) return;
             StopCoroutine(nameof(VignetteCo));
             _vigPeak = peakAlpha;
             _vigFade = fade;
+            _vigColor = color;
             StartCoroutine(nameof(VignetteCo));
         }
 
         float _vigPeak, _vigFade;
+        Color _vigColor = new Color(1f, 0f, 0f);
 
         IEnumerator VignetteCo()
         {
             _vignette.gameObject.SetActive(true);
-            _vignette.color = new Color(1f, 0f, 0f, _vigPeak);
             float t = 0f;
             while (t < _vigFade)
             {
                 t += Time.deltaTime;
                 float a = Mathf.Lerp(_vigPeak, 0f, t / _vigFade);
-                _vignette.color = new Color(1f, 0f, 0f, a);
+                _vignette.color = new Color(_vigColor.r, _vigColor.g, _vigColor.b, a);
                 yield return null;
             }
             _vignette.gameObject.SetActive(false);
