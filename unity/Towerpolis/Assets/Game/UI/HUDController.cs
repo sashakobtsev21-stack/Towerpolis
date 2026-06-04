@@ -38,6 +38,10 @@ namespace Towerpolis.Game.UI
         TMP_Text _restartScore;
         TMP_Text _restartBest;
 
+        TMP_Text _summitLabel;
+        bool _summitShown;
+        const int SummitHeight = 50; // TESTING: low so the beat is reachable (design = 200) — restore before launch
+
         int _highScore;
 
         void Start()
@@ -96,6 +100,12 @@ namespace Towerpolis.Game.UI
             if (_scoreLabel != null) _scoreLabel.text = floors.ToString();
             Punch(_scoreLabel != null ? _scoreLabel.rectTransform : null, 1.2f);
             if (_floorsLabel != null) _floorsLabel.text = ""; // drop the redundant top-right counter
+
+            if (floors >= SummitHeight && !_summitShown)
+            {
+                _summitShown = true;
+                StartCoroutine(SummitBeat());
+            }
         }
 
         void OnStrikeAdded(int strikeNumber)
@@ -132,6 +142,8 @@ namespace Towerpolis.Game.UI
             for (int i = 0; i < _pips.Length; i++)
                 if (_pips[i] != null) _pips[i].color = PipEmpty;
             if (_restartPanel != null) _restartPanel.SetActive(false);
+            _summitShown = false;
+            if (_summitLabel != null) _summitLabel.gameObject.SetActive(false);
         }
 
         // ---------- animations ----------
@@ -182,6 +194,28 @@ namespace Towerpolis.Game.UI
                 yield return null;
             }
             _perfectLabel.gameObject.SetActive(false);
+        }
+
+        IEnumerator SummitBeat()
+        {
+            if (_summitLabel == null) yield break;
+            _summitLabel.text = "SUMMIT!\n" + SummitHeight + " FLOORS";
+            _summitLabel.gameObject.SetActive(true);
+            RectTransform rt = _summitLabel.rectTransform;
+            float t = 0f, dur = 2.2f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float p = t / dur;
+                float scale = p < 0.18f ? Mathf.Lerp(0.4f, 1.2f, p / 0.18f)
+                            : p < 0.32f ? Mathf.Lerp(1.2f, 1f, (p - 0.18f) / 0.14f)
+                            : 1f;
+                rt.localScale = new Vector3(scale, scale, 1f);
+                float a = p < 0.72f ? 1f : Mathf.Lerp(1f, 0f, (p - 0.72f) / 0.28f);
+                _summitLabel.color = new Color(Yellow.r, Yellow.g, Yellow.b, a);
+                yield return null;
+            }
+            _summitLabel.gameObject.SetActive(false);
         }
 
         void FlashVignette(float peakAlpha, float fade)
@@ -269,6 +303,14 @@ namespace Towerpolis.Game.UI
             _perfectRect = _perfectLabel.rectTransform;
             _perfectRect.sizeDelta = new Vector2(600f, 120f);
             _perfectLabel.gameObject.SetActive(false);
+
+            _summitLabel = NewText("Summit", canvasGo.transform, 96, FontStyles.Bold, TextAlignmentOptions.Center);
+            _summitLabel.color = Yellow;
+            var srt = _summitLabel.rectTransform;
+            srt.anchorMin = srt.anchorMax = srt.pivot = new Vector2(0.5f, 0.5f);
+            srt.anchoredPosition = new Vector2(0f, 180f);
+            srt.sizeDelta = new Vector2(980f, 260f);
+            _summitLabel.gameObject.SetActive(false);
 
             BuildRestartPanel(canvasGo.transform);
         }
