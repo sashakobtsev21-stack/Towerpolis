@@ -198,14 +198,20 @@ namespace Towerpolis.Game.Gameplay
             // Measure the offset against the CURRENT (swaying) top, so a clean hit on a leaning tower
             // doesn't read as off-centre.
             float offsetX = contactX - tower.TopWorldX;
-            DropOutcome outcome = _run.PlaceBlock(_pendingType, offsetX);
+
+            // Magnet upgrade: nudge the block toward centre BEFORE grading (progression-spec §2.2). Endless
+            // only — GetMagnetFraction returns 0 in Daily, so the daily run grades the raw offset (fair).
+            float magnet = MetaService.Instance != null ? MetaService.Instance.MagnetFraction(Mode == RunMode.Daily) : 0f;
+            float gradedOffset = magnet > 0f ? offsetX * (1f - magnet) : offsetX;
+
+            DropOutcome outcome = _run.PlaceBlock(_pendingType, gradedOffset);
             if (_falling != null) _falling.enabled = false; // its job is done either way
 
             if (outcome.FloorPlaced)
             {
-                // Perfect → MAGNET-snap directly above the floor below (offset 0); Good → keep the landed
+                // Perfect → snap directly above the floor below (offset 0); Good → keep the (magnet-corrected)
                 // overhang. The tower welds it FLUSH in local space (no gaps/overlaps under the sway).
-                float offsetApplied = outcome.Grade == Grade.Perfect ? 0f : offsetX;
+                float offsetApplied = outcome.Grade == Grade.Perfect ? 0f : gradedOffset;
                 tower.WeldPlaced(_pendingBlock, offsetApplied, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
                 spawner.SetColliderEnabled(_pendingBlock, true); // solid face for missed blocks to land on / tip off
                 _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt

@@ -29,6 +29,76 @@ namespace Towerpolis.Game.Meta
         public string ActiveDistrictId => _city != null ? _city.ActiveDistrictId : "downtown";
         public int StreakCurrent => _city != null ? _city.Streak.Current : 0;
 
+        // --- Phase 4 progression: read ---
+        public int FreezeCharges => _city != null ? _city.FreezeCharges : 0;
+        public int FreezeCost => _config.StreakFreezeCost;
+        public int FreezeMax => _config.StreakFreezeMaxCharges;
+        public string EquippedBlockSkin => _city != null ? _city.EquippedBlockSkin : "skin_default";
+        public string EquippedCraneSkin => _city != null ? _city.EquippedCraneSkin : "crane_default";
+
+        public int UpgradeLevel(UpgradeKind kind) => _city == null ? 0 : kind switch
+        {
+            UpgradeKind.Magnet => _city.Upgrades.MagnetLevel,
+            UpgradeKind.SlowMo => _city.Upgrades.SlowMoLevel,
+            _ => _city.Upgrades.CityBonusLevel,
+        };
+
+        int[] UpgradeCosts(UpgradeKind kind) => kind switch
+        {
+            UpgradeKind.Magnet => _config.MagnetUpgradeCosts,
+            UpgradeKind.SlowMo => _config.SlowMoUpgradeCosts,
+            _ => _config.CityBonusUpgradeCosts,
+        };
+
+        public int UpgradeMaxLevel(UpgradeKind kind) => UpgradeCosts(kind).Length;
+        public bool IsUpgradeMaxed(UpgradeKind kind) => UpgradeLevel(kind) >= UpgradeMaxLevel(kind);
+        public int NextUpgradeCost(UpgradeKind kind)
+        {
+            int lvl = UpgradeLevel(kind);
+            int[] c = UpgradeCosts(kind);
+            return lvl < c.Length ? c[lvl] : 0;
+        }
+
+        // Effective gameplay effect — Endless only; the caller passes isDaily so it's suppressed in Daily.
+        public float MagnetFraction(bool isDaily)
+            => _city == null ? 0f : UpgradeService.GetMagnetFraction(_city.Upgrades.MagnetLevel, _config, isDaily);
+        public float SlowMoFactor(bool isDaily)
+            => _city == null ? 1f : UpgradeService.GetSlowMoFactor(_city.Upgrades.SlowMoLevel, _config, isDaily);
+
+        // --- Phase 4 progression: spend (persist + notify) ---
+        /// <summary>Fires whenever coins/upgrades/cosmetics change from a purchase or claim (UI refresh).</summary>
+        public event Action ProgressionChanged;
+
+        public bool BuyUpgrade(UpgradeKind kind)
+        {
+            if (_city == null || !_city.TryBuyUpgrade(kind)) return false;
+            Persist();
+            return true;
+        }
+
+        public bool BuyFreezeCharge()
+        {
+            if (_city == null || !_city.TryBuyFreezeCharge()) return false;
+            Persist();
+            return true;
+        }
+
+        public bool CanClaimLoginToday() => _city != null && _city.CanClaimLogin(TodayKey);
+
+        public LoginCalendarReward ClaimLoginToday()
+        {
+            if (_city == null) return default;
+            LoginCalendarReward r = _city.ClaimLogin(TodayKey);
+            Persist();
+            return r;
+        }
+
+        void Persist()
+        {
+            SaveManager.Save(SaveData.From(_city));
+            ProgressionChanged?.Invoke();
+        }
+
         static string TodayKey => DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         public bool HasPlayedDailyToday()

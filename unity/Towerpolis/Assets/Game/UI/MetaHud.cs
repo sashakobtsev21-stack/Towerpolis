@@ -43,13 +43,29 @@ namespace Towerpolis.Game.UI
         RectTransform _grid;
         GridLayoutGroup _gridLayout;
 
+        // Upgrades panel
+        static readonly UpgradeKind[] UpgKinds = { UpgradeKind.Magnet, UpgradeKind.SlowMo, UpgradeKind.CityBonus };
+        static readonly string[] UpgNames = { "MAGNET", "SLOW-MO", "CITY BONUS" };
+        static readonly Color Disabled = new Color(0.60f, 0.62f, 0.67f);
+        GameObject _upgPanel;
+        TMP_Text _upgCoins;
+        TMP_Text[] _upgInfo;
+        TMP_Text[] _upgBuyLbl;
+        Image[] _upgBuyImg;
+        TMP_Text _freezeInfo, _freezeBuyLbl, _loginLbl;
+        Image _freezeBuyImg, _loginImg;
+
         void Start()
         {
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
             _controller = FindFirstObjectByType<TowerGameController>();
             EnsureEventSystem(); // UGUI buttons need one to receive clicks
             BuildUI();
-            if (_meta != null) _meta.RunBanked += OnBanked;
+            if (_meta != null)
+            {
+                _meta.RunBanked += OnBanked;
+                _meta.ProgressionChanged += OnProgressionChanged;
+            }
             if (_controller != null)
             {
                 _controller.FloorAdded += OnFloorLive;  // tick coins/population up as you build
@@ -68,7 +84,11 @@ namespace Towerpolis.Game.UI
 
         void OnDestroy()
         {
-            if (_meta != null) _meta.RunBanked -= OnBanked;
+            if (_meta != null)
+            {
+                _meta.RunBanked -= OnBanked;
+                _meta.ProgressionChanged -= OnProgressionChanged;
+            }
             if (_controller != null)
             {
                 _controller.FloorAdded -= OnFloorLive;
@@ -80,6 +100,12 @@ namespace Towerpolis.Game.UI
         {
             RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
+            if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
+        }
+
+        void OnProgressionChanged()
+        {
+            if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
         }
 
         void OnFloorLive(int floors) => RefreshTopBar();
@@ -220,6 +246,82 @@ namespace Towerpolis.Game.UI
             brt.anchoredPosition = Vector2.zero;
         }
 
+        // ---------- upgrades view ----------
+
+        void OpenUpgrades()
+        {
+            if (_upgPanel == null) return;
+            PopulateUpgrades();
+            _upgPanel.SetActive(true);
+            InputGate.Suppress = true; // don't drop a block while the shop is up
+        }
+
+        void CloseUpgrades()
+        {
+            if (_upgPanel != null) _upgPanel.SetActive(false);
+            InputGate.Suppress = false;
+        }
+
+        void BuyUpgrade(UpgradeKind kind)
+        {
+            if (_meta != null) _meta.BuyUpgrade(kind); // ProgressionChanged → refresh
+            PopulateUpgrades();
+        }
+
+        void BuyFreeze()
+        {
+            if (_meta != null) _meta.BuyFreezeCharge();
+            PopulateUpgrades();
+        }
+
+        void ClaimLoginGift()
+        {
+            if (_meta != null) _meta.ClaimLoginToday();
+            PopulateUpgrades();
+        }
+
+        void PopulateUpgrades()
+        {
+            if (_meta == null) return;
+            int coins = _meta.Coins;
+            if (_upgCoins != null) _upgCoins.text = "COINS  " + coins;
+
+            for (int i = 0; i < UpgKinds.Length; i++)
+            {
+                UpgradeKind k = UpgKinds[i];
+                int lvl = _meta.UpgradeLevel(k), max = _meta.UpgradeMaxLevel(k);
+                bool maxed = _meta.IsUpgradeMaxed(k);
+                int cost = _meta.NextUpgradeCost(k);
+                bool afford = coins >= cost;
+                if (_upgInfo[i] != null) _upgInfo[i].text = UpgNames[i] + "   Lv " + lvl + " / " + max;
+                SetBuy(_upgBuyImg[i], _upgBuyLbl[i], maxed ? "MAX" : "BUY " + cost, maxed, afford);
+            }
+
+            int charges = _meta.FreezeCharges, fmax = _meta.FreezeMax;
+            bool freezeFull = charges >= fmax;
+            if (_freezeInfo != null) _freezeInfo.text = "STREAK FREEZE   x" + charges + " / " + fmax;
+            SetBuy(_freezeBuyImg, _freezeBuyLbl, freezeFull ? "FULL" : "BUY " + _meta.FreezeCost, freezeFull, coins >= _meta.FreezeCost);
+
+            bool canClaim = _meta.CanClaimLoginToday();
+            if (_loginLbl != null)
+            {
+                _loginLbl.text = canClaim ? "CLAIM DAILY GIFT" : "GIFT CLAIMED";
+                _loginLbl.color = canClaim ? Navy : OffWhite;
+            }
+            if (_loginImg != null) _loginImg.color = canClaim ? Gold : Navy;
+        }
+
+        // Colour a buy button by state: maxed/owned = navy, affordable = gold, too dear = greyed.
+        static void SetBuy(Image img, TMP_Text label, string text, bool maxed, bool afford)
+        {
+            if (label != null)
+            {
+                label.text = text;
+                label.color = maxed ? OffWhite : (afford ? Navy : Disabled);
+            }
+            if (img != null) img.color = maxed ? Navy : (afford ? Gold : Locked);
+        }
+
         // ---------- UI construction ----------
 
         void BuildUI()
@@ -243,7 +345,9 @@ namespace Towerpolis.Game.UI
 
             CityButton(canvasGo.transform);
             DailyButton(canvasGo.transform);
+            UpgradesButton(canvasGo.transform);
             BuildCityPanel(canvasGo.transform);
+            BuildUpgradePanel(canvasGo.transform);
         }
 
         void CityButton(Transform parent)
@@ -334,7 +438,90 @@ namespace Towerpolis.Game.UI
             Stretch(label.rectTransform);
         }
 
+        void UpgradesButton(Transform parent)
+        {
+            Button btn = MakeButton(parent, "UpgradesButton", new Vector2(0f, 1f), new Vector2(420f, -104f), new Vector2(220f, 72f), Navy, out _);
+            btn.onClick.AddListener(OpenUpgrades);
+            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            label.color = OffWhite;
+            label.text = "UPGRADES";
+            Stretch(label.rectTransform);
+        }
+
+        void BuildUpgradePanel(Transform parent)
+        {
+            _upgInfo = new TMP_Text[UpgKinds.Length];
+            _upgBuyLbl = new TMP_Text[UpgKinds.Length];
+            _upgBuyImg = new Image[UpgKinds.Length];
+
+            _upgPanel = new GameObject("UpgradePanel", typeof(RectTransform), typeof(Image));
+            _upgPanel.transform.SetParent(parent, false);
+            var prt = (RectTransform)_upgPanel.transform;
+            Stretch(prt);
+            _upgPanel.GetComponent<Image>().color = Dim;
+
+            var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
+            title.color = OffWhite;
+            title.text = "UPGRADES";
+            Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
+
+            _upgCoins = NewText("Coins", prt, 40, FontStyles.Bold, TextAlignmentOptions.Top);
+            _upgCoins.color = Gold;
+            Place(_upgCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(900f, 60f));
+
+            float[] ys = { 250f, 150f, 50f };
+            for (int i = 0; i < UpgKinds.Length; i++) UpgradeRow(prt, i, ys[i]);
+
+            _freezeInfo = NewText("FreezeInfo", prt, 34, FontStyles.Bold, TextAlignmentOptions.Left);
+            _freezeInfo.color = OffWhite;
+            Place(_freezeInfo.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-150f, -70f), new Vector2(560f, 70f));
+            Button freezeBtn = MakeButton(prt, "FreezeBuy", new Vector2(0.5f, 0.5f), new Vector2(330f, -70f), new Vector2(260f, 76f), Gold, out _freezeBuyImg);
+            freezeBtn.onClick.AddListener(BuyFreeze);
+            _freezeBuyLbl = NewText("Lbl", freezeBtn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(_freezeBuyLbl.rectTransform);
+
+            Button loginBtn = MakeButton(prt, "LoginClaim", new Vector2(0.5f, 0.5f), new Vector2(0f, -190f), new Vector2(520f, 84f), Gold, out _loginImg);
+            loginBtn.onClick.AddListener(ClaimLoginGift);
+            _loginLbl = NewText("Lbl", loginBtn.transform, 32, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(_loginLbl.rectTransform);
+
+            Button close = MakeButton(prt, "UpgClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(420f, 100f), Gold, out _);
+            close.onClick.AddListener(CloseUpgrades);
+            var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
+            clbl.color = Navy;
+            clbl.text = "CLOSE";
+            Stretch(clbl.rectTransform);
+
+            _upgPanel.SetActive(false);
+        }
+
+        void UpgradeRow(Transform parent, int i, float y)
+        {
+            _upgInfo[i] = NewText("UpgInfo" + i, parent, 34, FontStyles.Bold, TextAlignmentOptions.Left);
+            _upgInfo[i].color = OffWhite;
+            Place(_upgInfo[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-150f, y), new Vector2(560f, 70f));
+
+            int idx = i; // capture for the listener
+            Button btn = MakeButton(parent, "UpgBuy" + i, new Vector2(0.5f, 0.5f), new Vector2(330f, y), new Vector2(260f, 76f), Gold, out _upgBuyImg[i]);
+            btn.onClick.AddListener(() => BuyUpgrade(UpgKinds[idx]));
+            _upgBuyLbl[i] = NewText("Lbl", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(_upgBuyLbl[i].rectTransform);
+        }
+
         // ---------- helpers ----------
+
+        static Button MakeButton(Transform parent, string name, Vector2 anchor, Vector2 pos, Vector2 size, Color bg, out Image img)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = anchor;
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = size;
+            img = go.GetComponent<Image>();
+            img.color = bg;
+            return go.GetComponent<Button>();
+        }
 
         static TMP_Text NewText(string name, Transform parent, float size, FontStyles style, TextAlignmentOptions align)
         {
