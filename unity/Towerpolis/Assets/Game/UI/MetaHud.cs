@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -73,6 +75,13 @@ namespace Towerpolis.Game.UI
         TMP_Text[] _missionLines;
         TMP_Text[] _achLines;
 
+        // Run-end toasts (mission/achievement/district completions)
+        static readonly Color Cyan = new Color(0.50f, 0.85f, 1f);
+        Transform _toastRoot;
+        readonly Queue<Toast> _toasts = new Queue<Toast>();
+        bool _toasting;
+        struct Toast { public string Text; public Color Color; }
+
         void Start()
         {
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
@@ -121,6 +130,7 @@ namespace Towerpolis.Game.UI
             RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
+            if (outcome.DistrictCompletedNow) EnqueueToast("DISTRICT COMPLETE!", Gold);
         }
 
         void OnProgressionChanged()
@@ -132,6 +142,68 @@ namespace Towerpolis.Game.UI
         void OnSystemsResolved(RunSystemsOutcome sys)
         {
             if (_missionPanel != null && _missionPanel.activeSelf) PopulateMissions();
+
+            if (sys.CompletedMissions != null)
+                foreach (string id in sys.CompletedMissions)
+                {
+                    MissionDef m = MissionCatalog.Get(id);
+                    EnqueueToast("MISSION COMPLETE\n" + m.Name + "   +" + m.Info.RewardCoins, Gold);
+                }
+            if (sys.UnlockedAchievements != null)
+                foreach (string id in sys.UnlockedAchievements)
+                {
+                    AchievementDef a = FindAchievement(id);
+                    EnqueueToast("ACHIEVEMENT\n" + a.Name + "   +" + a.Info.RewardCoins, Cyan);
+                }
+        }
+
+        static AchievementDef FindAchievement(string id)
+        {
+            foreach (AchievementDef a in AchievementCatalog.All)
+                if (a.Info.AchievementId == id) return a;
+            return AchievementCatalog.All[0];
+        }
+
+        // ---------- toasts ----------
+
+        void EnqueueToast(string text, Color color)
+        {
+            if (_toastRoot == null) return;
+            _toasts.Enqueue(new Toast { Text = text, Color = color });
+            if (!_toasting) StartCoroutine(RunToasts());
+        }
+
+        IEnumerator RunToasts()
+        {
+            _toasting = true;
+            while (_toasts.Count > 0)
+                yield return AnimateToast(_toasts.Dequeue());
+            _toasting = false;
+        }
+
+        IEnumerator AnimateToast(Toast t)
+        {
+            TMP_Text lbl = NewText("Toast", _toastRoot, 44, FontStyles.Bold, TextAlignmentOptions.Center);
+            RectTransform rt = lbl.rectTransform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(940f, 130f);
+            lbl.text = t.Text;
+            const float baseY = 380f;
+
+            float e = 0f;
+            while (e < 0.18f) { e += Time.deltaTime; SetToast(lbl, t.Color, e / 0.18f, baseY); yield return null; }
+            e = 0f;
+            while (e < 1.1f) { e += Time.deltaTime; SetToast(lbl, t.Color, 1f, baseY); yield return null; }
+            e = 0f;
+            while (e < 0.45f) { e += Time.deltaTime; float k = e / 0.45f; SetToast(lbl, t.Color, 1f - k, baseY + k * 70f); yield return null; }
+            Destroy(lbl.gameObject);
+        }
+
+        static void SetToast(TMP_Text lbl, Color c, float alpha, float y)
+        {
+            c.a = Mathf.Clamp01(alpha);
+            lbl.color = c;
+            lbl.rectTransform.anchoredPosition = new Vector2(0f, y);
         }
 
         void OnFloorLive(int floors) => RefreshTopBar();
@@ -480,6 +552,7 @@ namespace Towerpolis.Game.UI
             scaler.referenceResolution = new Vector2(1080, 1920);
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
+            _toastRoot = canvasGo.transform;
 
             // Only POPULATION is shown in the top bar now (coins/streak are tracked in Core for later,
             // not displayed — owner: "нужно только население и этажей"; height is the HUD's big number).
