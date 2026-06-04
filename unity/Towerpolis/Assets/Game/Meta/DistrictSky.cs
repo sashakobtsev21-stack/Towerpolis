@@ -26,11 +26,6 @@ namespace Towerpolis.Game.Meta
             _gHorizon = t.SkyHorizon;
             _gBottom = t.SkyBottom;
             UpdateAltitude(0);
-
-            // Diagnostic: confirm the active skybox is our controllable gradient shader.
-            string shader = RenderSettings.skybox != null && RenderSettings.skybox.shader != null
-                ? RenderSettings.skybox.shader.name : "none";
-            Debug.Log($"[Towerpolis] DistrictSky set — skybox shader: {shader}; ground top {t.SkyTop}");
         }
 
         /// <summary>Blend the sky/ambient toward space for the current floor count.</summary>

@@ -84,6 +84,8 @@ namespace Towerpolis.Game.Gameplay
                 gameObject.AddComponent<Towerpolis.Game.UI.MetaHud>();
             if (FindFirstObjectByType<Towerpolis.Game.Meta.Atmosphere>() == null)
                 gameObject.AddComponent<Towerpolis.Game.Meta.Atmosphere>();
+            if (FindFirstObjectByType<Towerpolis.Game.Meta.BackgroundLayer>() == null)
+                gameObject.AddComponent<Towerpolis.Game.Meta.BackgroundLayer>();
         }
 
         public enum RunMode { Endless, Daily }
