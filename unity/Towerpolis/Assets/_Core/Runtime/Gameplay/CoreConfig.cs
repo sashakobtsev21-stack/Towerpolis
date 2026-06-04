@@ -45,5 +45,12 @@ namespace Towerpolis.Core.Gameplay
         public int ResidentsPremium = 4;
         public int PerfectResidentBonus = 1;
         public int ResidentScoreValue = 10;
+
+        // --- Economy / meta (Phase 3 — meta-spec §5). Earn-only; spending is Phase 4. ---
+        public int CoinPerFloor = 1;            // coins per placed floor (any grade)
+        public int CoinBonusPerfect = 2;        // extra coins per Perfect drop
+        public int DailySeedFirstWinCoins = 50; // once per UTC day, any completed daily run
+        public int[] StreakMilestoneDays = { 3, 7, 14, 30 };
+        public int[] StreakMilestoneCoins = { 75, 200, 400, 1000 };
     }
 }

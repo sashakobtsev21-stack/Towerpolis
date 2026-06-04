@@ -45,6 +45,7 @@ namespace Towerpolis.Core.Gameplay
         public int MissStrikes { get; private set; }
         public int Score { get; private set; }           // sum of floor scores only (spec §6.1)
         public int PerfectChain { get; private set; }
+        public int TotalPerfects { get; private set; }   // cumulative Perfect drops (coins/stats — meta §5)
         public int FloorCount { get; private set; }     // placed floors, excluding the base
         public int TotalResidents { get; private set; }
         public bool IsOver { get; private set; }
@@ -74,6 +75,7 @@ namespace Towerpolis.Core.Gameplay
             {
                 case Grade.Perfect:
                     PerfectChain += 1;
+                    TotalPerfects += 1;
                     LeanOffset *= 1f - _cfg.PerfectLeanCorrectionFraction;
                     residentsAdded = Scoring.BaseResidents(_cfg, type) + _cfg.PerfectResidentBonus;
                     scoreGained = Scoring.FloorScore(_cfg, type, grade, PerfectChain);
