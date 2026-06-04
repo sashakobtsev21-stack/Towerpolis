@@ -178,6 +178,8 @@ namespace Towerpolis.Game.Gameplay
                 model.transform.localPosition = Vector3.zero;
                 FitToGrid(model, floorHeight, mesh.transform);
                 Recolor(model, bodyFallback, bodyOverride, slotOverrides, hideCanopy);
+                // Balcony: FBX carnizes are hidden (above); add a single code-built canopy over the door.
+                if (hideCanopy) AddDoorCanopy(mesh.transform, blockWidth, bodyOverride ?? bodyFallback);
             }
             else
             {
@@ -282,6 +284,22 @@ namespace Towerpolis.Game.Gameplay
                 if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", color * emission);
             }
             return mat;
+        }
+
+        // A single sloped canopy over the balcony door (front face), built in code so we don't depend on the
+        // FBX. Coloured to the block's body. Slopes down-and-out above the door.
+        void AddDoorCanopy(Transform meshParent, float blockWidth, Material mat)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = "DoorCanopy";
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            var t = go.transform;
+            t.SetParent(meshParent, false);
+            t.localPosition = new Vector3(0f, floorHeight * 0.92f, -(depth * 0.5f) - 0.13f); // just in front of the front face
+            t.localRotation = Quaternion.Euler(-22f, 0f, 0f);                                // slope down-and-out
+            t.localScale = new Vector3(blockWidth * 0.85f, 0.05f, 0.30f);                     // wide, thin, short projection
+            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
         // A fully transparent material — assigning it to a slot "removes" that submesh visually at runtime
