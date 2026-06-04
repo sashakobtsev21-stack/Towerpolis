@@ -31,6 +31,12 @@ namespace Towerpolis.Game.UI
         Image _dailyButtonImg;
         TMP_Text _dailyLabel;
 
+        static readonly string[] DistIds = { "downtown", "neon", "winter" };
+        static readonly string[] DistNames = { "DOWNTOWN", "NEON", "WINTER" };
+        static readonly Color Locked = new Color(0.22f, 0.24f, 0.30f, 0.95f);
+        Image[] _distImg;
+        TMP_Text[] _distLbl;
+
         GameObject _cityPanel;
         TMP_Text _cityTitle;
         TMP_Text _cityPop;
@@ -125,6 +131,51 @@ namespace Towerpolis.Game.UI
             InputGate.Suppress = false;
         }
 
+        void DistrictButtons(Transform parent)
+        {
+            _distImg = new Image[DistIds.Length];
+            _distLbl = new TMP_Text[DistIds.Length];
+            float[] xs = { -310f, 0f, 310f };
+            for (int i = 0; i < DistIds.Length; i++)
+            {
+                int idx = i; // capture for the listener
+                var btnGo = new GameObject("Dist_" + DistIds[i], typeof(RectTransform), typeof(Image), typeof(Button));
+                btnGo.transform.SetParent(parent, false);
+                var rt = (RectTransform)btnGo.transform;
+                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 1f);
+                rt.anchoredPosition = new Vector2(xs[i], -300f);
+                rt.sizeDelta = new Vector2(290f, 80f);
+                _distImg[i] = btnGo.GetComponent<Image>();
+                btnGo.GetComponent<Button>().onClick.AddListener(() => SwitchDistrict(DistIds[idx]));
+                _distLbl[i] = NewText("L", rt, 28, FontStyles.Bold, TextAlignmentOptions.Center);
+                Stretch(_distLbl[i].rectTransform);
+            }
+        }
+
+        void RefreshDistrictButtons()
+        {
+            if (_meta == null || _distImg == null) return;
+            string active = _meta.ActiveDistrictId;
+            for (int i = 0; i < DistIds.Length; i++)
+            {
+                bool unlocked = _meta.IsDistrictUnlocked(DistIds[i]);
+                bool isActive = DistIds[i] == active;
+                if (_distImg[i] != null) _distImg[i].color = !unlocked ? Locked : isActive ? Gold : Navy;
+                if (_distLbl[i] != null)
+                {
+                    _distLbl[i].text = DistNames[i];
+                    _distLbl[i].color = unlocked ? (isActive ? Navy : OffWhite) : new Color(0.55f, 0.57f, 0.62f);
+                }
+            }
+        }
+
+        void SwitchDistrict(string id)
+        {
+            if (_meta == null || !_meta.SetActiveDistrict(id)) return; // locked → ignored
+            CloseCity();
+            if (_controller != null) _controller.NewRun(); // restart in the new district → applies its look
+        }
+
         void PopulateCity()
         {
             if (_meta == null) return;
@@ -138,6 +189,7 @@ namespace Towerpolis.Game.UI
 
             if (_cityTitle != null) _cityTitle.text = view.DisplayName;
             if (_cityPop != null) _cityPop.text = "POPULATION  " + population + "  /  " + info.FillGoal;
+            RefreshDistrictButtons();
 
             if (_gridLayout != null) _gridLayout.constraintCount = Mathf.Max(1, view.GridWidth);
 
@@ -243,6 +295,8 @@ namespace Towerpolis.Game.UI
             _cityPop = NewText("Pop", prt, 40, FontStyles.Normal, TextAlignmentOptions.Top);
             _cityPop.color = Gold;
             Place(_cityPop.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(900f, 60f));
+
+            DistrictButtons(prt);
 
             var gridGo = new GameObject("Grid", typeof(RectTransform));
             gridGo.transform.SetParent(prt, false);

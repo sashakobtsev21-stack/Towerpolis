@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 using Towerpolis.Core.Determinism;
 using Towerpolis.Core.Gameplay;
 using Towerpolis.Core.Meta;
+using Towerpolis.Game.Meta;
 
 namespace Towerpolis.Game.Gameplay
 {
@@ -106,6 +107,12 @@ namespace Towerpolis.Game.Gameplay
         void BeginRun()
         {
             ClearTower();
+
+            // Dress the run for the active district (block palette + sky).
+            string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
+            DistrictTheme theme = DistrictThemes.For(district);
+            if (spawner != null) spawner.ApplyTheme(theme);
+            DistrictSky.Apply(theme);
 
             _coreConfig = tuning != null ? tuning.BuildCoreConfig() : new CoreConfig();
             _run = new TowerRun(_coreConfig);

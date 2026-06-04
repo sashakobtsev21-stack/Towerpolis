@@ -37,6 +37,28 @@ namespace Towerpolis.Game.Meta
         /// <summary>Coins the in-progress run would bank (for a live HUD preview).</summary>
         public int PreviewCoins(in RunResult r) => CoinEarnCalculator.RunCoins(in r, _config);
 
+        /// <summary>Is the district available to play? Linear unlock: downtown → neon → winter.</summary>
+        public bool IsDistrictUnlocked(string id)
+        {
+            if (_city == null) return id == "downtown";
+            return id switch
+            {
+                "downtown" => true,
+                "neon" => _city.IsRewarded("downtown"),
+                "winter" => _city.IsRewarded("neon"),
+                _ => false,
+            };
+        }
+
+        /// <summary>Switch the active district (if unlocked) and persist. The next run uses its look.</summary>
+        public bool SetActiveDistrict(string id)
+        {
+            if (_city == null || !IsDistrictUnlocked(id)) return false;
+            _city.ActiveDistrictId = id;
+            SaveManager.Save(SaveData.From(_city));
+            return true;
+        }
+
         /// <summary>Begin today's daily-seed run if it hasn't been played yet. Returns false if already used.</summary>
         public bool TryStartDaily()
         {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Towerpolis.Core.Gameplay;
+using Towerpolis.Game.Meta;
 
 namespace Towerpolis.Game.Gameplay
 {
@@ -285,6 +286,33 @@ namespace Towerpolis.Game.Gameplay
                 mats[i].mainTexture = _wallTex; // subtle wall fabric so the bright colour isn't dead-flat
             }
             return mats;
+        }
+
+        /// <summary>Recolour the block materials to a district's theme (meta-spec §2): the 3 body variants
+        /// per type + glass + frame are re-tinted in place (textures/smoothness kept). Downtown's theme
+        /// equals the defaults, so applying it is a visual no-op.</summary>
+        public void ApplyTheme(in DistrictTheme t)
+        {
+            Tint(_standardBodies, t.Standard);
+            Tint(_balconyBodies, t.Balcony);
+            Tint(_premiumBodies, t.Premium);
+            if (_palette.TryGetValue("TP_Glass", out Material glass)) SetCol(glass, t.Glass, 0.12f);
+            if (_palette.TryGetValue("TP_White", out Material frame)) SetCol(frame, t.Frame, 0f);
+        }
+
+        static void Tint(Material[] mats, Color[] cols)
+        {
+            if (mats == null || cols == null) return;
+            int n = Mathf.Min(mats.Length, cols.Length);
+            for (int i = 0; i < n; i++) SetCol(mats[i], cols[i], 0f);
+        }
+
+        static void SetCol(Material m, Color c, float emission)
+        {
+            if (m == null) return;
+            m.color = c;
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
+            if (emission > 0f && m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", c * emission);
         }
 
         // Subtle tileable value-noise so flat walls get a little life (kept near-white so colours stay bright).
