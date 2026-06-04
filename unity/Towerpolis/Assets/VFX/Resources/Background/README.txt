@@ -1,12 +1,19 @@
-Drop your own animated-background art here to replace the procedural placeholders.
+Drop your own animated-background art here to replace any procedural placeholder layer.
 
-Names (Texture2D, .png with transparency):
-  cloud   -> the drifting cloud sprite (soft, transparent — fluffy looks best)
-  star    -> the twinkling star/dot sprite (small, bright)
+Each layer loads a Texture2D by name (PNG with transparency). Put files here as:
+  city      -> ground-level city skyline silhouette (wide, dark)
+  cloud     -> drifting clouds (soft, fluffy)
+  balloon   -> hot-air balloons / kites (small)
+  plane     -> planes / birds streaking across (small)
+  aurora    -> aurora band (wide soft gradient, upper atmosphere)
+  star      -> twinkling star / dot (small, bright)
+  moon      -> moon / planet disc (space)
 
 Example: Assets/VFX/Resources/Background/cloud.png  ->  loaded as "Background/cloud".
-If absent, BackgroundLayer generates soft procedural blobs. No wiring — press Play.
+Any name you DON'T provide uses a procedural placeholder. No wiring — press Play.
 
-The layer fades clouds in mid-climb and stars in toward space (atmospheric ascent).
-For richer backdrops (city silhouette, nebula, aurora, planets), tell me the names
-you want and I'll add more layers. See docs/ASSETS_GUIDE.md for sourcing tips.
+Layers fade in/out over their own altitude band as you climb (atmospheric ascent,
+GDD §4.9): city at street level → clouds/balloons mid → planes/aurora higher →
+stars + moon in space. Tints, sizes, drift and the fade bands are in
+BackgroundLayer.cs (Defs) — ask me to tweak any of them. Want more layers
+(satellites, comets, Earth's curve)? Tell me the names and I'll add them.
