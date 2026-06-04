@@ -1,8 +1,21 @@
+using System;
 using System.Collections.Generic;
 
 namespace Towerpolis.Core.Meta
 {
+    /// <summary>A leaderboard record as a serialisable pair (Unity JsonUtility can't serialise a Dictionary).</summary>
+    [Serializable]
+    public sealed class IntEntry
+    {
+        public string Key = "";
+        public int Value;
+
+        public IntEntry() { }
+        public IntEntry(string key, int value) { Key = key; Value = value; }
+    }
+
     /// <summary>One deposited tower in the save (ADR-0007).</summary>
+    [Serializable]
     public sealed class PlotSave
     {
         public int FloorCount;
@@ -11,6 +24,7 @@ namespace Towerpolis.Core.Meta
     }
 
     /// <summary>One district's saved plots (ADR-0007).</summary>
+    [Serializable]
     public sealed class DistrictSave
     {
         public string Id = "";
@@ -19,11 +33,12 @@ namespace Towerpolis.Core.Meta
     }
 
     /// <summary>
-    /// Plain, serialisable snapshot of <see cref="CityState"/> (ADR-0007). Public fields + initialised
-    /// collections so any JSON serialiser (Unity-side: Newtonsoft / System.Text.Json) round-trips it; Core
-    /// itself takes no JSON dependency. <see cref="SchemaVersion"/> drives forward-only migrations
-    /// (<see cref="SaveMigration"/>). The Unity <c>SaveManager</c> owns the actual file I/O.
+    /// Plain, serialisable snapshot of <see cref="CityState"/> (ADR-0007). Public fields, initialised
+    /// collections, and only JsonUtility-friendly types (no Dictionary) so the Unity <c>SaveManager</c>
+    /// round-trips it with the built-in serialiser — Core takes no JSON dependency. <see cref="SchemaVersion"/>
+    /// drives forward-only migrations (<see cref="SaveMigration"/>).
     /// </summary>
+    [Serializable]
     public sealed class SaveData
     {
         public const int CurrentVersion = 1;
@@ -36,7 +51,7 @@ namespace Towerpolis.Core.Meta
         public int StreakLongest;
         public string StreakLastDate = "";
         public List<DistrictSave> Districts = new();
-        public Dictionary<string, int> Leaderboard = new();
+        public List<IntEntry> Leaderboard = new();
         public List<string> RewardedDistricts = new();
 
         /// <summary>Snapshot the current meta-state for saving. Inverse of <see cref="CityState.FromSave"/>.</summary>
@@ -51,10 +66,13 @@ namespace Towerpolis.Core.Meta
                 StreakCurrent = s.Streak.Current,
                 StreakLongest = s.Streak.Longest,
                 StreakLastDate = s.Streak.LastDate,
-                Leaderboard = new Dictionary<string, int>(s.Leaderboard.Records),
                 RewardedDistricts = new List<string>(s.RewardedDistricts),
                 Districts = new List<DistrictSave>(),
+                Leaderboard = new List<IntEntry>(),
             };
+
+            foreach (KeyValuePair<string, int> rec in s.Leaderboard.Records)
+                save.Leaderboard.Add(new IntEntry(rec.Key, rec.Value));
 
             foreach (KeyValuePair<string, CityGrid> kv in s.Grids)
             {
@@ -72,6 +90,15 @@ namespace Towerpolis.Core.Meta
                 save.Districts.Add(ds);
             }
             return save;
+        }
+
+        /// <summary>The leaderboard pairs as a dictionary (for <see cref="LocalLeaderboard"/>).</summary>
+        public Dictionary<string, int> LeaderboardMap()
+        {
+            var map = new Dictionary<string, int>();
+            foreach (IntEntry e in Leaderboard)
+                if (!string.IsNullOrEmpty(e.Key)) map[e.Key] = e.Value;
+            return map;
         }
     }
 }

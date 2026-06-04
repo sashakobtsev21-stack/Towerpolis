@@ -1,0 +1,74 @@
+using System;
+using UnityEngine;
+using Towerpolis.Core.Gameplay;
+using Towerpolis.Core.Meta;
+using Towerpolis.Game.Gameplay;
+
+namespace Towerpolis.Game.Meta
+{
+    /// <summary>
+    /// Owns the persistent meta-state (<see cref="CityState"/>) across runs: loads the save on startup,
+    /// banks each finished run into the active district (deposit + coins + leaderboard), and saves. The
+    /// deterministic work is all in Core; this is the thin Unity bridge (ADR-0007). Self-bootstraps off
+    /// the controller, so no scene wiring is needed. Daily-seed mode + the city view subscribe to
+    /// <see cref="RunBanked"/> later.
+    /// </summary>
+    public sealed class MetaService : MonoBehaviour
+    {
+        public static MetaService Instance { get; private set; }
+
+        CityState _city;
+        TowerGameController _controller;
+
+        public CityState City => _city;
+        public int Coins => _city != null ? _city.Coins : 0;
+        public int Gems => _city != null ? _city.Gems : 0;
+        public int TotalPopulation => _city != null ? _city.TotalPopulation : 0;
+        public string ActiveDistrictId => _city != null ? _city.ActiveDistrictId : "downtown";
+
+        /// <summary>Fires after a finished run is banked into the city — carries what changed (coins,
+        /// population, district-complete) for the HUD / city view to animate.</summary>
+        public event Action<RunEndOutcome> RunBanked;
+
+        void Awake()
+        {
+            if (Instance != null && Instance != this) { Destroy(this); return; }
+            Instance = this;
+            _city = CityState.FromSave(SaveManager.Load(), new CoreConfig());
+        }
+
+        void OnEnable() => Bind();
+        void Start() => Bind();
+
+        void OnDisable()
+        {
+            if (_controller != null) _controller.RunToppled -= OnRunToppled;
+            _controller = null;
+            if (Instance == this) Instance = null;
+        }
+
+        void Bind()
+        {
+            if (_controller != null) return;
+            _controller = FindFirstObjectByType<TowerGameController>();
+            if (_controller != null) _controller.RunToppled += OnRunToppled;
+        }
+
+        void OnRunToppled()
+        {
+            if (_city == null || _controller == null) return;
+
+            RunResult result = _controller.BuildRunResult();
+            DistrictInfo district = DistrictCatalog.Get(_city.ActiveDistrictId);
+            long ticks = DateTime.UtcNow.Ticks;
+
+            RunEndOutcome outcome = _city.EndEndlessRun(district, result, ticks); // daily mode wires in later
+            SaveManager.Save(SaveData.From(_city));
+
+            RunBanked?.Invoke(outcome);
+            Debug.Log($"[Towerpolis] Run banked: +{outcome.CoinsEarned} coins (total {_city.Coins}), " +
+                      $"district pop {outcome.DistrictPopulation}, city pop {_city.TotalPopulation}" +
+                      (outcome.DistrictCompletedNow ? " — DISTRICT COMPLETE!" : ""));
+        }
+    }
+}

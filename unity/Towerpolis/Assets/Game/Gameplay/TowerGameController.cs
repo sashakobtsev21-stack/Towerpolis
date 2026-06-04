@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Towerpolis.Core.Determinism;
 using Towerpolis.Core.Gameplay;
+using Towerpolis.Core.Meta;
 
 namespace Towerpolis.Game.Gameplay
 {
@@ -44,6 +45,9 @@ namespace Towerpolis.Game.Gameplay
         public int PerfectChain => _run != null ? _run.PerfectChain : 0; // GameAudio climbs a scale with it
         public bool IsOver => _state == State.Over;
 
+        /// <summary>The current run's frozen result (for the meta deposit/scoring). Default if no run yet.</summary>
+        public RunResult BuildRunResult() => _run != null ? RunResult.From(_run) : default;
+
         // HUD events — the HUDController subscribes to these.
         public event Action<int> ScoreChanged;   // new total score
         public event Action<int> FloorAdded;      // new floor count
@@ -71,6 +75,8 @@ namespace Towerpolis.Game.Gameplay
                 gameObject.AddComponent<Towerpolis.Game.Vfx.GameVfx>();
             if (FindFirstObjectByType<Towerpolis.Game.Rendering.LookDev>() == null)
                 gameObject.AddComponent<Towerpolis.Game.Rendering.LookDev>();
+            if (FindFirstObjectByType<Towerpolis.Game.Meta.MetaService>() == null)
+                gameObject.AddComponent<Towerpolis.Game.Meta.MetaService>();
         }
 
         public void NewRun()

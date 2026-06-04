@@ -142,7 +142,7 @@ namespace Towerpolis.Core.Meta
             state.Gems = save.Gems;
             state.ActiveDistrictId = string.IsNullOrEmpty(save.ActiveDistrictId) ? "downtown" : save.ActiveDistrictId;
             state.Streak = new DailyStreakState(save.StreakCurrent, save.StreakLongest, save.StreakLastDate);
-            state.Leaderboard = new LocalLeaderboard(save.Leaderboard);
+            state.Leaderboard = new LocalLeaderboard(save.LeaderboardMap());
 
             foreach (string id in save.RewardedDistricts) state._rewarded.Add(id);
 
