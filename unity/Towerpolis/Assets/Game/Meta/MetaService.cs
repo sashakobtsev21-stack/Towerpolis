@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
+using Towerpolis.Core.Determinism;
 using Towerpolis.Core.Gameplay;
 using Towerpolis.Core.Meta;
 using Towerpolis.Game.Gameplay;
@@ -136,6 +138,40 @@ namespace Towerpolis.Game.Meta
 
         static string TodayKey => DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
+        // ISO week key + the Monday-of-week seed, so the same 3 missions are drawn worldwide each week.
+        static string WeekKey
+        {
+            get
+            {
+                DateTime d = DateTime.UtcNow;
+                return ISOWeek.GetYear(d) + "-W" + ISOWeek.GetWeekOfYear(d).ToString("D2", CultureInfo.InvariantCulture);
+            }
+        }
+        static ulong WeekSeed
+        {
+            get
+            {
+                DateTime d = DateTime.UtcNow.Date;
+                DateTime monday = d.AddDays(-(((int)d.DayOfWeek + 6) % 7));
+                return DailySeed.ForDateUtc(monday);
+            }
+        }
+
+        /// <summary>Draw this week's missions if needed (call on load / when the missions screen opens).</summary>
+        public void EnsureWeek()
+        {
+            if (_city != null) _city.EnsureWeeklyMissions(WeekKey, WeekSeed, MissionCatalog.Infos);
+        }
+
+        // --- missions / achievements (read, for the UI) ---
+        public IReadOnlyList<string> ActiveMissionIds => _city != null ? _city.ActiveMissionIds : Array.Empty<string>();
+        public int MissionProgressFor(string id) => _city != null && _city.MissionProgress.TryGetValue(id, out int p) ? p : 0;
+        public bool IsMissionComplete(string id) => _city != null && _city.IsMissionCompleted(id);
+        public bool IsAchievementUnlocked(string id) => _city != null && _city.IsAchievementUnlocked(id);
+
+        /// <summary>Fires after the weekly-mission + achievement pass at run-end (newly completed/unlocked).</summary>
+        public event Action<RunSystemsOutcome> SystemsResolved;
+
         public bool HasPlayedDailyToday()
             => _city != null && DailyStreak.HasPlayed(_city.Streak, TodayKey);
 
@@ -175,6 +211,7 @@ namespace Towerpolis.Game.Meta
             if (Instance != null && Instance != this) { Destroy(this); return; }
             Instance = this;
             _city = CityState.FromSave(SaveManager.Load(), _config);
+            EnsureWeek(); // make sure this week's missions are drawn
         }
 
         void OnEnable() => Bind();
@@ -202,15 +239,23 @@ namespace Towerpolis.Game.Meta
             DistrictInfo district = DistrictCatalog.Get(_city.ActiveDistrictId);
             long ticks = DateTime.UtcNow.Ticks;
 
-            RunEndOutcome outcome = _controller.Mode == TowerGameController.RunMode.Daily
+            bool daily = _controller.Mode == TowerGameController.RunMode.Daily;
+            RunEndOutcome outcome = daily
                 ? _city.EndDailyRun(district, result, ticks, _controller.DailyDateKey)
                 : _city.EndEndlessRun(district, result, ticks);
+
+            // Weekly missions + achievements (after EndRun so streak/lifetime stats are current).
+            RunSystemsOutcome sys = _city.ProcessRunSystems(result, daily, district.Id, WeekKey, WeekSeed,
+                MissionCatalog.Infos, AchievementCatalog.Infos);
+
             SaveManager.Save(SaveData.From(_city));
 
             RunBanked?.Invoke(outcome);
+            SystemsResolved?.Invoke(sys);
             Debug.Log($"[Towerpolis] Run banked: +{outcome.CoinsEarned} coins (total {_city.Coins}), " +
                       $"district pop {outcome.DistrictPopulation}, city pop {_city.TotalPopulation}" +
-                      (outcome.DistrictCompletedNow ? " — DISTRICT COMPLETE!" : ""));
+                      (outcome.DistrictCompletedNow ? " — DISTRICT COMPLETE!" : "") +
+                      (sys.BonusCoins > 0 ? $" — +{sys.BonusCoins} mission/achievement coins" : ""));
         }
     }
 }

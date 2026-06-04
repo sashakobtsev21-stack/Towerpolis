@@ -62,6 +62,12 @@ namespace Towerpolis.Game.UI
         Image[] _blockSkinImg, _craneSkinImg;
         TMP_Text[] _blockSkinLbl, _craneSkinLbl;
 
+        // Missions panel
+        static readonly Color LockedText = new Color(0.62f, 0.64f, 0.68f);
+        GameObject _missionPanel;
+        TMP_Text[] _missionLines;
+        TMP_Text[] _achLines;
+
         void Start()
         {
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
@@ -72,6 +78,7 @@ namespace Towerpolis.Game.UI
             {
                 _meta.RunBanked += OnBanked;
                 _meta.ProgressionChanged += OnProgressionChanged;
+                _meta.SystemsResolved += OnSystemsResolved;
             }
             if (_controller != null)
             {
@@ -95,6 +102,7 @@ namespace Towerpolis.Game.UI
             {
                 _meta.RunBanked -= OnBanked;
                 _meta.ProgressionChanged -= OnProgressionChanged;
+                _meta.SystemsResolved -= OnSystemsResolved;
             }
             if (_controller != null)
             {
@@ -114,6 +122,11 @@ namespace Towerpolis.Game.UI
         {
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
             if (_skinPanel != null && _skinPanel.activeSelf) PopulateSkins();
+        }
+
+        void OnSystemsResolved(RunSystemsOutcome sys)
+        {
+            if (_missionPanel != null && _missionPanel.activeSelf) PopulateMissions();
         }
 
         void OnFloorLive(int floors) => RefreshTopBar();
@@ -401,6 +414,53 @@ namespace Towerpolis.Game.UI
             return -total * 0.5f + w * 0.5f + i * (w + g);
         }
 
+        // ---------- goals view (weekly missions + achievements) ----------
+
+        void OpenMissions()
+        {
+            if (_missionPanel == null) return;
+            if (_meta != null) _meta.EnsureWeek(); // ensure this week's set is drawn
+            PopulateMissions();
+            _missionPanel.SetActive(true);
+            InputGate.Suppress = true;
+        }
+
+        void CloseMissions()
+        {
+            if (_missionPanel != null) _missionPanel.SetActive(false);
+            InputGate.Suppress = false;
+        }
+
+        void PopulateMissions()
+        {
+            if (_meta == null) return;
+            var active = _meta.ActiveMissionIds;
+            for (int i = 0; i < _missionLines.Length; i++)
+            {
+                if (_missionLines[i] == null) continue;
+                if (i < active.Count)
+                {
+                    MissionDef def = MissionCatalog.Get(active[i]);
+                    int prog = Mathf.Min(_meta.MissionProgressFor(active[i]), def.Info.Target);
+                    bool done = _meta.IsMissionComplete(active[i]);
+                    _missionLines[i].text = def.Description + "    " + prog + "/" + def.Info.Target +
+                                            "    +" + def.Info.RewardCoins + (done ? "    DONE" : "");
+                    _missionLines[i].color = done ? Gold : OffWhite;
+                }
+                else _missionLines[i].text = "";
+            }
+
+            AchievementDef[] all = AchievementCatalog.All;
+            for (int i = 0; i < _achLines.Length; i++)
+            {
+                if (_achLines[i] == null) continue;
+                bool got = _meta.IsAchievementUnlocked(all[i].Info.AchievementId);
+                _achLines[i].text = all[i].Name + " — " + all[i].Description +
+                                    (got ? "    DONE" : "    +" + all[i].Info.RewardCoins);
+                _achLines[i].color = got ? Gold : LockedText;
+            }
+        }
+
         // ---------- UI construction ----------
 
         void BuildUI()
@@ -426,9 +486,11 @@ namespace Towerpolis.Game.UI
             DailyButton(canvasGo.transform);
             UpgradesButton(canvasGo.transform);
             SkinsButton(canvasGo.transform);
+            MissionsButton(canvasGo.transform);
             BuildCityPanel(canvasGo.transform);
             BuildUpgradePanel(canvasGo.transform);
             BuildSkinPanel(canvasGo.transform);
+            BuildMissionPanel(canvasGo.transform);
         }
 
         void CityButton(Transform parent)
@@ -662,6 +724,62 @@ namespace Towerpolis.Game.UI
             lbl = NewText("Lbl", btn.transform, 26, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(lbl.rectTransform);
             return btn;
+        }
+
+        void MissionsButton(Transform parent)
+        {
+            Button btn = MakeButton(parent, "MissionsButton", new Vector2(0f, 1f), new Vector2(852f, -104f), new Vector2(180f, 72f), Navy, out _);
+            btn.onClick.AddListener(OpenMissions);
+            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            label.color = OffWhite;
+            label.text = "GOALS";
+            Stretch(label.rectTransform);
+        }
+
+        void BuildMissionPanel(Transform parent)
+        {
+            _missionLines = new TMP_Text[3];
+            _achLines = new TMP_Text[AchievementCatalog.All.Length];
+
+            _missionPanel = new GameObject("MissionPanel", typeof(RectTransform), typeof(Image));
+            _missionPanel.transform.SetParent(parent, false);
+            var prt = (RectTransform)_missionPanel.transform;
+            Stretch(prt);
+            _missionPanel.GetComponent<Image>().color = Dim;
+
+            var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
+            title.color = OffWhite;
+            title.text = "GOALS";
+            Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
+
+            SectionLabel(prt, "WEEKLY MISSIONS", 330f);
+            float my = 270f;
+            for (int i = 0; i < _missionLines.Length; i++)
+            {
+                _missionLines[i] = NewText("Mission" + i, prt, 30, FontStyles.Normal, TextAlignmentOptions.Center);
+                _missionLines[i].color = OffWhite;
+                Place(_missionLines[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, my), new Vector2(1000f, 48f));
+                my -= 52f;
+            }
+
+            SectionLabel(prt, "ACHIEVEMENTS", 90f);
+            float ay = 30f;
+            for (int i = 0; i < _achLines.Length; i++)
+            {
+                _achLines[i] = NewText("Ach" + i, prt, 24, FontStyles.Normal, TextAlignmentOptions.Center);
+                _achLines[i].color = LockedText;
+                Place(_achLines[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, ay), new Vector2(1000f, 38f));
+                ay -= 40f;
+            }
+
+            Button close = MakeButton(prt, "MissionClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(420f, 100f), Gold, out _);
+            close.onClick.AddListener(CloseMissions);
+            var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
+            clbl.color = Navy;
+            clbl.text = "CLOSE";
+            Stretch(clbl.rectTransform);
+
+            _missionPanel.SetActive(false);
         }
 
         // ---------- helpers ----------

@@ -119,6 +119,9 @@ namespace Towerpolis.Core.Meta
             get { int n = 0; foreach (CityGrid g in _grids.Values) n += g.OccupiedCount; return n; }
         }
 
+        public bool IsMissionCompleted(string id) => _completedMissionIds.Contains(id);
+        public bool IsAchievementUnlocked(string id) => _completedAchievements.Contains(id);
+
         public CityState(CoreConfig cfg) => _cfg = cfg ?? throw new ArgumentNullException(nameof(cfg));
 
         public IReadOnlyDictionary<string, CityGrid> Grids => _grids;
