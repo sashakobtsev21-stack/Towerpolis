@@ -39,6 +39,7 @@ namespace Towerpolis.Game.UI
         TMP_Text _restartScore;
         TMP_Text _restartBest;
         TMP_Text _restartCoins;
+        RunResult _toppledResult; // captured at topple (before any restart) for the coin breakdown
 
         TMP_Text _summitLabel;
         bool _summitShown;
@@ -135,6 +136,7 @@ namespace Towerpolis.Game.UI
             FlashVignette(0.5f, 0.8f);
             for (int i = 0; i < _pips.Length; i++)
                 if (_pips[i] != null) _pips[i].color = Coral;
+            _toppledResult = _game != null ? _game.BuildRunResult() : default; // capture now (before restart)
             StartCoroutine(ShowRestartAfter(1.2f));
         }
 
@@ -269,10 +271,11 @@ namespace Towerpolis.Game.UI
             if (_restartCoins != null)
             {
                 MetaService meta = MetaService.Instance;
-                if (meta != null && _game != null)
+                if (meta != null)
                 {
-                    int earned = meta.PreviewCoins(_game.BuildRunResult());
-                    _restartCoins.text = "+" + earned + " МОНЕТ   (всего " + meta.Coins + ")";
+                    int earned = meta.PreviewCoins(_toppledResult); // floors×1 + perfects×2
+                    _restartCoins.text = "+" + earned + " МОНЕТ\nэтажи " + _toppledResult.FloorCount +
+                                         "  ·  идеально " + _toppledResult.PerfectDrops + "  ·  всего " + meta.Coins;
                 }
                 else _restartCoins.text = "";
             }
@@ -350,9 +353,9 @@ namespace Towerpolis.Game.UI
             _restartBest = NewText("Best", prt, 40, FontStyles.Normal, TextAlignmentOptions.Center);
             Place(_restartBest.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -180f), new Vector2(700f, 60f));
 
-            _restartCoins = NewText("Coins", prt, 36, FontStyles.Bold, TextAlignmentOptions.Center);
+            _restartCoins = NewText("Coins", prt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             _restartCoins.color = Yellow;
-            Place(_restartCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -250f), new Vector2(700f, 54f));
+            Place(_restartCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -244f), new Vector2(760f, 110f));
 
             var btnGo = new GameObject("RetryButton", typeof(RectTransform), typeof(Image), typeof(Button));
             btnGo.transform.SetParent(prt, false);

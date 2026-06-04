@@ -233,7 +233,11 @@ namespace Towerpolis.Game.Meta
 
         void OnRunToppled()
         {
-            if (_city == null || _controller == null) return;
+            if (_city == null || _controller == null)
+            {
+                Debug.LogWarning("[Towerpolis] Run NOT banked — meta not bound (city/controller null).");
+                return;
+            }
 
             RunResult result = _controller.BuildRunResult();
             DistrictInfo district = DistrictCatalog.Get(_city.ActiveDistrictId);
