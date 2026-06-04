@@ -66,10 +66,12 @@ namespace Towerpolis.Game.Vfx
             Vector3 baseScale = t.localScale;
             TintUmbrella(go, index);
 
-            // From the side + above + in front of the block; settle INTO the block body at mid-height.
-            float side = (index % 2 == 0 ? 1f : -1f) * (1.7f + 0.2f * index + Random.Range(0f, 0.5f));
-            Vector3 start = basePos + new Vector3(side, FloorHeight + 1.4f + Random.Range(0f, 0.9f), -1.4f + Random.Range(-0.2f, 0.2f));
-            Vector3 end = basePos + new Vector3(Random.Range(-0.4f, 0.4f), FloorHeight * 0.55f, -0.7f);
+            // From FAR to the SIDE at roughly roof height + in front of the block; glide in mostly
+            // HORIZONTALLY (a gentle umbrella descent, NOT dropping through the roof) and settle INTO the
+            // block body at mid-height.
+            float side = (index % 2 == 0 ? 1f : -1f) * (2.4f + 0.25f * index + Random.Range(0f, 0.6f));
+            Vector3 start = basePos + new Vector3(side, FloorHeight * 0.85f + Random.Range(0f, 0.45f), -1.2f + Random.Range(-0.2f, 0.2f));
+            Vector3 end = basePos + new Vector3(Random.Range(-0.4f, 0.4f), FloorHeight * 0.55f, -0.6f);
 
             float dur = 1.35f + Random.Range(0f, 0.5f);
             float swayPhase = Random.Range(0f, 6.283f);
@@ -79,9 +81,9 @@ namespace Towerpolis.Game.Vfx
                 if (t == null) yield break;
                 e += Time.deltaTime;
                 float p = Mathf.Clamp01(e / dur);
-                float ease = 1f - (1f - p) * (1f - p);                              // ease-out descent
+                float ease = 1f - (1f - p) * (1f - p);                              // ease-out glide
                 Vector3 pos = Vector3.Lerp(start, end, ease);
-                pos.x += Mathf.Sin(Time.time * 2.3f + swayPhase) * 0.20f * (1f - p); // umbrella sway, settles
+                pos.y += Mathf.Sin(Time.time * 2.3f + swayPhase) * 0.10f * (1f - p); // gentle umbrella bob, settles
                 t.position = pos;
                 t.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 2.3f + swayPhase) * 9f * (1f - p));
                 if (p > 0.82f) t.localScale = baseScale * (1f - 0.85f * (p - 0.82f) / 0.18f); // shrink into the block
