@@ -98,7 +98,9 @@ namespace Towerpolis.Game.Gameplay
             if (_hook != null)
             {
                 _hook.position = attach;
-                _hook.up = hookUp; // the hook hangs along the cable, curl sitting on the block top
+                // Full rotation (not just .up, which leaves roll free → the hook would spin around the
+                // cable): hook's up follows the cable, its flat face stays toward the camera (+Z).
+                _hook.rotation = Quaternion.LookRotation(Vector3.forward, hookUp);
             }
         }
 
