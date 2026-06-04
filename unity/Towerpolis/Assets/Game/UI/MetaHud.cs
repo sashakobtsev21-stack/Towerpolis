@@ -394,20 +394,25 @@ namespace Towerpolis.Game.UI
 
         void BuyUpgrade(UpgradeKind kind)
         {
-            if (_meta != null) _meta.BuyUpgrade(kind); // ProgressionChanged → refresh
+            bool ok = _meta != null && _meta.BuyUpgrade(kind); // ProgressionChanged → refresh
             PopulateUpgrades();
+            int i = System.Array.IndexOf(UpgKinds, kind);
+            if (ok && i >= 0 && _upgBuyImg[i] != null) PopButton(_upgBuyImg[i].transform);
         }
 
         void BuyFreeze()
         {
-            if (_meta != null) _meta.BuyFreezeCharge();
+            bool ok = _meta != null && _meta.BuyFreezeCharge();
             PopulateUpgrades();
+            if (ok && _freezeBuyImg != null) PopButton(_freezeBuyImg.transform);
         }
 
         void ClaimLoginGift()
         {
+            bool ok = _meta != null && _meta.CanClaimLoginToday();
             if (_meta != null) _meta.ClaimLoginToday();
             PopulateUpgrades();
+            if (ok && _loginImg != null) PopButton(_loginImg.transform);
         }
 
         void PopulateUpgrades()
@@ -465,14 +470,32 @@ namespace Towerpolis.Game.UI
 
         void TapBlockSkin(string id)
         {
-            if (_meta != null) _meta.BuyOrEquipBlockSkin(id);
+            bool ok = _meta != null && _meta.BuyOrEquipBlockSkin(id);
             PopulateSkins();
+            int i = BlockSkinIndex(id);
+            if (ok && i >= 0 && _blockSkinImg[i] != null) PopButton(_blockSkinImg[i].transform);
         }
 
         void TapCraneSkin(string id)
         {
-            if (_meta != null) _meta.BuyOrEquipCraneSkin(id);
+            bool ok = _meta != null && _meta.BuyOrEquipCraneSkin(id);
             PopulateSkins();
+            int i = CraneSkinIndex(id);
+            if (ok && i >= 0 && _craneSkinImg[i] != null) PopButton(_craneSkinImg[i].transform);
+        }
+
+        static int BlockSkinIndex(string id)
+        {
+            BlockSkin[] a = CosmeticCatalog.BlockSkins;
+            for (int i = 0; i < a.Length; i++) if (a[i].Id == id) return i;
+            return -1;
+        }
+
+        static int CraneSkinIndex(string id)
+        {
+            CraneSkin[] a = CosmeticCatalog.CraneSkins;
+            for (int i = 0; i < a.Length; i++) if (a[i].Id == id) return i;
+            return -1;
         }
 
         void PopulateSkins()
@@ -653,6 +676,7 @@ namespace Towerpolis.Game.UI
             var prt = (RectTransform)_cityPanel.transform;
             Stretch(prt);
             _cityPanel.GetComponent<Image>().color = Dim; // dim full-screen backdrop, blocks taps
+            PanelCard(prt);
 
             _cityTitle = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             _cityTitle.color = OffWhite;
@@ -721,6 +745,7 @@ namespace Towerpolis.Game.UI
             var prt = (RectTransform)_upgPanel.transform;
             Stretch(prt);
             _upgPanel.GetComponent<Image>().color = Dim;
+            PanelCard(prt);
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
@@ -794,6 +819,7 @@ namespace Towerpolis.Game.UI
             var prt = (RectTransform)_skinPanel.transform;
             Stretch(prt);
             _skinPanel.GetComponent<Image>().color = Dim;
+            PanelCard(prt);
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
@@ -865,6 +891,7 @@ namespace Towerpolis.Game.UI
             var prt = (RectTransform)_missionPanel.transform;
             Stretch(prt);
             _missionPanel.GetComponent<Image>().color = Dim;
+            PanelCard(prt);
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
@@ -914,6 +941,39 @@ namespace Towerpolis.Game.UI
             img = go.GetComponent<Image>();
             img.color = bg;
             return go.GetComponent<Button>();
+        }
+
+        // A centred dialog surface behind a panel's content (so it reads as a card, not text on dim).
+        static void PanelCard(Transform panel)
+        {
+            var go = new GameObject("Card", typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(panel, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(1000f, 1720f);
+            go.GetComponent<Image>().color = new Color(0.09f, 0.14f, 0.22f, 0.98f);
+        }
+
+        // A quick 1 → 1.18 → 1 scale bounce on a button (purchase/equip feedback).
+        void PopButton(Transform t)
+        {
+            if (t != null) StartCoroutine(Pop(t));
+        }
+
+        static IEnumerator Pop(Transform t)
+        {
+            float e = 0f;
+            const float dur = 0.20f;
+            while (e < dur)
+            {
+                e += Time.deltaTime;
+                if (t == null) yield break;
+                float s = 1f + 0.18f * Mathf.Sin(Mathf.Clamp01(e / dur) * Mathf.PI);
+                t.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+            if (t != null) t.localScale = Vector3.one;
         }
 
         static TMP_Text NewText(string name, Transform parent, float size, FontStyles style, TextAlignmentOptions align)
