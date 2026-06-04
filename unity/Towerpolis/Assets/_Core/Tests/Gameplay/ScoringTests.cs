@@ -32,7 +32,7 @@ namespace Towerpolis.Core.Tests.Gameplay
 
         [TestCase(FloorType.Standard, 2)]
         [TestCase(FloorType.Balcony, 3)]
-        [TestCase(FloorType.Premium, 4)]
+        [TestCase(FloorType.Premium, 5)]
         public void BaseResidents_PerType(FloorType type, int expected)
         {
             Assert.That(Scoring.BaseResidents(Cfg(), type), Is.EqualTo(expected));

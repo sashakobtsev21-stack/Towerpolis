@@ -27,9 +27,7 @@ namespace Towerpolis.Game.UI
         MetaService _meta;
         TowerGameController _controller;
 
-        TMP_Text _coinsLabel;
         TMP_Text _popLabel;
-        TMP_Text _streakLabel;
         Image _dailyButtonImg;
         TMP_Text _dailyLabel;
 
@@ -85,18 +83,12 @@ namespace Towerpolis.Game.UI
         {
             if (_meta == null) return;
 
-            // Live preview: show the committed totals PLUS what the in-progress run would add, so coins and
-            // city population tick up as you build. Once the run ends (banked), IsOver is true → committed only.
-            int coins = _meta.Coins;
+            // Live preview: committed city population PLUS the in-progress run's residents, so it ticks up
+            // as you build; commits on topple (IsOver → committed only).
             int pop = _meta.TotalPopulation;
             if (_controller != null && !_controller.IsOver)
-            {
-                RunResult r = _controller.BuildRunResult();
-                coins += _meta.PreviewCoins(in r);
-                pop += r.TotalResidents;
-            }
+                pop += _controller.BuildRunResult().TotalResidents;
 
-            if (_coinsLabel != null) _coinsLabel.text = "COINS  " + coins;
             if (_popLabel != null) _popLabel.text = "CITY  " + pop;
             RefreshDaily();
         }
@@ -118,7 +110,6 @@ namespace Towerpolis.Game.UI
                 _dailyLabel.color = played ? OffWhite : Navy;
             }
             if (_dailyButtonImg != null) _dailyButtonImg.color = played ? Navy : Gold;
-            if (_streakLabel != null) _streakLabel.text = "STREAK  " + _meta.StreakCurrent;
         }
 
         // ---------- city view ----------
@@ -195,15 +186,11 @@ namespace Towerpolis.Game.UI
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
-            _coinsLabel = NewText("Coins", canvasGo.transform, 40, FontStyles.Bold, TextAlignmentOptions.TopLeft);
-            _coinsLabel.color = Gold;
-            Place(_coinsLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -36f), new Vector2(420f, 56f));
-
-            _popLabel = NewText("CityPop", canvasGo.transform, 34, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-            Place(_popLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -92f), new Vector2(420f, 50f));
-
-            _streakLabel = NewText("Streak", canvasGo.transform, 30, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-            Place(_streakLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -140f), new Vector2(420f, 46f));
+            // Only POPULATION is shown in the top bar now (coins/streak are tracked in Core for later,
+            // not displayed — owner: "нужно только население и этажей"; height is the HUD's big number).
+            _popLabel = NewText("CityPop", canvasGo.transform, 40, FontStyles.Bold, TextAlignmentOptions.TopLeft);
+            _popLabel.color = Gold;
+            Place(_popLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -36f), new Vector2(420f, 56f));
 
             CityButton(canvasGo.transform);
             DailyButton(canvasGo.transform);
@@ -216,7 +203,7 @@ namespace Towerpolis.Game.UI
             btnGo.transform.SetParent(parent, false);
             var rt = (RectTransform)btnGo.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(28f, -200f);
+            rt.anchoredPosition = new Vector2(28f, -104f);
             rt.sizeDelta = new Vector2(180f, 72f);
             btnGo.GetComponent<Image>().color = Navy;
             btnGo.GetComponent<Button>().onClick.AddListener(OpenCity);
@@ -232,7 +219,7 @@ namespace Towerpolis.Game.UI
             btnGo.transform.SetParent(parent, false);
             var rt = (RectTransform)btnGo.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(224f, -200f);
+            rt.anchoredPosition = new Vector2(224f, -104f);
             rt.sizeDelta = new Vector2(180f, 72f);
             _dailyButtonImg = btnGo.GetComponent<Image>();
             _dailyButtonImg.color = Gold;

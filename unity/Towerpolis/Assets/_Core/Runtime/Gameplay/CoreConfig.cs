@@ -42,7 +42,7 @@ namespace Towerpolis.Core.Gameplay
         // --- Residents (spec §6.3, §9) ---
         public int ResidentsStandard = 2;
         public int ResidentsBalcony = 3;
-        public int ResidentsPremium = 4;
+        public int ResidentsPremium = 5; // owner ruling 2026-06-04 (was 4)
         public int PerfectResidentBonus = 1;
         public int ResidentScoreValue = 10;
 

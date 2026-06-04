@@ -156,8 +156,8 @@ namespace Towerpolis.Core.Tests.Gameplay
             var run = new TowerRun(new CoreConfig());
             var o = run.PlaceBlock(FloorType.Premium, 0f);
             Assert.That(o.ScoreGained, Is.EqualTo(200 * 2 + 50)); // base 200 ×2 + chain(1)
-            Assert.That(o.ResidentsAdded, Is.EqualTo(5));          // 4 + perfect bonus
-            Assert.That(run.RunScore, Is.EqualTo(450 + 5 * 10));
+            Assert.That(o.ResidentsAdded, Is.EqualTo(6));          // 5 + perfect bonus
+            Assert.That(run.RunScore, Is.EqualTo(450 + 6 * 10));
         }
 
         [Test]
