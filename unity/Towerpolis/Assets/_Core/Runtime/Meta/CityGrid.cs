@@ -42,14 +42,30 @@ namespace Towerpolis.Core.Meta
             _plots = new Plot[capacity];
         }
 
-        /// <summary>Deposit a finished tower into the next empty plot. Returns false if the grid is full
-        /// (the tower is rejected and the population is unchanged — meta-spec §1.2).</summary>
+        /// <summary>Deposit a finished tower (meta-spec §1.2, "keep the best N"). While a plot is free the
+        /// tower fills the next one. Once the grid is full it REPLACES the smallest-population tower if this
+        /// one has more residents — so the city always shows your best buildings and <see cref="Population"/>
+        /// can keep climbing toward the fill goal (no progression soft-lock). A tower no bigger than the
+        /// current smallest is rejected (the city is unchanged). Returns true if it entered the grid
+        /// (placed or replaced), false if rejected.</summary>
         public bool Deposit(int floorCount, int residents, long timestampUtcTicks)
         {
-            if (IsFull) return false;
-            _plots[OccupiedCount] = new Plot(floorCount, residents, timestampUtcTicks);
-            OccupiedCount++;
-            Population += residents;
+            if (!IsFull)
+            {
+                _plots[OccupiedCount] = new Plot(floorCount, residents, timestampUtcTicks);
+                OccupiedCount++;
+                Population += residents;
+                return true;
+            }
+
+            // Full: find the smallest tower and replace it only if the newcomer beats it (keep the best N).
+            int smallest = 0;
+            for (int i = 1; i < _plots.Length; i++)
+                if (_plots[i].Residents < _plots[smallest].Residents) smallest = i;
+
+            if (residents <= _plots[smallest].Residents) return false; // not an improvement → keep the city
+            Population += residents - _plots[smallest].Residents;
+            _plots[smallest] = new Plot(floorCount, residents, timestampUtcTicks);
             return true;
         }
 

@@ -50,6 +50,14 @@ namespace Towerpolis.Game.UI
         public const string ToastMission     = "toast.mission";     // "МИССИЯ ВЫПОЛНЕНА\n{0}   +{1}"
         public const string ToastAchievement = "toast.achievement"; // "ДОСТИЖЕНИЕ\n{0}   +{1}"
 
+        // ----- District-complete celebration (meta-spec §2.4) -----
+        public const string CompleteTitle    = "complete.title";     // "РАЙОН ЗАСТРОЕН!"
+        public const string CompleteCoins    = "complete.coins";     // "Монеты  +{0}"
+        public const string CompleteGems     = "complete.gems";      // "Кристаллы  +{0}"
+        public const string CompleteNext     = "complete.next";      // "ОТКРЫТ НОВЫЙ РАЙОН:\n{0}"
+        public const string CompleteNextNone = "complete.next.none"; // "ГОРОД ПОСТРОЕН ПОЛНОСТЬЮ!"
+        public const string CompleteContinue = "complete.continue";  // "ПРОДОЛЖИТЬ"
+
         // ----- Upgrade tracks -----
         public const string UpgMagnetName     = "upg.magnet.name";     // "МАГНИТ"
         public const string UpgMagnetDesc     = "upg.magnet.desc";

@@ -77,6 +77,11 @@ namespace Towerpolis.Game.UI
         bool _toasting;
         struct Toast { public string Text; public Color Color; }
 
+        // District-complete celebration (meta-spec §2.4) — a distinct full-screen beat, not just a toast.
+        GameObject _completePanel;
+        RectTransform _completeContent;
+        TMP_Text _completeName, _completeCoins, _completeGems, _completeNext;
+
         void Start()
         {
             UiFont.EnsureCyrillic(); // render Cyrillic with the default TMP font
@@ -140,7 +145,7 @@ namespace Towerpolis.Game.UI
             RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
-            if (outcome.DistrictCompletedNow) EnqueueToast(Loc.T(LocKeys.ToastDistrict), Gold);
+            if (outcome.DistrictCompletedNow) ShowDistrictComplete(outcome); // a distinct celebration, not a toast
         }
 
         void OnProgressionChanged()
@@ -516,6 +521,7 @@ namespace Towerpolis.Game.UI
             BuildMissionPanel(canvasGo.transform);
             BuildSettingsPanel(canvasGo.transform);
             BuildMenuPanel(canvasGo.transform);
+            BuildCompletePanel(canvasGo.transform);
         }
 
         // Hamburger (☰) in the top-right corner — the single entry point to every meta section.
@@ -586,6 +592,105 @@ namespace Towerpolis.Game.UI
 
         void OpenMenu() { if (_menuPanel != null) ShowPanel(_menuPanel); }
         void CloseMenu() => HidePanel(_menuPanel);
+
+        // ---------- district-complete celebration (meta-spec §2.4) ----------
+
+        void BuildCompletePanel(Transform parent)
+        {
+            _completePanel = new GameObject("CompletePanel", typeof(RectTransform), typeof(Image));
+            _completePanel.transform.SetParent(parent, false);
+            var prt = (RectTransform)_completePanel.transform;
+            Stretch(prt);
+            _completePanel.GetComponent<Image>().color = Dim; // dim full-screen backdrop, blocks taps
+            PanelCard(prt);
+
+            // All the celebratory text lives under a centred content node so it can pop as one unit (the Dim
+            // backdrop + card stay put). The Continue button stays on the panel so the pop never moves it.
+            var contentGo = new GameObject("Content", typeof(RectTransform));
+            contentGo.transform.SetParent(prt, false);
+            _completeContent = (RectTransform)contentGo.transform;
+            _completeContent.anchorMin = _completeContent.anchorMax = _completeContent.pivot = new Vector2(0.5f, 0.5f);
+            _completeContent.anchoredPosition = Vector2.zero;
+            _completeContent.sizeDelta = new Vector2(1000f, 1500f);
+
+            var title = NewText("Title", _completeContent, 72, FontStyles.Bold, TextAlignmentOptions.Center);
+            title.color = Gold;
+            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.CompleteTitle);
+            Place(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 380f), new Vector2(960f, 120f));
+
+            _completeName = NewText("Name", _completeContent, 48, FontStyles.Bold, TextAlignmentOptions.Center);
+            _completeName.color = OffWhite;
+            Place(_completeName.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 250f), new Vector2(960f, 70f));
+
+            _completeCoins = NewText("Coins", _completeContent, 46, FontStyles.Bold, TextAlignmentOptions.Center);
+            _completeCoins.color = Gold;
+            Place(_completeCoins.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 110f), new Vector2(960f, 60f));
+
+            _completeGems = NewText("Gems", _completeContent, 42, FontStyles.Bold, TextAlignmentOptions.Center);
+            _completeGems.color = Cyan;
+            Place(_completeGems.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 40f), new Vector2(960f, 56f));
+
+            _completeNext = NewText("Next", _completeContent, 40, FontStyles.Normal, TextAlignmentOptions.Center);
+            _completeNext.color = OffWhite;
+            Place(_completeNext.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -150f), new Vector2(980f, 130f));
+
+            Button cont = MakeButton(prt, "CompleteContinue", new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(460f, 110f), Gold, out _);
+            cont.onClick.AddListener(CloseComplete);
+            var clbl = NewText("Label", cont.transform, 42, FontStyles.Bold, TextAlignmentOptions.Center);
+            clbl.color = Navy;
+            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.CompleteContinue);
+            Stretch(clbl.rectTransform);
+
+            _completePanel.SetActive(false);
+        }
+
+        // The completed district is the active one at run-end; show its reward + the next district unlocked.
+        void ShowDistrictComplete(RunEndOutcome outcome)
+        {
+            if (_completePanel == null || _meta == null) return;
+            string id = _meta.ActiveDistrictId;
+
+            if (_completeName != null) _completeName.text = Loc.T(DistrictCatalog.GetView(id).DisplayName);
+            if (_completeCoins != null) _completeCoins.text = Loc.T(LocKeys.CompleteCoins, outcome.DistrictRewardCoins);
+
+            bool hasGems = outcome.GemsEarned > 0;
+            if (_completeGems != null)
+            {
+                _completeGems.gameObject.SetActive(hasGems);
+                if (hasGems) _completeGems.text = Loc.T(LocKeys.CompleteGems, outcome.GemsEarned);
+            }
+
+            string nextId = DistrictCatalog.NextId(id);
+            if (_completeNext != null)
+                _completeNext.text = string.IsNullOrEmpty(nextId)
+                    ? Loc.T(LocKeys.CompleteNextNone)
+                    : Loc.T(LocKeys.CompleteNext, Loc.T(DistrictCatalog.GetView(nextId).DisplayName));
+
+            ShowPanel(_completePanel);
+            StartCoroutine(CelebratePop());
+        }
+
+        void CloseComplete() => HidePanel(_completePanel);
+
+        // A spring pop on the celebration content (overshoot → settle) so the beat reads as a milestone.
+        IEnumerator CelebratePop()
+        {
+            if (_completeContent == null) yield break;
+            float e = 0f;
+            const float dur = 0.42f;
+            while (e < dur)
+            {
+                e += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(e / dur);
+                float ease = 1f - (1f - k) * (1f - k);        // ease-out toward 1
+                float overshoot = Mathf.Sin(k * Mathf.PI) * 0.08f; // brief bulge past 1, back to 0
+                float s = Mathf.Lerp(0.7f, 1f, ease) + overshoot;
+                if (_completeContent == null) yield break;
+                _completeContent.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+            if (_completeContent != null) _completeContent.localScale = Vector3.one;
+        }
 
         void BuildCityPanel(Transform parent)
         {

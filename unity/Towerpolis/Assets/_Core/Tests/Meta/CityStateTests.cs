@@ -46,6 +46,7 @@ namespace Towerpolis.Core.Tests.Meta
             Assert.That(first.DistrictCompletedNow, Is.True);
             Assert.That(first.GemsEarned, Is.EqualTo(1));
             Assert.That(first.CoinsEarned, Is.EqualTo(3 + 100)); // run 3 + reward 100
+            Assert.That(first.DistrictRewardCoins, Is.EqualTo(100)); // the reward portion alone (for the complete screen)
             Assert.That(s.Gems, Is.EqualTo(1));
             Assert.That(s.IsRewarded("mini"), Is.True);
 
@@ -53,7 +54,28 @@ namespace Towerpolis.Core.Tests.Meta
             Assert.That(second.DistrictCompletedNow, Is.False);
             Assert.That(second.GemsEarned, Is.Zero);
             Assert.That(second.CoinsEarned, Is.EqualTo(2)); // run only, no second reward
+            Assert.That(second.DistrictRewardCoins, Is.Zero); // no reward second time
             Assert.That(s.Gems, Is.EqualTo(1)); // unchanged
+        }
+
+        [Test]
+        public void DistrictCompletes_ViaBestNReplacement_NoSoftLock()
+        {
+            var s = new CityState(Cfg());
+            var d = D("mini", cap: 2, goal: 50, rc: 100, rg: 1);
+
+            // Fill both plots with small towers: grid full, pop 20 < goal 50. (Old behaviour bricked here.)
+            s.EndEndlessRun(d, new RunResult(2, 10, 0, 0), 1);
+            var full = s.EndEndlessRun(d, new RunResult(2, 10, 0, 0), 2);
+            Assert.That(full.DistrictCompletedNow, Is.False);
+            Assert.That(s.Grids["mini"].Population, Is.EqualTo(20));
+
+            // Keep improving: bigger towers replace the smallest until the goal is reached.
+            s.EndEndlessRun(d, new RunResult(8, 30, 0, 0), 3);          // replaces a 10 → pop 40
+            var done = s.EndEndlessRun(d, new RunResult(9, 30, 0, 0), 4); // replaces the other 10 → pop 60 ≥ 50
+            Assert.That(done.DistrictCompletedNow, Is.True);
+            Assert.That(done.DistrictRewardCoins, Is.EqualTo(100));
+            Assert.That(s.Grids["mini"].Population, Is.EqualTo(60));
         }
 
         [Test]

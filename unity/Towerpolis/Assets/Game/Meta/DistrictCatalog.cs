@@ -30,14 +30,13 @@ namespace Towerpolis.Game.Meta
     /// </summary>
     public static class DistrictCatalog
     {
-        // Order is the unlock chain: downtown → neon → winter.
-        // NOTE: fill goals are TEMPORARILY LOW (100/150/200) for testing the unlock/switch flow; the
-        // design values are 1200/1600/2200 (meta-spec §2.2) — restore before soft-launch.
+        // Order is the unlock chain: downtown → neon → winter. Fill goals + rewards are the design values
+        // from meta-spec §2.2 (Downtown 1200, Neon 1600, Winter 2200).
         public static readonly DistrictInfo[] All =
         {
-            new DistrictInfo("downtown", gridCapacity: 5 * 4, fillGoal: 100, rewardCoins: 200, rewardGems: 0),
-            new DistrictInfo("neon",     gridCapacity: 5 * 4, fillGoal: 150, rewardCoins: 350, rewardGems: 1),
-            new DistrictInfo("winter",   gridCapacity: 6 * 4, fillGoal: 200, rewardCoins: 500, rewardGems: 2),
+            new DistrictInfo("downtown", gridCapacity: 5 * 4, fillGoal: 1200, rewardCoins: 200, rewardGems: 0),
+            new DistrictInfo("neon",     gridCapacity: 5 * 4, fillGoal: 1600, rewardCoins: 350, rewardGems: 1),
+            new DistrictInfo("winter",   gridCapacity: 6 * 4, fillGoal: 2200, rewardCoins: 500, rewardGems: 2),
         };
 
         static readonly DistrictView[] Views =

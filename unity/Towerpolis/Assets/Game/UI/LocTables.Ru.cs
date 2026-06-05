@@ -54,6 +54,14 @@ namespace Towerpolis.Game.UI
             { LocKeys.ToastMission,     "МИССИЯ ВЫПОЛНЕНА\n{0}   +{1}" },
             { LocKeys.ToastAchievement, "ДОСТИЖЕНИЕ\n{0}   +{1}" },
 
+            // ----- District-complete celebration -----
+            { LocKeys.CompleteTitle,    "РАЙОН ЗАСТРОЕН!" },
+            { LocKeys.CompleteCoins,    "Монеты  +{0}" },
+            { LocKeys.CompleteGems,     "Кристаллы  +{0}" },
+            { LocKeys.CompleteNext,     "ОТКРЫТ НОВЫЙ РАЙОН:\n{0}" },
+            { LocKeys.CompleteNextNone, "ГОРОД ПОСТРОЕН ПОЛНОСТЬЮ!" },
+            { LocKeys.CompleteContinue, "ПРОДОЛЖИТЬ" },
+
             // ----- Upgrades -----
             { LocKeys.UpgMagnetName,    "МАГНИТ" },
             { LocKeys.UpgMagnetDesc,    "Подтягивает блок к центру (Endless)" },

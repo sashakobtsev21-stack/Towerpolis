@@ -1,5 +1,7 @@
+using System.Collections;
 using UnityEngine;
 using Towerpolis.Game.Gameplay;
+using Towerpolis.Game.Meta;
 
 namespace Towerpolis.Game.Audio
 {
@@ -27,8 +29,15 @@ namespace Towerpolis.Game.Audio
         [SerializeField] AudioClip toppleClip;   // Resources/Sfx/topple  — run over (collapse)
         [SerializeField] AudioClip startClip;    // Resources/Sfx/start   — new run
 
-        [Header("Music (optional — else Resources/Music/theme)")]
+        [Header("Music — per-district beds (optional). Each falls back to Resources/Music/<district>, then")]
+        [Tooltip("the shared theme below. The active bed crossfades when you switch district (meta-spec §2/§9).")]
+        [SerializeField] AudioClip downtownMusic;
+        [SerializeField] AudioClip neonMusic;
+        [SerializeField] AudioClip winterMusic;
+        [Tooltip("Fallback bed used when a district has no track yet (else Resources/Music/theme).")]
         [SerializeField] AudioClip musicClip;
+        [Tooltip("Seconds to crossfade between district beds on a district switch.")]
+        [Range(0.1f, 4f)] [SerializeField] float musicCrossfade = 0.9f;
 
         [Header("Feel")]
         [Tooltip("Perfect pitches UP with the combo (a tonal chime/bell works best).")]
@@ -41,9 +50,13 @@ namespace Towerpolis.Game.Audio
 
         TowerGameController _controller;
         AudioSource[] _sources;
-        AudioSource _music;
         int _next;
         AudioClip _land, _perfect, _miss, _topple, _start, _theme;
+
+        // Two music voices to crossfade between on a district switch; _active is the audible one.
+        AudioSource _musicA, _musicB, _active;
+        Coroutine _fade;
+        string _currentDistrict = "";
 
         void Awake()
         {
@@ -71,16 +84,20 @@ namespace Towerpolis.Game.Audio
                 _sources[i] = s;
             }
 
-            _music = gameObject.AddComponent<AudioSource>();
-            _music.loop = true;
-            _music.playOnAwake = false;
-            _music.spatialBlend = 0f;
-            _music.volume = musicVolume;
-            if (_theme != null)
-            {
-                _music.clip = _theme;
-                if (playMusic) _music.Play();
-            }
+            // Two looping music voices so the bed can crossfade on a district switch. Which clip plays is
+            // chosen on RunStarted from the active district (so retries keep the same bed, no re-fade).
+            _musicA = NewMusicSource();
+            _musicB = NewMusicSource();
+        }
+
+        AudioSource NewMusicSource()
+        {
+            var s = gameObject.AddComponent<AudioSource>();
+            s.loop = true;
+            s.playOnAwake = false;
+            s.spatialBlend = 0f;
+            s.volume = 0f;
+            return s;
         }
 
         void OnEnable() => Bind();
@@ -126,7 +143,75 @@ namespace Towerpolis.Game.Audio
 
         void OnStrike(int strikes) => Play(_miss, 0.9f, 1f);
         void OnToppled() => Play(_topple, 1f, 1f);
-        void OnStarted() => Play(_start, 0.7f, 1f);
+
+        void OnStarted()
+        {
+            Play(_start, 0.7f, 1f);
+            string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
+            SetDistrictMusic(district);
+        }
+
+        // Crossfade to the active district's music bed. No-op while the district is unchanged (so an Endless
+        // retry doesn't restart the track), and when two districts share the same fallback theme.
+        void SetDistrictMusic(string districtId)
+        {
+            if (!playMusic || _musicA == null) return;
+            if (districtId == _currentDistrict) return;
+            _currentDistrict = districtId;
+
+            AudioClip bed = MusicFor(districtId);
+            if (_active != null && _active.clip == bed && _active.isPlaying) return; // same clip → keep playing
+
+            AudioSource from = _active;
+            AudioSource to = _active == _musicA ? _musicB : _musicA; // null _active → picks A first
+            if (bed != null)
+            {
+                to.clip = bed;
+                to.volume = 0f;
+                to.Play();
+                _active = to;
+            }
+            else
+            {
+                _active = null; // no bed for this district → just fade the old one out
+            }
+
+            if (_fade != null) StopCoroutine(_fade);
+            _fade = StartCoroutine(Crossfade(from, bed != null ? to : null));
+        }
+
+        // Inspector slot → Resources/Music/<district> → the shared fallback theme.
+        AudioClip MusicFor(string id)
+        {
+            AudioClip slot = id switch
+            {
+                "neon" => neonMusic,
+                "winter" => winterMusic,
+                "downtown" => downtownMusic,
+                _ => null,
+            };
+            if (slot == null) slot = Resources.Load<AudioClip>("Music/" + id);
+            return slot != null ? slot : _theme;
+        }
+
+        // Fade `from` out and `to` in over musicCrossfade seconds. Unscaled time so slow-mo/pause can't stall it.
+        IEnumerator Crossfade(AudioSource from, AudioSource to)
+        {
+            float dur = Mathf.Max(0.05f, musicCrossfade);
+            float fromStart = from != null ? from.volume : 0f;
+            float e = 0f;
+            while (e < dur)
+            {
+                e += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(e / dur);
+                if (from != null) from.volume = Mathf.Lerp(fromStart, 0f, k);
+                if (to != null) to.volume = Mathf.Lerp(0f, musicVolume, k);
+                yield return null;
+            }
+            if (from != null) { from.Stop(); from.volume = 0f; }
+            if (to != null) to.volume = musicVolume;
+            _fade = null;
+        }
 
         void Play(AudioClip clip, float volume, float pitch)
         {

@@ -43,16 +43,35 @@ namespace Towerpolis.Core.Tests.Meta
         }
 
         [Test]
-        public void FullGrid_RejectsFurtherDeposits()
+        public void FullGrid_RejectsTowerNoBiggerThanSmallest()
         {
             var grid = new CityGrid(2);
             grid.Deposit(1, 5, 0);
-            grid.Deposit(1, 5, 0);
+            grid.Deposit(1, 8, 0);
             Assert.That(grid.IsFull, Is.True);
 
-            Assert.That(grid.Deposit(1, 99, 0), Is.False);
+            Assert.That(grid.Deposit(1, 5, 0), Is.False); // equal to the smallest → no improvement
+            Assert.That(grid.Deposit(1, 3, 0), Is.False); // smaller → rejected
             Assert.That(grid.OccupiedCount, Is.EqualTo(2));
-            Assert.That(grid.Population, Is.EqualTo(10)); // unchanged by the rejected deposit
+            Assert.That(grid.Population, Is.EqualTo(13)); // unchanged
+        }
+
+        [Test]
+        public void FullGrid_ReplacesSmallest_WhenTowerIsBigger() // best-N: city keeps the best, no soft-lock
+        {
+            var grid = new CityGrid(2);
+            grid.Deposit(3, 5, 0);    // the smallest
+            grid.Deposit(10, 20, 0);
+            Assert.That(grid.IsFull, Is.True);
+            Assert.That(grid.Population, Is.EqualTo(25));
+
+            Assert.That(grid.Deposit(15, 40, 99), Is.True); // beats the smallest (5) → replaces it
+            Assert.That(grid.OccupiedCount, Is.EqualTo(2));  // still full, no extra plot
+            Assert.That(grid.Population, Is.EqualTo(60));     // 25 − 5 + 40
+
+            int a = grid.Plots[0].Residents, b = grid.Plots[1].Residents;
+            Assert.That(System.Math.Max(a, b), Is.EqualTo(40)); // the two biggest survive (40 and 20)
+            Assert.That(System.Math.Min(a, b), Is.EqualTo(20)); // the 5 is gone
         }
 
         [Test]

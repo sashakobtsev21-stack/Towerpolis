@@ -35,9 +35,10 @@ namespace Towerpolis.Core.Meta
         public readonly bool NewLeaderboardBest;
         public readonly int DistrictPopulation;   // after this deposit
         public readonly int StreakMilestoneCoins; // 0 unless a milestone was hit this run
+        public readonly int DistrictRewardCoins;  // the City-Bonused district-completion coins (0 unless completed now)
 
         public RunEndOutcome(bool deposited, int coinsEarned, int gemsEarned, bool districtCompletedNow,
-            bool newLeaderboardBest, int districtPopulation, int streakMilestoneCoins)
+            bool newLeaderboardBest, int districtPopulation, int streakMilestoneCoins, int districtRewardCoins)
         {
             Deposited = deposited;
             CoinsEarned = coinsEarned;
@@ -46,6 +47,7 @@ namespace Towerpolis.Core.Meta
             NewLeaderboardBest = newLeaderboardBest;
             DistrictPopulation = districtPopulation;
             StreakMilestoneCoins = streakMilestoneCoins;
+            DistrictRewardCoins = districtRewardCoins;
         }
     }
 
@@ -257,11 +259,13 @@ namespace Towerpolis.Core.Meta
             }
 
             int gemsEarned = 0;
+            int districtRewardCoins = 0;
             bool completedNow = false;
             if (!_rewarded.Contains(d.Id) && DistrictGoal.IsReached(grid.Population, d.FillGoal))
             {
                 _rewarded.Add(d.Id);
-                coins += CoinEarnCalculator.CityBonusedReward(d.RewardCoins, Upgrades.CityBonusLevel, _cfg); // City Bonus upgrade
+                districtRewardCoins = CoinEarnCalculator.CityBonusedReward(d.RewardCoins, Upgrades.CityBonusLevel, _cfg); // City Bonus upgrade
+                coins += districtRewardCoins;
                 gemsEarned = d.RewardGems;
                 completedNow = true;
             }
@@ -270,7 +274,7 @@ namespace Towerpolis.Core.Meta
             Gems += gemsEarned;
             LifetimePerfects += r.PerfectDrops;
             if (r.FloorCount > BestFloorCount) BestFloorCount = r.FloorCount;
-            return new RunEndOutcome(deposited, coins, gemsEarned, completedNow, newBest, grid.Population, milestoneCoins);
+            return new RunEndOutcome(deposited, coins, gemsEarned, completedNow, newBest, grid.Population, milestoneCoins, districtRewardCoins);
         }
 
         // --- Weekly missions & achievements (progression-spec §4) ---
