@@ -46,6 +46,7 @@ namespace Towerpolis.Game.Gameplay
         public int Floors => _run != null ? _run.FloorCount : 0;
         public int Strikes => _run != null ? _run.MissStrikes : 0;
         public int PerfectChain => _run != null ? _run.PerfectChain : 0; // GameAudio climbs a scale with it
+        public int ComboLevel => _run != null ? _run.ComboLevel : 0;     // Phase B: drives the HUD combo meter
         public bool IsOver => _state == State.Over;
 
         /// <summary>The current run's frozen result (for the meta deposit/scoring). Default if no run yet.</summary>

@@ -52,6 +52,18 @@ namespace Towerpolis.Core.Gameplay
             };
         }
 
+        /// <summary>Bonus residents added to EVERY placed floor while a combo is alive (Phase A, Tower-Bloxx).
+        /// Indexed by the current combo level (0 = no combo). Defensive: clamps the index to the table and
+        /// returns 0 for an empty/missing table, so a misconfigured CoreConfig can never crash a run.</summary>
+        public static int ComboResidentBonus(CoreConfig cfg, int comboLevel)
+        {
+            if (cfg is null) throw new ArgumentNullException(nameof(cfg));
+            int[] table = cfg.ComboResidentBonus;
+            if (table is null || table.Length == 0) return 0;
+            int i = comboLevel < 0 ? 0 : (comboLevel >= table.Length ? table.Length - 1 : comboLevel);
+            return table[i];
+        }
+
         /// <summary>Extra residents a Perfect drop houses, per floor type (spec §6.3).</summary>
         public static int PerfectResidentBonus(CoreConfig cfg, FloorType type)
         {

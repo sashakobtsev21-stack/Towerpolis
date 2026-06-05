@@ -49,6 +49,13 @@ namespace Towerpolis.Core.Gameplay
         public int PerfectBonusPremium = 3;
         public int ResidentScoreValue = 10;
 
+        // --- Combo → residents (Phase A, Tower-Bloxx). Skillful streaks pour PEOPLE into the building.
+        //     Index = ComboLevel (0..ComboLevelCap). A Perfect raises the level (+1, capped), a Good lowers
+        //     it (−1), a strike (Sloppy/Miss) zeroes it. EVERY placed floor gets ComboResidentBonus[level]
+        //     extra residents while the combo is alive. Deterministic (no clock) → daily-seed safe. ---
+        public int[] ComboResidentBonus = { 0, 1, 2, 4 }; // residents/floor by combo level (tune by feel)
+        public int ComboLevelCap = 3;                      // max combo level (= last bonus-table index)
+
         // --- Economy / meta (Phase 3 — meta-spec §5). Earn-only; spending is Phase 4. ---
         public int CoinPerFloor = 1;            // coins per placed floor (any grade)
         public int CoinBonusPerfect = 2;        // extra coins per Perfect drop

@@ -22,6 +22,25 @@ namespace Towerpolis.Core.Tests.Gameplay
             Assert.That(Scoring.ChainBonus(Cfg(), chain), Is.EqualTo(expected));
         }
 
+        // Combo resident bonus (Phase A): default table {0,1,2,4}, index clamped both ends.
+        [TestCase(0, 0)]
+        [TestCase(1, 1)]
+        [TestCase(2, 2)]
+        [TestCase(3, 4)]
+        [TestCase(4, 4)]   // above the table → clamped to last
+        [TestCase(-1, 0)]  // below 0 → clamped to first
+        public void ComboResidentBonus_ClampsIndex(int level, int expected)
+        {
+            Assert.That(Scoring.ComboResidentBonus(Cfg(), level), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ComboResidentBonus_EmptyTable_ReturnsZero()
+        {
+            var cfg = new CoreConfig { ComboResidentBonus = new int[0] };
+            Assert.That(Scoring.ComboResidentBonus(cfg, 2), Is.Zero);
+        }
+
         [TestCase(FloorType.Standard, 100)]
         [TestCase(FloorType.Balcony, 150)]
         [TestCase(FloorType.Premium, 200)]
