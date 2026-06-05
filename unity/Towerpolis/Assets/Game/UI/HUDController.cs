@@ -71,6 +71,7 @@ namespace Towerpolis.Game.UI
         void Start()
         {
             UiFont.EnsureCyrillic(); // render Cyrillic with the default TMP font
+            Loc.Init();              // restore the saved/device language (ADR-0008)
             _game = GetComponent<TowerGameController>();
             if (_game == null) _game = FindFirstObjectByType<TowerGameController>();
             _cam = Camera.main;
@@ -269,7 +270,7 @@ namespace Towerpolis.Game.UI
                 if (_comboLabel.gameObject.activeSelf != showLabel) _comboLabel.gameObject.SetActive(showLabel);
                 if (showLabel)
                 {
-                    _comboLabel.text = (level >= 3 ? "СЕРИЯ ×" : "×") + chain;
+                    _comboLabel.text = Loc.T(level >= 3 ? LocKeys.HudStreak : LocKeys.HudChain, chain);
                     _comboLabel.color = ComboLit[lit];
                 }
             }
@@ -383,7 +384,7 @@ namespace Towerpolis.Game.UI
         IEnumerator SummitBeat()
         {
             if (_summitLabel == null) yield break;
-            _summitLabel.text = "ВЕРШИНА!\n" + SummitHeight + " ЭТАЖЕЙ";
+            _summitLabel.text = Loc.T(LocKeys.HudSummit, SummitHeight);
             _summitLabel.gameObject.SetActive(true);
             FlashVignette(0.35f, 1.0f, Yellow); // gold flash so it can't be missed
             RectTransform rt = _summitLabel.rectTransform;
@@ -442,7 +443,7 @@ namespace Towerpolis.Game.UI
             if (_restartScore != null) _restartScore.text = finalHeight.ToString();
             if (_restartBest != null)
             {
-                _restartBest.text = newBest ? "РЕКОРД!" : "ЛУЧШЕЕ  " + _highScore;
+                _restartBest.text = newBest ? Loc.T(LocKeys.HudRecord) : Loc.T(LocKeys.HudBest, _highScore);
                 _restartBest.color = newBest ? Mint : Navy;
             }
             // Coins banked this run + the running total — so the reward is visible (coins are otherwise
@@ -454,10 +455,10 @@ namespace Towerpolis.Game.UI
                 {
                     int earned = meta.PreviewCoins(_toppledResult); // floors×1 + perfects×2
                     string trophy = _toppledResult.TrophyRoofResidents > 0
-                        ? "\nТРОФЕЙ ЗА СЕРИЮ  +" + _toppledResult.TrophyRoofResidents + " жильцов"
+                        ? Loc.T(LocKeys.HudTrophyLine, _toppledResult.TrophyRoofResidents)
                         : "";
-                    _restartCoins.text = "+" + earned + " МОНЕТ\nэтажи " + _toppledResult.FloorCount +
-                                         "  ·  идеально " + _toppledResult.PerfectDrops + "  ·  всего " + meta.Coins + trophy;
+                    _restartCoins.text = Loc.T(LocKeys.HudRunCoins, earned, _toppledResult.FloorCount,
+                                               _toppledResult.PerfectDrops, meta.Coins) + trophy;
                 }
                 else _restartCoins.text = "";
             }
@@ -514,7 +515,7 @@ namespace Towerpolis.Game.UI
 
             _perfectLabel = NewText("Perfect", canvasGo.transform, 80, FontStyles.Bold, TextAlignmentOptions.Center);
             _perfectLabel.color = Yellow;
-            _perfectLabel.text = "ИДЕАЛЬНО!";
+            _perfectLabel.gameObject.AddComponent<LocalizedLabel>().Bind(_perfectLabel, LocKeys.HudPerfect);
             _perfectRect = _perfectLabel.rectTransform;
             _perfectRect.sizeDelta = new Vector2(600f, 120f);
             _perfectLabel.gameObject.SetActive(false);
@@ -561,7 +562,7 @@ namespace Towerpolis.Game.UI
 
             var label = NewText("RetryLabel", brt, 42, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "ЕЩЁ РАЗ";
+            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.HudRetry);
             Stretch(label.rectTransform);
 
             _restartPanel.SetActive(false);
