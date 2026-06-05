@@ -16,7 +16,8 @@ namespace Towerpolis.Game.UI
         public const string HudTrophyLine = "hud.trophyline";  // "\nТРОФЕЙ ЗА СЕРИЮ  +{0} жильцов"
 
         // ----- Meta HUD (MetaHud) chrome -----
-        public const string MetaCity            = "meta.btn.city";       // top-bar "ГОРОД"
+        public const string MetaMenu            = "meta.menu";           // ☰ panel title "МЕНЮ"
+        public const string MetaCity            = "meta.btn.city";       // menu row "ГОРОД"
         public const string MetaBonuses         = "meta.btn.bonuses";    // top-bar "БОНУСЫ"
         public const string MetaSkins           = "meta.btn.skins";      // top-bar + panel title "СКИНЫ"
         public const string MetaGoals           = "meta.btn.goals";      // top-bar + panel title "ЦЕЛИ"

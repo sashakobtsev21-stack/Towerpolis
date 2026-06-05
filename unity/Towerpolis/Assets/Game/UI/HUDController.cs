@@ -493,11 +493,11 @@ namespace Towerpolis.Game.UI
             _coinIcon = NewImage("CoinIcon", _safeRoot, Yellow); // gold disc (generated sprite, font-independent)
             _coinIcon.sprite = CoinSprite();
             _coinIcon.raycastTarget = false;
-            Place(_coinIcon.rectTransform, new Vector2(1f, 1f), new Vector2(-30f, -40f), new Vector2(46f, 46f));
+            Place(_coinIcon.rectTransform, new Vector2(1f, 1f), new Vector2(-130f, -40f), new Vector2(46f, 46f)); // left of the ☰ menu button
 
             _coinsLabel = NewText("Coins", _safeRoot, 48, FontStyles.Bold, TextAlignmentOptions.TopRight);
             _coinsLabel.color = Yellow; // gold — the live coin tally
-            Place(_coinsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(-88f, -36f), new Vector2(320f, 80f));
+            Place(_coinsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(-188f, -36f), new Vector2(320f, 80f)); // shifted left for the ☰ menu button
 
             for (int i = 0; i < 2; i++)
             {

@@ -20,6 +20,7 @@ namespace Towerpolis.Game.UI
             { LocKeys.HudTrophyLine, "\nSTREAK TROPHY  +{0} residents" },
 
             // ----- Meta HUD chrome -----
+            { LocKeys.MetaMenu,           "MENU" },
             { LocKeys.MetaCity,           "CITY" },
             { LocKeys.MetaBonuses,        "BONUSES" },
             { LocKeys.MetaSkins,          "SKINS" },

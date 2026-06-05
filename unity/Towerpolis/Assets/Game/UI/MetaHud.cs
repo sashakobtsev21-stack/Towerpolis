@@ -26,10 +26,6 @@ namespace Towerpolis.Game.UI
         static readonly Color Dim = new Color(0.06f, 0.10f, 0.16f, 0.92f);
         static readonly Color EmptyPlot = new Color(1f, 1f, 1f, 0.10f);
 
-        // Top-bar buttons: a uniform evenly-spaced row (CITY · DAILY · UPGRADES · SKINS · GOALS).
-        const float TopBarW = 168f;
-        static float TopBarX(int i) => 24f + i * (TopBarW + 12f);
-
         MetaService _meta;
         TowerGameController _controller;
 
@@ -74,6 +70,7 @@ namespace Towerpolis.Game.UI
         TMP_Text[] _missionLines;
         TMP_Text[] _achLines;
 
+        GameObject _menuPanel;
         GameObject _settingsPanel;
         Image _langRuImg, _langEnImg; // highlight the active language
         Image _soundImg; TMP_Text _soundLbl; bool _soundOn = true;
@@ -608,33 +605,84 @@ namespace Towerpolis.Game.UI
             _popLabel.color = Gold;
             Place(_popLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -36f), new Vector2(420f, 56f));
 
-            CityButton(safe);
-            UpgradesButton(safe);
-            SkinsButton(safe);
-            MissionsButton(safe);
-            SettingsButton(safe);
+            MenuButton(safe); // ☰ top-right corner → opens the menu with every section
             BuildCityPanel(canvasGo.transform);
             BuildUpgradePanel(canvasGo.transform);
             BuildSkinPanel(canvasGo.transform);
             BuildMissionPanel(canvasGo.transform);
             BuildSettingsPanel(canvasGo.transform);
+            BuildMenuPanel(canvasGo.transform);
         }
 
-        void CityButton(Transform parent)
+        // Hamburger (☰) in the top-right corner — the single entry point to every meta section.
+        void MenuButton(Transform parent)
         {
-            var btnGo = new GameObject("CityButton", typeof(RectTransform), typeof(Image), typeof(Button));
-            btnGo.transform.SetParent(parent, false);
-            var rt = (RectTransform)btnGo.transform;
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(TopBarX(0), -104f);
-            rt.sizeDelta = new Vector2(TopBarW, 72f);
-            btnGo.GetComponent<Image>().color = Navy;
-            btnGo.GetComponent<Button>().onClick.AddListener(OpenCity);
-
-            var label = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaCity);
-            Stretch(label.rectTransform);
+            Button btn = MakeButton(parent, "MenuButton", new Vector2(1f, 1f), new Vector2(-16f, -16f), new Vector2(96f, 96f), Navy, out _);
+            btn.onClick.AddListener(OpenMenu);
+            var icon = new GameObject("Icon", typeof(RectTransform));
+            icon.transform.SetParent(btn.transform, false);
+            Stretch((RectTransform)icon.transform);
+            MenuBar(icon.transform, 18f);
+            MenuBar(icon.transform, 0f);
+            MenuBar(icon.transform, -18f);
         }
+
+        void MenuBar(Transform parent, float y)
+        {
+            var bar = new GameObject("Bar", typeof(RectTransform), typeof(Image));
+            bar.transform.SetParent(parent, false);
+            var rt = (RectTransform)bar.transform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, y);
+            rt.sizeDelta = new Vector2(50f, 8f);
+            var img = bar.GetComponent<Image>();
+            img.color = OffWhite;
+            img.raycastTarget = false; // taps fall through to the button
+        }
+
+        void BuildMenuPanel(Transform parent)
+        {
+            _menuPanel = new GameObject("MenuPanel", typeof(RectTransform), typeof(Image));
+            _menuPanel.transform.SetParent(parent, false);
+            var prt = (RectTransform)_menuPanel.transform;
+            Stretch(prt);
+            _menuPanel.GetComponent<Image>().color = Dim;
+            PanelCard(prt);
+
+            var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
+            title.color = OffWhite;
+            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.MetaMenu);
+            Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
+
+            // One row per section; each closes the menu, then opens its panel.
+            MenuItem(prt, LocKeys.MetaCity,      260f, OpenCity);
+            MenuItem(prt, LocKeys.MetaBonuses,   150f, OpenUpgrades);
+            MenuItem(prt, LocKeys.MetaSkins,      40f, OpenSkins);
+            MenuItem(prt, LocKeys.MetaGoals,     -70f, OpenMissions);
+            MenuItem(prt, LocKeys.MetaSettings, -180f, OpenSettings);
+
+            Button close = MakeButton(prt, "MenuClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(420f, 100f), Gold, out _);
+            close.onClick.AddListener(CloseMenu);
+            var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
+            clbl.color = Navy;
+            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.MetaClose);
+            Stretch(clbl.rectTransform);
+
+            _menuPanel.SetActive(false);
+        }
+
+        void MenuItem(Transform parent, string labelKey, float y, System.Action open)
+        {
+            Button b = MakeButton(parent, "Menu_" + labelKey, new Vector2(0.5f, 0.5f), new Vector2(0f, y), new Vector2(560f, 92f), Navy, out _);
+            b.onClick.AddListener(() => { CloseMenu(); open(); });
+            var lbl = NewText("Label", b.transform, 36, FontStyles.Bold, TextAlignmentOptions.Center);
+            lbl.color = OffWhite;
+            lbl.gameObject.AddComponent<LocalizedLabel>().Bind(lbl, labelKey);
+            Stretch(lbl.rectTransform);
+        }
+
+        void OpenMenu() { if (_menuPanel != null) ShowPanel(_menuPanel); }
+        void CloseMenu() => HidePanel(_menuPanel);
 
         void BuildCityPanel(Transform parent)
         {
@@ -688,16 +736,6 @@ namespace Towerpolis.Game.UI
             var label = NewText("Label", rt, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = Navy;
             label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaClose);
-            Stretch(label.rectTransform);
-        }
-
-        void UpgradesButton(Transform parent)
-        {
-            Button btn = MakeButton(parent, "UpgradesButton", new Vector2(0f, 1f), new Vector2(TopBarX(1), -104f), new Vector2(TopBarW, 72f), Navy, out _);
-            btn.onClick.AddListener(OpenUpgrades);
-            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            label.color = OffWhite;
-            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaBonuses); // panel title stays "УЛУЧШЕНИЯ"
             Stretch(label.rectTransform);
         }
 
@@ -763,16 +801,6 @@ namespace Towerpolis.Game.UI
             btn.onClick.AddListener(() => BuyUpgrade(UpgKinds[idx]));
             _upgBuyLbl[i] = NewText("Lbl", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_upgBuyLbl[i].rectTransform);
-        }
-
-        void SkinsButton(Transform parent)
-        {
-            Button btn = MakeButton(parent, "SkinsButton", new Vector2(0f, 1f), new Vector2(TopBarX(2), -104f), new Vector2(TopBarW, 72f), Navy, out _);
-            btn.onClick.AddListener(OpenSkins);
-            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            label.color = OffWhite;
-            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaSkins);
-            Stretch(label.rectTransform);
         }
 
         void BuildSkinPanel(Transform parent)
@@ -842,16 +870,6 @@ namespace Towerpolis.Game.UI
             return btn;
         }
 
-        void MissionsButton(Transform parent)
-        {
-            Button btn = MakeButton(parent, "MissionsButton", new Vector2(0f, 1f), new Vector2(TopBarX(3), -104f), new Vector2(TopBarW, 72f), Navy, out _);
-            btn.onClick.AddListener(OpenMissions);
-            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            label.color = OffWhite;
-            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaGoals);
-            Stretch(label.rectTransform);
-        }
-
         void BuildMissionPanel(Transform parent)
         {
             _missionLines = new TMP_Text[3];
@@ -900,16 +918,6 @@ namespace Towerpolis.Game.UI
         }
 
         // ---------- settings (language) ----------
-
-        void SettingsButton(Transform parent)
-        {
-            Button btn = MakeButton(parent, "SettingsButton", new Vector2(0f, 1f), new Vector2(TopBarX(4), -104f), new Vector2(TopBarW, 72f), Navy, out _);
-            btn.onClick.AddListener(OpenSettings);
-            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            label.color = OffWhite;
-            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaSettings);
-            Stretch(label.rectTransform);
-        }
 
         void BuildSettingsPanel(Transform parent)
         {
