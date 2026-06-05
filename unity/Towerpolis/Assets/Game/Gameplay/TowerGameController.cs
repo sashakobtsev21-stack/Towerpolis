@@ -265,12 +265,16 @@ namespace Towerpolis.Game.Gameplay
                 // overhang. The tower welds it FLUSH in local space (no gaps/overlaps under the sway).
                 float offsetApplied = outcome.Grade == Grade.Perfect ? 0f : gradedOffset;
                 tower.WeldPlaced(_pendingBlock, offsetApplied, outcome.TopWidth, _run.FloorCount, _run.LeanOffset);
-                spawner.SetColliderEnabled(_pendingBlock, true); // solid face for missed blocks to land on / tip off
                 _pendingBlock.gameObject.AddComponent<SettleUpright>().Play(); // right the fall tilt
+                // NB: placed blocks deliberately get NO active collider. They are kinematic Rigidbodies on the
+                // swaying parent; a dynamic miss resolving against those swaying kinematic colliders snagged on
+                // "air" (the collider's physics pose lagged the visual sway). The stack is fake-physics
+                // (ADR-0002) and the swept fall-contact is scripted, so no collider is needed here.
             }
             else
             {
-                spawner.SetColliderEnabled(_pendingBlock, true);
+                // A miss free-tumbles off the side it overshot and falls away — no tower collision, so it can
+                // never snag. Score is decided in Core, so this is pure juice and safe to decouple from physics.
                 TumbleAway(_pendingBlock, offsetX);
             }
 
@@ -310,16 +314,14 @@ namespace Towerpolis.Game.Gameplay
             if (rb != null)
             {
                 rb.isKinematic = false;
-                // Continuous detection so the falling block hits the block FACES accurately instead of
-                // tunnelling through and catching on "air".
-                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 rb.useGravity = true;
                 rb.constraints = RigidbodyConstraints.None;
-                // Gentle: it lands on the top block's edge, then its weight hanging off the edge + gravity
-                // tip it off naturally and it tumbles down the side.
+                // Knocked off the side it overshot: an outward push + a downward kick + a spin so it tumbles
+                // clear of the tower and falls away. The block has no active collider, so it hits nothing and
+                // can't snag — it just arcs off-screen and is cleaned up below.
                 float dir = offsetX >= 0f ? 1f : -1f;
-                rb.linearVelocity = new Vector3(dir * 1.0f, -1.5f, 0f);
-                rb.angularVelocity = new Vector3(0f, 0f, -dir * 1.0f);
+                rb.linearVelocity = new Vector3(dir * 1.6f, -1.0f, 0f);
+                rb.angularVelocity = new Vector3(0f, 0f, -dir * 2.4f);
             }
             Destroy(block.gameObject, 4f);
         }
