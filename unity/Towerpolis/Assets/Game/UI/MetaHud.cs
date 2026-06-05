@@ -594,17 +594,25 @@ namespace Towerpolis.Game.UI
             canvasGo.AddComponent<GraphicRaycaster>();
             _toastRoot = canvasGo.transform;
 
+            // Top-bar chrome lives under a safe-area root so notches / rounded corners never clip the buttons.
+            // (Full-screen panels stay on the canvas — their content is centred, away from the edges.)
+            var safeGo = new GameObject("SafeRoot", typeof(RectTransform));
+            safeGo.transform.SetParent(canvasGo.transform, false);
+            var safe = (RectTransform)safeGo.transform;
+            Stretch(safe);
+            safeGo.AddComponent<SafeAreaRoot>();
+
             // Only POPULATION is shown in the top bar now (coins/streak are tracked in Core for later,
             // not displayed — owner: "нужно только население и этажей"; height is the HUD's big number).
-            _popLabel = NewText("CityPop", canvasGo.transform, 40, FontStyles.Bold, TextAlignmentOptions.TopLeft);
+            _popLabel = NewText("CityPop", safe, 40, FontStyles.Bold, TextAlignmentOptions.TopLeft);
             _popLabel.color = Gold;
             Place(_popLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -36f), new Vector2(420f, 56f));
 
-            CityButton(canvasGo.transform);
-            UpgradesButton(canvasGo.transform);
-            SkinsButton(canvasGo.transform);
-            MissionsButton(canvasGo.transform);
-            SettingsButton(canvasGo.transform);
+            CityButton(safe);
+            UpgradesButton(safe);
+            SkinsButton(safe);
+            MissionsButton(safe);
+            SettingsButton(safe);
             BuildCityPanel(canvasGo.transform);
             BuildUpgradePanel(canvasGo.transform);
             BuildSkinPanel(canvasGo.transform);

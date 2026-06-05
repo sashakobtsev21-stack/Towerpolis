@@ -105,14 +105,7 @@ namespace Towerpolis.Game.UI
         {
             RefreshCoins();      // live tally — ticks up as floors land
             UpdateComboMeter();  // show/hide + repaint the combo embers
-
-            // Apply the device safe area each frame (cheap; handles notches / rotation).
-            if (_safeRoot == null) return;
-            Rect sa = Screen.safeArea;
-            _safeRoot.anchorMin = new Vector2(sa.xMin / Screen.width, sa.yMin / Screen.height);
-            _safeRoot.anchorMax = new Vector2(sa.xMax / Screen.width, sa.yMax / Screen.height);
-            _safeRoot.offsetMin = Vector2.zero;
-            _safeRoot.offsetMax = Vector2.zero;
+            // (device safe area is handled by the SafeAreaRoot component on _safeRoot)
         }
 
         // ---------- event handlers ----------
@@ -492,6 +485,7 @@ namespace Towerpolis.Game.UI
             safeGo.transform.SetParent(canvasGo.transform, false);
             _safeRoot = (RectTransform)safeGo.transform;
             Stretch(_safeRoot);
+            safeGo.AddComponent<SafeAreaRoot>(); // insets to the device safe area each frame
 
             _scoreLabel = NewText("Score", _safeRoot, 72, FontStyles.Bold, TextAlignmentOptions.Top);
             Place(_scoreLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -32f), new Vector2(700f, 100f));
