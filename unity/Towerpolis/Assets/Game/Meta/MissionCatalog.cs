@@ -1,4 +1,5 @@
 using Towerpolis.Core.Meta;
+using Towerpolis.Game.UI;
 
 namespace Towerpolis.Game.Meta
 {
@@ -20,14 +21,14 @@ namespace Towerpolis.Game.Meta
     {
         public static readonly MissionDef[] All =
         {
-            new MissionDef(new MissionInfo("m_floors_weekly",    MissionMetric.FloorsPlaced,         200, 100), "Строитель",    "Построй 200 этажей"),
-            new MissionDef(new MissionInfo("m_perfects_weekly",  MissionMetric.PerfectDrops,         50,  120), "Меткий",       "50 идеальных постановок"),
-            new MissionDef(new MissionInfo("m_daily_runs",       MissionMetric.DailyRunsCompleted,   5,   150), "Завсегдатай",  "Сыграй «День» 5 дней"),
-            new MissionDef(new MissionInfo("m_tall_tower",       MissionMetric.TowerHeight,          40,  120), "Высотка",      "40 этажей за забег"),
-            new MissionDef(new MissionInfo("m_perfect_chain",    MissionMetric.PerfectChainLength,   8,   150), "В ударе",      "Серия из 8 идеальных"),
-            new MissionDef(new MissionInfo("m_residents_weekly", MissionMetric.ResidentsHoused,      400, 100), "Домовладелец", "Посели 400 жильцов"),
-            new MissionDef(new MissionInfo("m_district_runs",    MissionMetric.DistrictRunsCompleted, 6,  80),  "Местный",      "Заверши 6 забегов"),
-            new MissionDef(new MissionInfo("m_streak_days",      MissionMetric.StreakDays,           5,   200), "Преданный",    "Серия в 5 дней"),
+            new MissionDef(new MissionInfo("m_floors_weekly",    MissionMetric.FloorsPlaced,         200, 100), LocKeys.MissionFloorsName,    LocKeys.MissionFloorsDesc),
+            new MissionDef(new MissionInfo("m_perfects_weekly",  MissionMetric.PerfectDrops,         50,  120), LocKeys.MissionPerfectsName,  LocKeys.MissionPerfectsDesc),
+            new MissionDef(new MissionInfo("m_daily_runs",       MissionMetric.DailyRunsCompleted,   5,   150), LocKeys.MissionDailyName,     LocKeys.MissionDailyDesc),
+            new MissionDef(new MissionInfo("m_tall_tower",       MissionMetric.TowerHeight,          40,  120), LocKeys.MissionTallName,      LocKeys.MissionTallDesc),
+            new MissionDef(new MissionInfo("m_perfect_chain",    MissionMetric.PerfectChainLength,   8,   150), LocKeys.MissionChainName,     LocKeys.MissionChainDesc),
+            new MissionDef(new MissionInfo("m_residents_weekly", MissionMetric.ResidentsHoused,      400, 100), LocKeys.MissionResidentsName, LocKeys.MissionResidentsDesc),
+            new MissionDef(new MissionInfo("m_district_runs",    MissionMetric.DistrictRunsCompleted, 6,  80),  LocKeys.MissionDistrictName,  LocKeys.MissionDistrictDesc),
+            new MissionDef(new MissionInfo("m_streak_days",      MissionMetric.StreakDays,           5,   200), LocKeys.MissionStreakName,    LocKeys.MissionStreakDesc),
         };
 
         public static readonly MissionInfo[] Infos;

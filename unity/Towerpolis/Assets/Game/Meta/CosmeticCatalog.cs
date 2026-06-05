@@ -1,4 +1,5 @@
 using UnityEngine;
+using Towerpolis.Game.UI;
 
 namespace Towerpolis.Game.Meta
 {
@@ -46,27 +47,27 @@ namespace Towerpolis.Game.Meta
 
         public static readonly BlockSkin[] BlockSkins =
         {
-            new BlockSkin("skin_default", "Classic", 0, "", false, null, null, null, default, default),
+            new BlockSkin("skin_default", LocKeys.SkinClassic, 0, "", false, null, null, null, default, default),
 
-            new BlockSkin("skin_pastel", "Pastel", 150, "", true,
+            new BlockSkin("skin_pastel", LocKeys.SkinPastel, 150, "", true,
                 new[] { C(0.70f,0.92f,0.80f), C(0.72f,0.85f,0.98f), C(0.85f,0.80f,0.96f) },
                 new[] { C(1.00f,0.85f,0.72f), C(1.00f,0.78f,0.84f), C(1.00f,0.92f,0.70f) },
                 new[] { C(0.78f,0.82f,0.98f), C(0.88f,0.80f,0.96f), C(0.98f,0.90f,0.74f) },
                 C(0.80f,0.90f,0.96f), C(1.00f,0.99f,0.96f)),
 
-            new BlockSkin("skin_metal", "Steel", 150, "", true,
+            new BlockSkin("skin_metal", LocKeys.SkinSteel, 150, "", true,
                 new[] { C(0.55f,0.60f,0.66f), C(0.48f,0.54f,0.60f), C(0.62f,0.66f,0.70f) },
                 new[] { C(0.70f,0.72f,0.74f), C(0.58f,0.60f,0.64f), C(0.66f,0.62f,0.58f) },
                 new[] { C(0.42f,0.46f,0.52f), C(0.50f,0.54f,0.60f), C(0.60f,0.64f,0.68f) },
                 C(0.55f,0.70f,0.78f), C(0.32f,0.35f,0.40f)),
 
-            new BlockSkin("skin_neon_glow", "Neon Glow", 400, "neon", true,
+            new BlockSkin("skin_neon_glow", LocKeys.SkinNeonGlow, 400, "neon", true,
                 new[] { C(0.10f,0.80f,0.85f), C(0.20f,0.40f,0.95f), C(0.65f,0.20f,0.90f) },
                 new[] { C(0.95f,0.15f,0.60f), C(1.00f,0.35f,0.20f), C(0.85f,0.90f,0.10f) },
                 new[] { C(0.15f,0.90f,0.55f), C(0.30f,0.50f,1.00f), C(0.80f,0.25f,0.95f) },
                 C(0.20f,0.95f,0.95f), C(0.20f,0.22f,0.30f)),
 
-            new BlockSkin("skin_snow", "Arctic", 400, "winter", true,
+            new BlockSkin("skin_snow", LocKeys.SkinArctic, 400, "winter", true,
                 new[] { C(0.95f,0.97f,1.00f), C(0.85f,0.92f,0.98f), C(0.90f,0.96f,0.94f) },
                 new[] { C(0.80f,0.90f,0.98f), C(0.92f,0.88f,0.96f), C(0.98f,0.92f,0.90f) },
                 new[] { C(0.90f,0.95f,1.00f), C(0.78f,0.86f,0.92f), C(0.96f,0.94f,0.88f) },
@@ -75,10 +76,10 @@ namespace Towerpolis.Game.Meta
 
         public static readonly CraneSkin[] CraneSkins =
         {
-            new CraneSkin("crane_default", "Hemp",  0,   "",     C(0.45f,0.33f,0.20f), C(0.24f,0.24f,0.27f)),
-            new CraneSkin("crane_steel",   "Steel", 200, "",     C(0.62f,0.66f,0.70f), C(0.55f,0.58f,0.63f)),
-            new CraneSkin("crane_gold",    "Gold",  400, "",     C(0.82f,0.67f,0.39f), C(0.85f,0.70f,0.30f)),
-            new CraneSkin("crane_neon",    "Neon",  400, "neon", C(0.20f,0.90f,0.95f), C(0.92f,0.20f,0.70f)),
+            new CraneSkin("crane_default", LocKeys.CraneHemp,  0,   "",     C(0.45f,0.33f,0.20f), C(0.24f,0.24f,0.27f)),
+            new CraneSkin("crane_steel",   LocKeys.CraneSteel, 200, "",     C(0.62f,0.66f,0.70f), C(0.55f,0.58f,0.63f)),
+            new CraneSkin("crane_gold",    LocKeys.CraneGold,  400, "",     C(0.82f,0.67f,0.39f), C(0.85f,0.70f,0.30f)),
+            new CraneSkin("crane_neon",    LocKeys.CraneNeon,  400, "neon", C(0.20f,0.90f,0.95f), C(0.92f,0.20f,0.70f)),
         };
 
         public static BlockSkin GetBlockSkin(string id)

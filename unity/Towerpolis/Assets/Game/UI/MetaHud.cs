@@ -36,7 +36,7 @@ namespace Towerpolis.Game.UI
         TMP_Text _popLabel;
 
         static readonly string[] DistIds = { "downtown", "neon", "winter" };
-        static readonly string[] DistNames = { "ЦЕНТР", "НЕОН", "ЗИМА" };
+        static readonly string[] DistNames = { LocKeys.DistDowntownShort, LocKeys.DistNeonShort, LocKeys.DistWinterShort };
         static readonly Color Locked = new Color(0.22f, 0.24f, 0.30f, 0.95f);
         Image[] _distImg;
         TMP_Text[] _distLbl;
@@ -49,12 +49,8 @@ namespace Towerpolis.Game.UI
 
         // Upgrades panel
         static readonly UpgradeKind[] UpgKinds = { UpgradeKind.Magnet, UpgradeKind.CityBonus };
-        static readonly string[] UpgNames = { "МАГНИТ", "БОНУС ГОРОДА" };
-        static readonly string[] UpgDescs =
-        {
-            "Подтягивает блок к центру (Endless)",
-            "Больше монет за достройку района",
-        };
+        static readonly string[] UpgNames = { LocKeys.UpgMagnetName, LocKeys.UpgCityBonusName };
+        static readonly string[] UpgDescs = { LocKeys.UpgMagnetDesc, LocKeys.UpgCityBonusDesc };
         static readonly Color Disabled = new Color(0.60f, 0.62f, 0.67f);
         GameObject _upgPanel;
         TMP_Text _upgCoins;
@@ -88,6 +84,7 @@ namespace Towerpolis.Game.UI
         void Start()
         {
             UiFont.EnsureCyrillic(); // render Cyrillic with the default TMP font
+            Loc.Init();              // restore the saved/device language (ADR-0008)
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
             _controller = FindFirstObjectByType<TowerGameController>();
             EnsureEventSystem(); // UGUI buttons need one to receive clicks
@@ -103,7 +100,18 @@ namespace Towerpolis.Game.UI
                 _controller.FloorAdded += OnFloorLive;  // tick coins/population up as you build
                 _controller.RunStarted += OnRunStartLive;
             }
+            Loc.LanguageChanged += OnLanguageChanged;   // re-resolve dynamic labels on a language switch
             RefreshTopBar();
+        }
+
+        // Static captions re-resolve themselves via LocalizedLabel; repaint the dynamic labels + open panel.
+        void OnLanguageChanged()
+        {
+            RefreshTopBar();
+            if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
+            if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
+            if (_skinPanel != null && _skinPanel.activeSelf) PopulateSkins();
+            if (_missionPanel != null && _missionPanel.activeSelf) PopulateMissions();
         }
 
         static void EnsureEventSystem()
@@ -127,6 +135,7 @@ namespace Towerpolis.Game.UI
                 _controller.FloorAdded -= OnFloorLive;
                 _controller.RunStarted -= OnRunStartLive;
             }
+            Loc.LanguageChanged -= OnLanguageChanged;
         }
 
         void OnBanked(RunEndOutcome outcome)
@@ -134,7 +143,7 @@ namespace Towerpolis.Game.UI
             RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
-            if (outcome.DistrictCompletedNow) EnqueueToast("РАЙОН ЗАВЕРШЁН!", Gold);
+            if (outcome.DistrictCompletedNow) EnqueueToast(Loc.T(LocKeys.ToastDistrict), Gold);
         }
 
         void OnProgressionChanged()
@@ -151,13 +160,13 @@ namespace Towerpolis.Game.UI
                 foreach (string id in sys.CompletedMissions)
                 {
                     MissionDef m = MissionCatalog.Get(id);
-                    EnqueueToast("МИССИЯ ВЫПОЛНЕНА\n" + m.Name + "   +" + m.Info.RewardCoins, Gold);
+                    EnqueueToast(Loc.T(LocKeys.ToastMission, Loc.T(m.Name), m.Info.RewardCoins), Gold);
                 }
             if (sys.UnlockedAchievements != null)
                 foreach (string id in sys.UnlockedAchievements)
                 {
                     AchievementDef a = FindAchievement(id);
-                    EnqueueToast("ДОСТИЖЕНИЕ\n" + a.Name + "   +" + a.Info.RewardCoins, Cyan);
+                    EnqueueToast(Loc.T(LocKeys.ToastAchievement, Loc.T(a.Name), a.Info.RewardCoins), Cyan);
                 }
         }
 
@@ -264,7 +273,7 @@ namespace Towerpolis.Game.UI
             // THIS building's residents (current run) — starts at 0 each run, grows as you stack. The
             // cumulative city population (the meta-score) is shown in the city view.
             int residents = _controller != null ? _controller.BuildRunResult().TotalResidents : 0;
-            if (_popLabel != null) _popLabel.text = "ЖИЛЬЦЫ  " + residents;
+            if (_popLabel != null) _popLabel.text = Loc.T(LocKeys.MetaResidents, residents);
         }
 
         // ---------- city view ----------
@@ -310,7 +319,7 @@ namespace Towerpolis.Game.UI
                 if (_distImg[i] != null) _distImg[i].color = !unlocked ? Locked : isActive ? Gold : Navy;
                 if (_distLbl[i] != null)
                 {
-                    _distLbl[i].text = DistNames[i];
+                    _distLbl[i].text = Loc.T(DistNames[i]);
                     _distLbl[i].color = unlocked ? (isActive ? Navy : OffWhite) : new Color(0.55f, 0.57f, 0.62f);
                 }
             }
@@ -334,8 +343,8 @@ namespace Towerpolis.Game.UI
             _meta.City?.Grids.TryGetValue(id, out grid);
             int population = grid != null ? grid.Population : 0;
 
-            if (_cityTitle != null) _cityTitle.text = view.DisplayName;
-            if (_cityPop != null) _cityPop.text = "НАСЕЛЕНИЕ  " + population + "  /  " + info.FillGoal;
+            if (_cityTitle != null) _cityTitle.text = Loc.T(view.DisplayName);
+            if (_cityPop != null) _cityPop.text = Loc.T(LocKeys.MetaPopulation, population, info.FillGoal);
             RefreshDistrictButtons();
 
             if (_gridLayout != null) _gridLayout.constraintCount = Mathf.Max(1, view.GridWidth);
@@ -398,7 +407,7 @@ namespace Towerpolis.Game.UI
         {
             if (_meta == null) return;
             int coins = _meta.Coins;
-            if (_upgCoins != null) _upgCoins.text = "МОНЕТЫ  " + coins;
+            if (_upgCoins != null) _upgCoins.text = Loc.T(LocKeys.MetaCoins, coins);
 
             for (int i = 0; i < UpgKinds.Length; i++)
             {
@@ -407,14 +416,14 @@ namespace Towerpolis.Game.UI
                 bool maxed = _meta.IsUpgradeMaxed(k);
                 int cost = _meta.NextUpgradeCost(k);
                 bool afford = coins >= cost;
-                if (_upgInfo[i] != null) _upgInfo[i].text = UpgNames[i] + "   Ур " + lvl + " / " + max;
-                SetBuy(_upgBuyImg[i], _upgBuyLbl[i], maxed ? "МАКС" : "КУПИТЬ " + cost, maxed, afford);
+                if (_upgInfo[i] != null) _upgInfo[i].text = Loc.T(LocKeys.MetaUpgRow, Loc.T(UpgNames[i]), lvl, max);
+                SetBuy(_upgBuyImg[i], _upgBuyLbl[i], maxed ? Loc.T(LocKeys.MetaMax) : Loc.T(LocKeys.MetaBuy, cost), maxed, afford);
             }
 
             bool canClaim = _meta.CanClaimLoginToday();
             if (_loginLbl != null)
             {
-                _loginLbl.text = canClaim ? "ЗАБРАТЬ ПОДАРОК" : "ПОДАРОК ВЗЯТ";
+                _loginLbl.text = Loc.T(canClaim ? LocKeys.MetaLoginClaim : LocKeys.MetaLoginTaken);
                 _loginLbl.color = canClaim ? Navy : OffWhite;
             }
             if (_loginImg != null) _loginImg.color = canClaim ? Gold : Navy;
@@ -476,7 +485,7 @@ namespace Towerpolis.Game.UI
         {
             if (_meta == null) return;
             int coins = _meta.Coins;
-            if (_skinCoins != null) _skinCoins.text = "МОНЕТЫ  " + coins;
+            if (_skinCoins != null) _skinCoins.text = Loc.T(LocKeys.MetaCoins, coins);
 
             BlockSkin[] blocks = CosmeticCatalog.BlockSkins;
             for (int i = 0; i < blocks.Length; i++)
@@ -494,17 +503,17 @@ namespace Towerpolis.Game.UI
             bool unlocked = _meta.IsDistrictRewarded(gate);
             string state;
             Color bg, fg;
-            if (equipped) { state = "НАДЕТО"; bg = Gold; fg = Navy; }
-            else if (owned) { state = "НАДЕТЬ"; bg = Navy; fg = OffWhite; }
-            else if (!unlocked) { state = "ЗАКРЫТО"; bg = Locked; fg = Disabled; }
+            if (equipped) { state = Loc.T(LocKeys.MetaSkinEquipped); bg = Gold; fg = Navy; }
+            else if (owned) { state = Loc.T(LocKeys.MetaSkinEquip); bg = Navy; fg = OffWhite; }
+            else if (!unlocked) { state = Loc.T(LocKeys.MetaSkinLocked); bg = Locked; fg = Disabled; }
             else
             {
                 bool afford = coins >= cost;
-                state = "КУПИТЬ " + cost;
+                state = Loc.T(LocKeys.MetaBuy, cost);
                 bg = afford ? Buyable : Locked;
                 fg = afford ? Navy : Disabled;
             }
-            if (lbl != null) { lbl.text = name + "\n" + state; lbl.color = fg; }
+            if (lbl != null) { lbl.text = Loc.T(name) + "\n" + state; lbl.color = fg; }
             if (img != null) img.color = bg;
         }
 
@@ -539,8 +548,8 @@ namespace Towerpolis.Game.UI
                     MissionDef def = MissionCatalog.Get(active[i]);
                     int prog = Mathf.Min(_meta.MissionProgressFor(active[i]), def.Info.Target);
                     bool done = _meta.IsMissionComplete(active[i]);
-                    _missionLines[i].text = def.Description + "    " + prog + "/" + def.Info.Target +
-                                            "    +" + def.Info.RewardCoins + (done ? "    ГОТОВО" : "");
+                    _missionLines[i].text = Loc.T(LocKeys.MetaMissionLine, Loc.T(def.Description), prog, def.Info.Target, def.Info.RewardCoins)
+                                            + (done ? "    " + Loc.T(LocKeys.MetaDone) : "");
                     _missionLines[i].color = done ? Gold : OffWhite;
                 }
                 else _missionLines[i].text = "";
@@ -551,8 +560,8 @@ namespace Towerpolis.Game.UI
             {
                 if (_achLines[i] == null) continue;
                 bool got = _meta.IsAchievementUnlocked(all[i].Info.AchievementId);
-                _achLines[i].text = all[i].Name + " — " + all[i].Description +
-                                    (got ? "    ГОТОВО" : "    +" + all[i].Info.RewardCoins);
+                _achLines[i].text = Loc.T(LocKeys.MetaAchLine, Loc.T(all[i].Name), Loc.T(all[i].Description))
+                                    + (got ? "    " + Loc.T(LocKeys.MetaDone) : "    +" + all[i].Info.RewardCoins);
                 _achLines[i].color = got ? Gold : LockedText;
             }
         }
@@ -604,7 +613,7 @@ namespace Towerpolis.Game.UI
             btnGo.GetComponent<Button>().onClick.AddListener(OpenCity);
 
             var label = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            label.text = "ГОРОД";
+            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaCity);
             Stretch(label.rectTransform);
         }
 
@@ -659,7 +668,7 @@ namespace Towerpolis.Game.UI
 
             var label = NewText("Label", rt, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = Navy;
-            label.text = "ЗАКРЫТЬ";
+            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaClose);
             Stretch(label.rectTransform);
         }
 
@@ -669,7 +678,7 @@ namespace Towerpolis.Game.UI
             btn.onClick.AddListener(OpenUpgrades);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "БОНУСЫ"; // short label so it fits the narrow button (panel title stays "УЛУЧШЕНИЯ")
+            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaBonuses); // panel title stays "УЛУЧШЕНИЯ"
             Stretch(label.rectTransform);
         }
 
@@ -689,7 +698,7 @@ namespace Towerpolis.Game.UI
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
-            title.text = "УЛУЧШЕНИЯ";
+            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.MetaUpgradesTitle);
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
             _upgCoins = NewText("Coins", prt, 40, FontStyles.Bold, TextAlignmentOptions.Top);
@@ -698,7 +707,7 @@ namespace Towerpolis.Game.UI
 
             var hint = NewText("CoinHint", prt, 24, FontStyles.Italic, TextAlignmentOptions.Top);
             hint.color = Disabled;
-            hint.text = "Монеты: +1 за этаж · +2 за идеальную постановку · награды за район/цели";
+            hint.gameObject.AddComponent<LocalizedLabel>().Bind(hint, LocKeys.MetaUpgHint);
             Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -262f), new Vector2(980f, 36f));
 
             float[] ys = { 250f, 150f };
@@ -713,7 +722,7 @@ namespace Towerpolis.Game.UI
             close.onClick.AddListener(CloseUpgrades);
             var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             clbl.color = Navy;
-            clbl.text = "ЗАКРЫТЬ";
+            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.MetaClose);
             Stretch(clbl.rectTransform);
 
             _upgPanel.SetActive(false);
@@ -727,7 +736,7 @@ namespace Towerpolis.Game.UI
 
             _upgDesc[i] = NewText("UpgDesc" + i, parent, 22, FontStyles.Italic, TextAlignmentOptions.Left);
             _upgDesc[i].color = Disabled;
-            _upgDesc[i].text = UpgDescs[i];
+            _upgDesc[i].text = Loc.T(UpgDescs[i]);
             Place(_upgDesc[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-150f, y - 22f), new Vector2(620f, 34f));
 
             int idx = i; // capture for the listener
@@ -743,7 +752,7 @@ namespace Towerpolis.Game.UI
             btn.onClick.AddListener(OpenSkins);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "СКИНЫ";
+            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaSkins);
             Stretch(label.rectTransform);
         }
 
@@ -765,14 +774,14 @@ namespace Towerpolis.Game.UI
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
-            title.text = "СКИНЫ";
+            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.MetaSkins);
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
             _skinCoins = NewText("Coins", prt, 40, FontStyles.Bold, TextAlignmentOptions.Top);
             _skinCoins.color = Gold;
             Place(_skinCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(900f, 60f));
 
-            SectionLabel(prt, "БЛОКИ", 260f);
+            SectionLabel(prt, LocKeys.MetaSectionBlocks, 260f);
             for (int i = 0; i < blocks.Length; i++)
             {
                 string id = blocks[i].Id; // capture
@@ -780,7 +789,7 @@ namespace Towerpolis.Game.UI
                 b.onClick.AddListener(() => TapBlockSkin(id));
             }
 
-            SectionLabel(prt, "КРАН", -40f);
+            SectionLabel(prt, LocKeys.MetaSectionCrane, -40f);
             for (int i = 0; i < cranes.Length; i++)
             {
                 string id = cranes[i].Id; // capture
@@ -792,16 +801,17 @@ namespace Towerpolis.Game.UI
             close.onClick.AddListener(CloseSkins);
             var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             clbl.color = Navy;
-            clbl.text = "ЗАКРЫТЬ";
+            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.MetaClose);
             Stretch(clbl.rectTransform);
 
             _skinPanel.SetActive(false);
         }
 
-        void SectionLabel(Transform parent, string text, float y)
+        void SectionLabel(Transform parent, string key, float y)
         {
-            var t = NewText("Section_" + text, parent, 32, FontStyles.Bold, TextAlignmentOptions.Center);
+            var t = NewText("Section_" + key, parent, 32, FontStyles.Bold, TextAlignmentOptions.Center);
             t.color = OffWhite;
+            t.gameObject.AddComponent<LocalizedLabel>().Bind(t, key); // also fixes a latent bug: text was never set
             Place(t.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, y), new Vector2(900f, 50f));
         }
 
@@ -819,7 +829,7 @@ namespace Towerpolis.Game.UI
             btn.onClick.AddListener(OpenMissions);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
-            label.text = "ЦЕЛИ";
+            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaGoals);
             Stretch(label.rectTransform);
         }
 
@@ -837,10 +847,10 @@ namespace Towerpolis.Game.UI
 
             var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
             title.color = OffWhite;
-            title.text = "ЦЕЛИ";
+            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.MetaGoals);
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
-            SectionLabel(prt, "МИССИИ НЕДЕЛИ", 330f);
+            SectionLabel(prt, LocKeys.MetaSectionWeekly, 330f);
             float my = 270f;
             for (int i = 0; i < _missionLines.Length; i++)
             {
@@ -850,7 +860,7 @@ namespace Towerpolis.Game.UI
                 my -= 52f;
             }
 
-            SectionLabel(prt, "ДОСТИЖЕНИЯ", 90f);
+            SectionLabel(prt, LocKeys.MetaSectionAchieve, 90f);
             float ay = 30f;
             for (int i = 0; i < _achLines.Length; i++)
             {
@@ -864,7 +874,7 @@ namespace Towerpolis.Game.UI
             close.onClick.AddListener(CloseMissions);
             var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
             clbl.color = Navy;
-            clbl.text = "ЗАКРЫТЬ";
+            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.MetaClose);
             Stretch(clbl.rectTransform);
 
             _missionPanel.SetActive(false);
