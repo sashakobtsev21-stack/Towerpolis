@@ -1,3 +1,7 @@
+# ===== .NET test / coverage output =====
+[Tt]est[Rr]esults/
+*.cobertura.xml
+
 # ===== Unity =====
 [Ll]ibrary/
 [Tt]emp/
