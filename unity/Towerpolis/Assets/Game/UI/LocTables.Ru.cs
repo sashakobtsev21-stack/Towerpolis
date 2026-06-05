@@ -26,6 +26,8 @@ namespace Towerpolis.Game.UI
             { LocKeys.MetaGoals,          "ЦЕЛИ" },
             { LocKeys.MetaClose,          "ЗАКРЫТЬ" },
             { LocKeys.MetaUpgradesTitle,  "УЛУЧШЕНИЯ" },
+            { LocKeys.MetaSettings,       "НАСТРОЙКИ" },
+            { LocKeys.MetaLanguage,       "ЯЗЫК" },
             { LocKeys.MetaSectionBlocks,  "БЛОКИ" },
             { LocKeys.MetaSectionCrane,   "КРАН" },
             { LocKeys.MetaSectionWeekly,  "МИССИИ НЕДЕЛИ" },

@@ -74,6 +74,9 @@ namespace Towerpolis.Game.UI
         TMP_Text[] _missionLines;
         TMP_Text[] _achLines;
 
+        GameObject _settingsPanel;
+        Image _langRuImg, _langEnImg; // highlight the active language
+
         // Run-end toasts (mission/achievement/district completions)
         static readonly Color Cyan = new Color(0.50f, 0.85f, 1f);
         Transform _toastRoot;
@@ -112,6 +115,7 @@ namespace Towerpolis.Game.UI
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
             if (_skinPanel != null && _skinPanel.activeSelf) PopulateSkins();
             if (_missionPanel != null && _missionPanel.activeSelf) PopulateMissions();
+            if (_settingsPanel != null && _settingsPanel.activeSelf) RefreshSettings();
         }
 
         static void EnsureEventSystem()
@@ -595,10 +599,12 @@ namespace Towerpolis.Game.UI
             UpgradesButton(canvasGo.transform);
             SkinsButton(canvasGo.transform);
             MissionsButton(canvasGo.transform);
+            SettingsButton(canvasGo.transform);
             BuildCityPanel(canvasGo.transform);
             BuildUpgradePanel(canvasGo.transform);
             BuildSkinPanel(canvasGo.transform);
             BuildMissionPanel(canvasGo.transform);
+            BuildSettingsPanel(canvasGo.transform);
         }
 
         void CityButton(Transform parent)
@@ -878,6 +884,80 @@ namespace Towerpolis.Game.UI
             Stretch(clbl.rectTransform);
 
             _missionPanel.SetActive(false);
+        }
+
+        // ---------- settings (language) ----------
+
+        void SettingsButton(Transform parent)
+        {
+            Button btn = MakeButton(parent, "SettingsButton", new Vector2(0f, 1f), new Vector2(TopBarX(4), -104f), new Vector2(TopBarW, 72f), Navy, out _);
+            btn.onClick.AddListener(OpenSettings);
+            var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            label.color = OffWhite;
+            label.gameObject.AddComponent<LocalizedLabel>().Bind(label, LocKeys.MetaSettings);
+            Stretch(label.rectTransform);
+        }
+
+        void BuildSettingsPanel(Transform parent)
+        {
+            _settingsPanel = new GameObject("SettingsPanel", typeof(RectTransform), typeof(Image));
+            _settingsPanel.transform.SetParent(parent, false);
+            var prt = (RectTransform)_settingsPanel.transform;
+            Stretch(prt);
+            _settingsPanel.GetComponent<Image>().color = Dim;
+            PanelCard(prt);
+
+            var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
+            title.color = OffWhite;
+            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.MetaSettings);
+            Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
+
+            SectionLabel(prt, LocKeys.MetaLanguage, 180f);
+
+            // Language names are endonyms — each shown in its own script, intentionally NOT localized.
+            Button ru = MakeButton(prt, "LangRu", new Vector2(0.5f, 0.5f), new Vector2(-170f, 70f), new Vector2(300f, 96f), Navy, out _langRuImg);
+            ru.onClick.AddListener(() => SetLanguage(SystemLanguage.Russian));
+            var rul = NewText("Label", ru.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
+            rul.text = "Русский";
+            Stretch(rul.rectTransform);
+
+            Button en = MakeButton(prt, "LangEn", new Vector2(0.5f, 0.5f), new Vector2(170f, 70f), new Vector2(300f, 96f), Navy, out _langEnImg);
+            en.onClick.AddListener(() => SetLanguage(SystemLanguage.English));
+            var enl = NewText("Label", en.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
+            enl.text = "English";
+            Stretch(enl.rectTransform);
+
+            Button close = MakeButton(prt, "SettingsClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(420f, 100f), Gold, out _);
+            close.onClick.AddListener(CloseSettings);
+            var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
+            clbl.color = Navy;
+            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.MetaClose);
+            Stretch(clbl.rectTransform);
+
+            _settingsPanel.SetActive(false);
+        }
+
+        void OpenSettings()
+        {
+            if (_settingsPanel == null) return;
+            RefreshSettings();
+            ShowPanel(_settingsPanel);
+        }
+
+        void CloseSettings() => HidePanel(_settingsPanel);
+
+        void SetLanguage(SystemLanguage lang)
+        {
+            Loc.SetLanguage(lang); // fires LanguageChanged → LocalizedLabel + OnLanguageChanged re-resolve everything
+            RefreshSettings();
+        }
+
+        // Highlight the active language button (gold) vs the other (navy).
+        void RefreshSettings()
+        {
+            bool ru = Loc.Language == SystemLanguage.Russian;
+            if (_langRuImg != null) _langRuImg.color = ru ? Gold : Navy;
+            if (_langEnImg != null) _langEnImg.color = ru ? Navy : Gold;
         }
 
         // ---------- helpers ----------

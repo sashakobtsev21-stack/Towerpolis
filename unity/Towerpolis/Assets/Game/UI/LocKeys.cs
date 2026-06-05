@@ -22,6 +22,8 @@ namespace Towerpolis.Game.UI
         public const string MetaGoals           = "meta.btn.goals";      // top-bar + panel title "ЦЕЛИ"
         public const string MetaClose           = "meta.close";          // "ЗАКРЫТЬ"
         public const string MetaUpgradesTitle   = "meta.title.upgrades"; // panel title "УЛУЧШЕНИЯ"
+        public const string MetaSettings        = "meta.settings";       // button + panel title "НАСТРОЙКИ"
+        public const string MetaLanguage        = "meta.language";        // section "ЯЗЫК"
         public const string MetaSectionBlocks   = "meta.section.blocks"; // "БЛОКИ"
         public const string MetaSectionCrane    = "meta.section.crane";  // "КРАН"
         public const string MetaSectionWeekly   = "meta.section.weekly"; // "МИССИИ НЕДЕЛИ"
