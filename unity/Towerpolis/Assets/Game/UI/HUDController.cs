@@ -24,6 +24,16 @@ namespace Towerpolis.Game.UI
         static readonly Color Mint = new Color(0.40f, 0.73f, 0.40f);
         static readonly Color PipEmpty = new Color(0.12f, 0.23f, 0.37f, 0.6f);
 
+        // Combo meter (Phase B): three "ember" pips that light as the combo climbs (0..3).
+        static readonly Color ComboGhost = new Color(0.18f, 0.28f, 0.42f, 0.30f); // unlit pip
+        static readonly Color[] ComboLit =
+        {
+            new Color(0.18f, 0.28f, 0.42f, 0.30f), // 0 (no lit pip)
+            new Color(1.00f, 0.60f, 0.18f, 1f),    // 1 — amber
+            new Color(1.00f, 0.38f, 0.12f, 1f),    // 2 — orange-red
+            new Color(1.00f, 0.84f, 0.18f, 1f),    // 3 — gold ("on fire")
+        };
+
         TowerGameController _game;
         Camera _cam;
 
@@ -35,6 +45,13 @@ namespace Towerpolis.Game.UI
         static Sprite _coinSprite;
         readonly Image[] _pips = new Image[2];
         Image _vignette;
+
+        RectTransform _comboRoot;
+        readonly Image[] _comboPips = new Image[3];
+        TMP_Text _comboLabel;
+        int _shownComboLevel = -1, _shownChain = -1;
+        bool _runLive;
+        Coroutine _comboPulseCo, _comboPunchCo;
 
         TMP_Text _perfectLabel;
         RectTransform _perfectRect;
@@ -85,7 +102,8 @@ namespace Towerpolis.Game.UI
 
         void Update()
         {
-            RefreshCoins(); // live tally — ticks up as floors land
+            RefreshCoins();      // live tally — ticks up as floors land
+            UpdateComboMeter();  // show/hide + repaint the combo embers
 
             // Apply the device safe area each frame (cheap; handles notches / rotation).
             if (_safeRoot == null) return;
@@ -142,6 +160,8 @@ namespace Towerpolis.Game.UI
             FlashVignette(0.5f, 0.8f);
             for (int i = 0; i < _pips.Length; i++)
                 if (_pips[i] != null) _pips[i].color = Coral;
+            _runLive = false;
+            StopComboAnim();
             _toppledResult = _game != null ? _game.BuildRunResult() : default; // capture now (before restart)
             StartCoroutine(ShowRestartAfter(1.2f));
         }
@@ -155,6 +175,10 @@ namespace Towerpolis.Game.UI
             if (_restartPanel != null) _restartPanel.SetActive(false);
             _summitShown = false;
             if (_summitLabel != null) _summitLabel.gameObject.SetActive(false);
+            _runLive = true;
+            _shownComboLevel = -1; // force a repaint of the combo embers on the first drop
+            _shownChain = -1;
+            StopComboAnim();
         }
 
         // Live coin tally on the main HUD = banked wallet + this-run earned-so-far (1/floor + 2/perfect).
@@ -190,6 +214,120 @@ namespace Towerpolis.Game.UI
             tex.SetPixels32(px); tex.Apply();
             _coinSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f);
             return _coinSprite;
+        }
+
+        // ---------- combo meter (Phase B) ----------
+
+        // Three "ember" pips in the cleared bottom-centre band + a chain badge below them.
+        void BuildComboMeter(Transform parent)
+        {
+            var go = new GameObject("ComboMeter", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            _comboRoot = (RectTransform)go.transform;
+            _comboRoot.anchorMin = _comboRoot.anchorMax = _comboRoot.pivot = new Vector2(0.5f, 0f);
+            _comboRoot.anchoredPosition = new Vector2(0f, 220f);
+            _comboRoot.sizeDelta = new Vector2(360f, 96f);
+
+            float[] xs = { -100f, 0f, 100f };
+            for (int i = 0; i < 3; i++)
+            {
+                _comboPips[i] = NewImage("ComboPip" + i, _comboRoot, ComboGhost);
+                _comboPips[i].sprite = CoinSprite(); // reuse the generated disc
+                _comboPips[i].raycastTarget = false;
+                Place(_comboPips[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(xs[i], 12f), new Vector2(72f, 72f));
+            }
+
+            _comboLabel = NewText("ComboLabel", _comboRoot, 30, FontStyles.Bold, TextAlignmentOptions.Center);
+            _comboLabel.color = ComboLit[3];
+            Place(_comboLabel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -38f), new Vector2(320f, 40f));
+
+            _comboRoot.gameObject.SetActive(false);
+        }
+
+        // Show only during a live run with no modal open; repaint the embers when the level/chain changes.
+        void UpdateComboMeter()
+        {
+            if (_comboRoot == null || _game == null) return;
+            bool show = _runLive && !_game.IsOver && !InputGate.Suppress;
+            if (_comboRoot.gameObject.activeSelf != show) _comboRoot.gameObject.SetActive(show);
+            if (!show) return;
+
+            int level = _game.ComboLevel; // 0..3
+            int chain = _game.PerfectChain;
+            if (level == _shownComboLevel && chain == _shownChain) return;
+            int prev = _shownComboLevel;
+            _shownComboLevel = level;
+            _shownChain = chain;
+
+            int lit = Mathf.Clamp(level, 1, 3);
+            for (int i = 0; i < 3; i++)
+                if (_comboPips[i] != null) _comboPips[i].color = i < level ? ComboLit[lit] : ComboGhost;
+
+            if (_comboLabel != null)
+            {
+                bool showLabel = level > 0;
+                if (_comboLabel.gameObject.activeSelf != showLabel) _comboLabel.gameObject.SetActive(showLabel);
+                if (showLabel)
+                {
+                    _comboLabel.text = (level >= 3 ? "СЕРИЯ ×" : "×") + chain;
+                    _comboLabel.color = ComboLit[lit];
+                }
+            }
+
+            if (level == prev) return; // only the chain count changed → no scale animation
+
+            if (level >= 3)
+            {
+                if (_comboPulseCo == null) _comboPulseCo = StartCoroutine(ComboPulseCo()); // breathe owns the scale at L3
+            }
+            else
+            {
+                if (_comboPulseCo != null) { StopCoroutine(_comboPulseCo); _comboPulseCo = null; } // leaving L3
+                if (prev < 0) { if (_comboRoot != null) _comboRoot.localScale = Vector3.one; } // first paint, no punch
+                else if (level > prev) StartComboPunch(1.22f); // tier up → pop
+                else if (level > 0) StartComboPunch(0.90f);    // decay one tier → small dip
+                else StartComboPunch(0.80f);                   // break → crush
+            }
+        }
+
+        // Stop both combo tweens and reset scale — used on run start / topple so nothing leaks into the next run.
+        void StopComboAnim()
+        {
+            if (_comboPulseCo != null) { StopCoroutine(_comboPulseCo); _comboPulseCo = null; }
+            if (_comboPunchCo != null) { StopCoroutine(_comboPunchCo); _comboPunchCo = null; }
+            if (_comboRoot != null) _comboRoot.localScale = Vector3.one;
+        }
+
+        void StartComboPunch(float peak)
+        {
+            if (_comboPunchCo != null) StopCoroutine(_comboPunchCo);
+            _comboPunchCo = StartCoroutine(ComboPunchCo(peak));
+        }
+
+        IEnumerator ComboPunchCo(float peak)
+        {
+            RectTransform rt = _comboRoot;
+            float t = 0f, dur = 0.2f;
+            while (t < dur && rt != null)
+            {
+                t += Time.deltaTime;
+                float s = 1f + (peak - 1f) * Mathf.Sin(t / dur * Mathf.PI);
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+            if (rt != null) rt.localScale = Vector3.one;
+            _comboPunchCo = null;
+        }
+
+        IEnumerator ComboPulseCo() // gentle breathe while "on fire" (level 3)
+        {
+            RectTransform rt = _comboRoot;
+            while (rt != null)
+            {
+                float s = 1.08f + 0.06f * Mathf.Sin(Time.time * (2f * Mathf.PI / 1.1f));
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
         }
 
         // ---------- animations ----------
@@ -368,6 +506,8 @@ namespace Towerpolis.Game.UI
                 _pips[i] = NewImage("Pip" + i, _safeRoot, PipEmpty);
                 Place(_pips[i].rectTransform, new Vector2(0f, 0f), new Vector2(34f + i * 64f, 56f), new Vector2(52f, 52f));
             }
+
+            BuildComboMeter(_safeRoot);
 
             _perfectLabel = NewText("Perfect", canvasGo.transform, 80, FontStyles.Bold, TextAlignmentOptions.Center);
             _perfectLabel.color = Yellow;
