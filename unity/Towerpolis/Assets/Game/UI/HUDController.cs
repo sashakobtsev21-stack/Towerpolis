@@ -29,7 +29,10 @@ namespace Towerpolis.Game.UI
 
         RectTransform _safeRoot;
         TMP_Text _scoreLabel;
-        TMP_Text _floorsLabel;
+        TMP_Text _coinsLabel;   // live coin tally (top-right): wallet + this-run earned-so-far
+        Image _coinIcon;        // gold coin disc next to the tally (generated sprite — no font glyph)
+        int _shownCoins = -1;
+        static Sprite _coinSprite;
         readonly Image[] _pips = new Image[2];
         Image _vignette;
 
@@ -82,6 +85,8 @@ namespace Towerpolis.Game.UI
 
         void Update()
         {
+            RefreshCoins(); // live tally — ticks up as floors land
+
             // Apply the device safe area each frame (cheap; handles notches / rotation).
             if (_safeRoot == null) return;
             Rect sa = Screen.safeArea;
@@ -104,7 +109,7 @@ namespace Towerpolis.Game.UI
             // Headline = building HEIGHT (floors placed; the base floor is 0).
             if (_scoreLabel != null) _scoreLabel.text = floors.ToString();
             Punch(_scoreLabel != null ? _scoreLabel.rectTransform : null, 1.2f);
-            if (_floorsLabel != null) _floorsLabel.text = ""; // drop the redundant top-right counter
+            RefreshCoins(); // each placed floor banks +1 coin (+2 on a Perfect) → show it immediately
 
             if (floors >= SummitHeight && !_summitShown)
             {
@@ -144,12 +149,47 @@ namespace Towerpolis.Game.UI
         void OnRunStarted()
         {
             if (_scoreLabel != null) _scoreLabel.text = "0";
-            if (_floorsLabel != null) _floorsLabel.text = "";
+            RefreshCoins();
             for (int i = 0; i < _pips.Length; i++)
                 if (_pips[i] != null) _pips[i].color = PipEmpty;
             if (_restartPanel != null) _restartPanel.SetActive(false);
             _summitShown = false;
             if (_summitLabel != null) _summitLabel.gameObject.SetActive(false);
+        }
+
+        // Live coin tally on the main HUD = banked wallet + this-run earned-so-far (1/floor + 2/perfect).
+        // While a run is live it ticks up per placed floor; once the run is over we show the wallet alone
+        // (which the run-end bank has just topped up), so the number never double-counts at the topple.
+        void RefreshCoins()
+        {
+            if (_coinsLabel == null) return;
+            MetaService meta = MetaService.Instance;
+            if (meta == null) return;
+            int preview = (_game != null && !_game.IsOver) ? meta.PreviewCoins(_game.BuildRunResult()) : 0;
+            int total = meta.Coins + preview;
+            if (total == _shownCoins) return; // only rebuild the text when it actually changes
+            _shownCoins = total;
+            _coinsLabel.text = total.ToString();
+        }
+
+        // A small filled gold disc for the coin icon — generated once so it needs no font glyph or art asset.
+        static Sprite CoinSprite()
+        {
+            if (_coinSprite != null) return _coinSprite;
+            const int s = 64;
+            var tex = new Texture2D(s, s, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[s * s];
+            float r = s * 0.5f - 1f, c = s * 0.5f - 0.5f;
+            for (int y = 0; y < s; y++)
+                for (int x = 0; x < s; x++)
+                {
+                    float dx = x - c, dy = y - c;
+                    float a = Mathf.Clamp01(r - Mathf.Sqrt(dx * dx + dy * dy)); // solid inside, ~1px soft edge
+                    px[y * s + x] = new Color32(255, 255, 255, (byte)(a * 255f));
+                }
+            tex.SetPixels32(px); tex.Apply();
+            _coinSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f);
+            return _coinSprite;
         }
 
         // ---------- animations ----------
@@ -288,7 +328,10 @@ namespace Towerpolis.Game.UI
         void BuildUI()
         {
             var canvasGo = new GameObject("HUD_Canvas");
-            canvasGo.transform.SetParent(transform, false);
+            // Kept at scene root, NOT parented to this controller GameObject: TowerController lives on the
+            // same GameObject and ClearTower() destroys ALL of its children every NewRun (and rotates it for
+            // the sway) — which would wipe this HUD on a district switch / retry. A ScreenSpaceOverlay canvas
+            // renders regardless of parent, so root is correct and safe.
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 10;
@@ -311,8 +354,14 @@ namespace Towerpolis.Game.UI
             _scoreLabel = NewText("Score", _safeRoot, 72, FontStyles.Bold, TextAlignmentOptions.Top);
             Place(_scoreLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -32f), new Vector2(700f, 100f));
 
-            _floorsLabel = NewText("Floors", _safeRoot, 48, FontStyles.Normal, TextAlignmentOptions.TopRight);
-            Place(_floorsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(-28f, -36f), new Vector2(300f, 80f));
+            _coinIcon = NewImage("CoinIcon", _safeRoot, Yellow); // gold disc (generated sprite, font-independent)
+            _coinIcon.sprite = CoinSprite();
+            _coinIcon.raycastTarget = false;
+            Place(_coinIcon.rectTransform, new Vector2(1f, 1f), new Vector2(-30f, -40f), new Vector2(46f, 46f));
+
+            _coinsLabel = NewText("Coins", _safeRoot, 48, FontStyles.Bold, TextAlignmentOptions.TopRight);
+            _coinsLabel.color = Yellow; // gold — the live coin tally
+            Place(_coinsLabel.rectTransform, new Vector2(1f, 1f), new Vector2(-88f, -36f), new Vector2(320f, 80f));
 
             for (int i = 0; i < 2; i++)
             {

@@ -1,24 +1,18 @@
-using TMPro;
-
 namespace Towerpolis.Game.UI
 {
     /// <summary>
-    /// One-time UI font setup. The default TMP font asset usually ships with a STATIC Latin-only atlas, so
-    /// Cyrillic renders as missing boxes. Switching it to DYNAMIC makes TMP rasterise any glyph present in
-    /// the underlying source font (LiberationSans includes Cyrillic) on demand — so Russian text shows up
-    /// without bundling a custom font asset. Called once from the HUDs' Start.
+    /// Cyrillic is already handled by the default TMP font's OWN per-font fallback
+    /// ("LiberationSans SDF" → "LiberationSans SDF - Fallback", which is Dynamic + readable and carries the
+    /// Cyrillic glyphs), so there is nothing to do at runtime.
+    ///
+    /// This used to flip the MAIN font to Dynamic to "enable Cyrillic", but the main atlas is NOT
+    /// CPU-readable and its runtime sourceFontFile is null — so that only spammed
+    /// "Unable to add the requested character … make the texture readable" on every Cyrillic glyph while
+    /// the fallback was already rendering the text correctly. Left as a no-op so the HUDs' call sites don't
+    /// churn. (Pre-launch we can bake a dedicated Cyrillic SDF font; see the font known-issue note.)
     /// </summary>
     public static class UiFont
     {
-        static bool _done;
-
-        public static void EnsureCyrillic()
-        {
-            if (_done) return;
-            _done = true;
-            TMP_FontAsset f = TMP_Settings.defaultFontAsset;
-            if (f != null && f.atlasPopulationMode != AtlasPopulationMode.Dynamic)
-                f.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-        }
+        public static void EnsureCyrillic() { /* no-op — the per-font fallback renders Cyrillic */ }
     }
 }

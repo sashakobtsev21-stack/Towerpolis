@@ -34,9 +34,6 @@ namespace Towerpolis.Game.UI
         TowerGameController _controller;
 
         TMP_Text _popLabel;
-        Image _dailyButtonImg;
-        TMP_Text _dailyLabel;
-        TMP_Text _slowMoHint; // "HOLD TO SLOW" — shown only when a Slow-Mo charge is ready
 
         static readonly string[] DistIds = { "downtown", "neon", "winter" };
         static readonly string[] DistNames = { "ЦЕНТР", "НЕОН", "ЗИМА" };
@@ -51,12 +48,11 @@ namespace Towerpolis.Game.UI
         GridLayoutGroup _gridLayout;
 
         // Upgrades panel
-        static readonly UpgradeKind[] UpgKinds = { UpgradeKind.Magnet, UpgradeKind.SlowMo, UpgradeKind.CityBonus };
-        static readonly string[] UpgNames = { "МАГНИТ", "ЗАМЕДЛЕНИЕ", "БОНУС ГОРОДА" };
+        static readonly UpgradeKind[] UpgKinds = { UpgradeKind.Magnet, UpgradeKind.CityBonus };
+        static readonly string[] UpgNames = { "МАГНИТ", "БОНУС ГОРОДА" };
         static readonly string[] UpgDescs =
         {
             "Подтягивает блок к центру (Endless)",
-            "Зажми палец — кран замедляется (Endless)",
             "Больше монет за достройку района",
         };
         static readonly Color Disabled = new Color(0.60f, 0.62f, 0.67f);
@@ -66,8 +62,8 @@ namespace Towerpolis.Game.UI
         TMP_Text[] _upgDesc;
         TMP_Text[] _upgBuyLbl;
         Image[] _upgBuyImg;
-        TMP_Text _freezeInfo, _freezeBuyLbl, _loginLbl;
-        Image _freezeBuyImg, _loginImg;
+        TMP_Text _loginLbl;
+        Image _loginImg;
 
         // Skins panel
         static readonly Color Buyable = new Color(0.40f, 0.74f, 0.42f);
@@ -241,6 +237,7 @@ namespace Towerpolis.Game.UI
 
         IEnumerator FadePanel(GameObject panel, float to, float dur, bool deactivateAtEnd)
         {
+            if (panel == null) yield break;
             CanvasGroup cg = panel.GetComponent<CanvasGroup>();
             if (cg == null) cg = panel.AddComponent<CanvasGroup>();
             float from = deactivateAtEnd ? cg.alpha : 0f;
@@ -249,11 +246,12 @@ namespace Towerpolis.Game.UI
             while (e < dur)
             {
                 e += Time.deltaTime;
+                if (panel == null || cg == null) yield break; // panel destroyed mid-fade → bail, don't throw
                 cg.alpha = Mathf.Lerp(from, to, e / dur);
                 yield return null;
             }
-            cg.alpha = to;
-            if (deactivateAtEnd) panel.SetActive(false);
+            if (cg != null) cg.alpha = to;
+            if (deactivateAtEnd && panel != null) panel.SetActive(false);
         }
 
         void OnFloorLive(int floors) => RefreshTopBar();
@@ -267,26 +265,6 @@ namespace Towerpolis.Game.UI
             // cumulative city population (the meta-score) is shown in the city view.
             int residents = _controller != null ? _controller.BuildRunResult().TotalResidents : 0;
             if (_popLabel != null) _popLabel.text = "ЖИЛЬЦЫ  " + residents;
-            RefreshDaily();
-        }
-
-        void OnDailyTapped()
-        {
-            if (_meta == null) return;
-            _meta.TryStartDaily(); // no-op if already played today
-            RefreshDaily();
-        }
-
-        void RefreshDaily()
-        {
-            if (_meta == null) return;
-            bool played = _meta.HasPlayedDailyToday();
-            if (_dailyLabel != null)
-            {
-                _dailyLabel.text = played ? "ГОТОВО" : "ДЕНЬ";
-                _dailyLabel.color = played ? OffWhite : Navy;
-            }
-            if (_dailyButtonImg != null) _dailyButtonImg.color = played ? Navy : Gold;
         }
 
         // ---------- city view ----------
@@ -408,13 +386,6 @@ namespace Towerpolis.Game.UI
             if (ok && i >= 0 && _upgBuyImg[i] != null) PopButton(_upgBuyImg[i].transform);
         }
 
-        void BuyFreeze()
-        {
-            bool ok = _meta != null && _meta.BuyFreezeCharge();
-            PopulateUpgrades();
-            if (ok && _freezeBuyImg != null) PopButton(_freezeBuyImg.transform);
-        }
-
         void ClaimLoginGift()
         {
             bool ok = _meta != null && _meta.CanClaimLoginToday();
@@ -439,11 +410,6 @@ namespace Towerpolis.Game.UI
                 if (_upgInfo[i] != null) _upgInfo[i].text = UpgNames[i] + "   Ур " + lvl + " / " + max;
                 SetBuy(_upgBuyImg[i], _upgBuyLbl[i], maxed ? "МАКС" : "КУПИТЬ " + cost, maxed, afford);
             }
-
-            int charges = _meta.FreezeCharges, fmax = _meta.FreezeMax;
-            bool freezeFull = charges >= fmax;
-            if (_freezeInfo != null) _freezeInfo.text = "ЗАМОРОЗКА   x" + charges + " / " + fmax;
-            SetBuy(_freezeBuyImg, _freezeBuyLbl, freezeFull ? "ПОЛНО" : "КУПИТЬ " + _meta.FreezeCost, freezeFull, coins >= _meta.FreezeCost);
 
             bool canClaim = _meta.CanClaimLoginToday();
             if (_loginLbl != null)
@@ -596,7 +562,10 @@ namespace Towerpolis.Game.UI
         void BuildUI()
         {
             var canvasGo = new GameObject("MetaHUD_Canvas");
-            canvasGo.transform.SetParent(transform, false);
+            // Kept at scene root, NOT parented to this controller GameObject: TowerController lives on the
+            // same GameObject and (a) rotates its transform for the tower sway and (b) ClearTower() destroys
+            // ALL of its children every NewRun — which would wipe this HUD on a district switch / retry. A
+            // ScreenSpaceOverlay canvas renders regardless of parent, so root is correct and safe.
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 11; // above the gameplay HUD (10)
@@ -614,7 +583,6 @@ namespace Towerpolis.Game.UI
             Place(_popLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -36f), new Vector2(420f, 56f));
 
             CityButton(canvasGo.transform);
-            DailyButton(canvasGo.transform);
             UpgradesButton(canvasGo.transform);
             SkinsButton(canvasGo.transform);
             MissionsButton(canvasGo.transform);
@@ -622,25 +590,6 @@ namespace Towerpolis.Game.UI
             BuildUpgradePanel(canvasGo.transform);
             BuildSkinPanel(canvasGo.transform);
             BuildMissionPanel(canvasGo.transform);
-
-            _slowMoHint = NewText("SlowMoHint", canvasGo.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
-            _slowMoHint.color = new Color(0.55f, 0.85f, 1f);
-            _slowMoHint.text = "ЗАЖМИ, ЧТОБЫ ЗАМЕДЛИТЬ";
-            Place(_slowMoHint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 220f), new Vector2(600f, 60f));
-            _slowMoHint.gameObject.SetActive(false);
-        }
-
-        void Update()
-        {
-            if (_slowMoHint == null || _controller == null) return;
-            bool show = _controller.SlowMoHintActive;
-            if (_slowMoHint.gameObject.activeSelf != show) _slowMoHint.gameObject.SetActive(show);
-            if (show)
-            {
-                Color c = _slowMoHint.color;
-                c.a = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.time * 3.2f)); // gentle pulse to catch the eye
-                _slowMoHint.color = c;
-            }
         }
 
         void CityButton(Transform parent)
@@ -657,24 +606,6 @@ namespace Towerpolis.Game.UI
             var label = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.text = "ГОРОД";
             Stretch(label.rectTransform);
-        }
-
-        void DailyButton(Transform parent)
-        {
-            var btnGo = new GameObject("DailyButton", typeof(RectTransform), typeof(Image), typeof(Button));
-            btnGo.transform.SetParent(parent, false);
-            var rt = (RectTransform)btnGo.transform;
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(TopBarX(1), -104f);
-            rt.sizeDelta = new Vector2(TopBarW, 72f);
-            _dailyButtonImg = btnGo.GetComponent<Image>();
-            _dailyButtonImg.color = Gold;
-            btnGo.GetComponent<Button>().onClick.AddListener(OnDailyTapped);
-
-            _dailyLabel = NewText("Label", rt, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            _dailyLabel.color = Navy;
-            _dailyLabel.text = "ДЕНЬ";
-            Stretch(_dailyLabel.rectTransform);
         }
 
         void BuildCityPanel(Transform parent)
@@ -734,7 +665,7 @@ namespace Towerpolis.Game.UI
 
         void UpgradesButton(Transform parent)
         {
-            Button btn = MakeButton(parent, "UpgradesButton", new Vector2(0f, 1f), new Vector2(TopBarX(2), -104f), new Vector2(TopBarW, 72f), Navy, out _);
+            Button btn = MakeButton(parent, "UpgradesButton", new Vector2(0f, 1f), new Vector2(TopBarX(1), -104f), new Vector2(TopBarW, 72f), Navy, out _);
             btn.onClick.AddListener(OpenUpgrades);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
@@ -770,18 +701,10 @@ namespace Towerpolis.Game.UI
             hint.text = "Монеты: +1 за этаж · +2 за идеальную постановку · награды за район/цели";
             Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -262f), new Vector2(980f, 36f));
 
-            float[] ys = { 250f, 150f, 50f };
+            float[] ys = { 250f, 150f };
             for (int i = 0; i < UpgKinds.Length; i++) UpgradeRow(prt, i, ys[i]);
 
-            _freezeInfo = NewText("FreezeInfo", prt, 34, FontStyles.Bold, TextAlignmentOptions.Left);
-            _freezeInfo.color = OffWhite;
-            Place(_freezeInfo.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-150f, -70f), new Vector2(560f, 70f));
-            Button freezeBtn = MakeButton(prt, "FreezeBuy", new Vector2(0.5f, 0.5f), new Vector2(330f, -70f), new Vector2(260f, 76f), Gold, out _freezeBuyImg);
-            freezeBtn.onClick.AddListener(BuyFreeze);
-            _freezeBuyLbl = NewText("Lbl", freezeBtn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            Stretch(_freezeBuyLbl.rectTransform);
-
-            Button loginBtn = MakeButton(prt, "LoginClaim", new Vector2(0.5f, 0.5f), new Vector2(0f, -190f), new Vector2(520f, 84f), Gold, out _loginImg);
+            Button loginBtn = MakeButton(prt, "LoginClaim", new Vector2(0.5f, 0.5f), new Vector2(0f, -10f), new Vector2(520f, 84f), Gold, out _loginImg);
             loginBtn.onClick.AddListener(ClaimLoginGift);
             _loginLbl = NewText("Lbl", loginBtn.transform, 32, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_loginLbl.rectTransform);
@@ -816,7 +739,7 @@ namespace Towerpolis.Game.UI
 
         void SkinsButton(Transform parent)
         {
-            Button btn = MakeButton(parent, "SkinsButton", new Vector2(0f, 1f), new Vector2(TopBarX(3), -104f), new Vector2(TopBarW, 72f), Navy, out _);
+            Button btn = MakeButton(parent, "SkinsButton", new Vector2(0f, 1f), new Vector2(TopBarX(2), -104f), new Vector2(TopBarW, 72f), Navy, out _);
             btn.onClick.AddListener(OpenSkins);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
@@ -892,7 +815,7 @@ namespace Towerpolis.Game.UI
 
         void MissionsButton(Transform parent)
         {
-            Button btn = MakeButton(parent, "MissionsButton", new Vector2(0f, 1f), new Vector2(TopBarX(4), -104f), new Vector2(TopBarW, 72f), Navy, out _);
+            Button btn = MakeButton(parent, "MissionsButton", new Vector2(0f, 1f), new Vector2(TopBarX(3), -104f), new Vector2(TopBarW, 72f), Navy, out _);
             btn.onClick.AddListener(OpenMissions);
             var label = NewText("Label", btn.transform, 30, FontStyles.Bold, TextAlignmentOptions.Center);
             label.color = OffWhite;
