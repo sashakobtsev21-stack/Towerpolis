@@ -172,7 +172,8 @@ namespace Towerpolis.Game.Gameplay
 
         void SpawnNext()
         {
-            _pendingType = _sequence.Next();
+            // Phase C: a Perfect streak can upgrade the seeded type to a specialty block (more residents).
+            _pendingType = _run.NextSpawnType(_sequence.Next());
             int nextFloor = _run.FloorCount + 1;
             _pendingBlock = spawner.CreateBlock(_pendingType, tower.TopWidth, "Floor_" + nextFloor);
             float period = tuning.SwingPeriod(nextFloor);

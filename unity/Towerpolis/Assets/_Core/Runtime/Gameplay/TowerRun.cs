@@ -50,6 +50,10 @@ namespace Towerpolis.Core.Gameplay
         public int MaxPerfectChain { get; private set; } // longest chain reached this run (mission metric)
         public int ComboLevel { get; private set; }      // 0..cap: +1/Perfect, −1/Good, 0 on a strike
         public int MaxComboLevel { get; private set; }   // highest combo level reached this run
+        public UpgradeTier PendingUpgrade { get; private set; } // earned block upgrade for the NEXT spawn (Phase C)
+
+        /// <summary>Run-end "trophy roof" bonus residents for this run's longest Perfect chain (Phase C).</summary>
+        public int TrophyRoofResidents => Scoring.TrophyRoofBonus(_cfg, MaxPerfectChain);
         public int TotalPerfects { get; private set; }   // cumulative Perfect drops (coins/stats — meta §5)
         public int FloorCount { get; private set; }     // placed floors, excluding the base
         public int TotalResidents { get; private set; }
@@ -86,6 +90,9 @@ namespace Towerpolis.Core.Gameplay
                     TotalPerfects += 1;
                     ComboLevel = ComboLevel < _cfg.ComboLevelCap ? ComboLevel + 1 : _cfg.ComboLevelCap; // raise (capped)
                     if (ComboLevel > MaxComboLevel) MaxComboLevel = ComboLevel;
+                    // Phase C: a streak milestone arms an upgrade for the next spawned block (upgrade-only).
+                    UpgradeTier earned = EvaluateStreakUpgrade(_cfg, PerfectChain);
+                    if (earned > PendingUpgrade) PendingUpgrade = earned;
                     LeanOffset *= 1f - _cfg.PerfectLeanCorrectionFraction;
                     // Tower-Bloxx: residents = base + the Perfect bonus + the live combo bonus.
                     residentsAdded = Scoring.BaseResidents(_cfg, type) + Scoring.PerfectResidentBonus(_cfg, type)
@@ -110,12 +117,14 @@ namespace Towerpolis.Core.Gameplay
                     // Too much overhang — the block tips off (not placed). Costs a strike + breaks the combo.
                     PerfectChain = 0;
                     ComboLevel = 0;
+                    PendingUpgrade = UpgradeTier.None; // a strike cancels any earned-but-unspent upgrade
                     if (_cfg.SloppyCostsStrike) MissStrikes += 1;
                     break;
 
                 default: // Miss — block misses entirely and falls. Costs a strike + breaks the combo.
                     PerfectChain = 0;
                     ComboLevel = 0;
+                    PendingUpgrade = UpgradeTier.None; // a strike cancels any earned-but-unspent upgrade
                     MissStrikes += 1;
                     break;
             }
@@ -128,6 +137,25 @@ namespace Towerpolis.Core.Gameplay
 
             return new DropOutcome(grade, floorPlaced, scoreGained, residentsAdded,
                 CurrentTopWidth, LeanOffset, MissStrikes, PerfectChain, ComboLevel, toppled);
+        }
+
+        /// <summary>Resolve the floor type for the NEXT block to spawn: raise the seeded type to any earned
+        /// pending upgrade (upgrade-only — never lowers it), then consume the upgrade. Pure + deterministic
+        /// (no RNG); call it once, immediately before instantiating the next block.</summary>
+        public FloorType NextSpawnType(FloorType seededType)
+        {
+            var resolved = (FloorType)Math.Max((int)seededType, (int)PendingUpgrade);
+            PendingUpgrade = UpgradeTier.None;
+            return resolved;
+        }
+
+        // A streak milestone (a multiple of Tier1Threshold consecutive Perfects) earns an upgrade:
+        // Premium at/after Tier2Threshold, else Balcony. Returns None between milestones.
+        static UpgradeTier EvaluateStreakUpgrade(CoreConfig cfg, int chain)
+        {
+            int t1 = cfg.StreakUpgradeTier1Threshold;
+            if (t1 <= 0 || chain < t1 || (chain - t1) % t1 != 0) return UpgradeTier.None;
+            return chain >= cfg.StreakUpgradeTier2Threshold ? UpgradeTier.Premium : UpgradeTier.Balcony;
         }
     }
 }

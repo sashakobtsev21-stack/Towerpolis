@@ -453,8 +453,11 @@ namespace Towerpolis.Game.UI
                 if (meta != null)
                 {
                     int earned = meta.PreviewCoins(_toppledResult); // floors×1 + perfects×2
+                    string trophy = _toppledResult.TrophyRoofResidents > 0
+                        ? "\nТРОФЕЙ ЗА СЕРИЮ  +" + _toppledResult.TrophyRoofResidents + " жильцов"
+                        : "";
                     _restartCoins.text = "+" + earned + " МОНЕТ\nэтажи " + _toppledResult.FloorCount +
-                                         "  ·  идеально " + _toppledResult.PerfectDrops + "  ·  всего " + meta.Coins;
+                                         "  ·  идеально " + _toppledResult.PerfectDrops + "  ·  всего " + meta.Coins + trophy;
                 }
                 else _restartCoins.text = "";
             }

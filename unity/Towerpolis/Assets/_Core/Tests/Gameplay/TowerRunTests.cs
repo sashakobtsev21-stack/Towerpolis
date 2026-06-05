@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using Towerpolis.Core.Gameplay;
+using Towerpolis.Core.Meta;
 
 namespace Towerpolis.Core.Tests.Gameplay
 {
@@ -361,6 +362,152 @@ namespace Towerpolis.Core.Tests.Gameplay
         {
             var bad = new CoreConfig { ComboResidentBonus = new[] { 0, 1 }, ComboLevelCap = 3 };
             Assert.That(() => new TowerRun(bad), Throws.TypeOf<ArgumentException>());
+        }
+
+        // ---------- Phase C: earned specialty blocks ----------
+
+        static TowerRun Perfects(int n)
+        {
+            var run = new TowerRun(new CoreConfig { StrikeLimit = 99 }); // high limit: a stray strike won't topple
+            for (int i = 0; i < n; i++) run.PlaceBlock(FloorType.Standard, 0f); // Perfect
+            return run;
+        }
+
+        [Test] // SC-01: 4 perfects → Balcony pending; resolved + consumed
+        public void Upgrade_Tier1_AtChain4()
+        {
+            var run = Perfects(4);
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.Balcony));
+            Assert.That(run.NextSpawnType(FloorType.Standard), Is.EqualTo(FloorType.Balcony));
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None)); // consumed
+        }
+
+        [Test] // SC-02: 8 perfects → Premium pending (rose from Balcony)
+        public void Upgrade_Tier2_AtChain8()
+        {
+            var run = Perfects(8);
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.Premium));
+            Assert.That(run.NextSpawnType(FloorType.Standard), Is.EqualTo(FloorType.Premium));
+        }
+
+        [Test] // SC-03: a Good keeps the pending upgrade (only the chain resets)
+        public void Upgrade_SurvivesAGood()
+        {
+            var run = Perfects(4);
+            run.PlaceBlock(FloorType.Standard, 0.50f * run.CurrentTopWidth); // Good
+            Assert.That(run.PerfectChain, Is.Zero);
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.Balcony));
+            Assert.That(run.NextSpawnType(FloorType.Standard), Is.EqualTo(FloorType.Balcony));
+        }
+
+        [Test] // SC-04: a strike cancels the pending upgrade
+        public void Upgrade_CancelledByMiss()
+        {
+            var run = Perfects(4);
+            run.PlaceBlock(FloorType.Premium, 0.95f * run.CurrentTopWidth); // Miss
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None));
+            Assert.That(run.NextSpawnType(FloorType.Standard), Is.EqualTo(FloorType.Standard));
+        }
+
+        [Test] // SC-05: upgrade only RAISES — never downgrades a better seeded type
+        public void Upgrade_NeverDowngrades_SeededPremium()
+        {
+            var run = Perfects(4); // pending Balcony
+            Assert.That(run.NextSpawnType(FloorType.Premium), Is.EqualTo(FloorType.Premium));
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None)); // still consumed
+        }
+
+        [Test] // SC-07: chain 12 → still Premium pending
+        public void Upgrade_RepeatingPremium_AtChain12()
+        {
+            var run = Perfects(12);
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.Premium));
+        }
+
+        [Test] // SC-10: no upgrade between milestones (chain 3, and chain 5 doesn't re-trigger)
+        public void Upgrade_OnlyAtMilestones()
+        {
+            var run = Perfects(3);
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None));
+            run.PlaceBlock(FloorType.Standard, 0f);            // chain 4 → Balcony
+            run.NextSpawnType(FloorType.Standard);             // consume
+            run.PlaceBlock(FloorType.Standard, 0f);            // chain 5 → no new trigger
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None));
+        }
+
+        [Test] // SC-11: deterministic — identical perfect sequences resolve identically
+        public void Upgrade_Deterministic()
+        {
+            var a = Perfects(8);
+            var b = Perfects(8);
+            Assert.That(a.NextSpawnType(FloorType.Standard), Is.EqualTo(b.NextSpawnType(FloorType.Standard)));
+        }
+
+        [Test] // SC-08/09: trophy-roof bonus by longest chain, folded into residents
+        public void TrophyRoof_ByMaxChain()
+        {
+            Assert.That(Perfects(3).TrophyRoofResidents, Is.Zero);  // below first threshold
+            var run = Perfects(4);
+            Assert.That(run.TrophyRoofResidents, Is.EqualTo(8));
+            var r = RunResult.From(run);
+            Assert.That(r.TrophyRoofResidents, Is.EqualTo(8));
+            Assert.That(r.TotalResidents, Is.EqualTo(run.TotalResidents + 8)); // folded into population
+        }
+
+        [Test] // M1: earn Balcony at 4, consume it, then earn Premium 4 drops later (chain keeps counting)
+        public void Upgrade_Consume_ThenEarnPremium_AtChain8()
+        {
+            var run = Perfects(4);
+            run.NextSpawnType(FloorType.Standard); // consume the Balcony
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None));
+            for (int i = 0; i < 4; i++) run.PlaceBlock(FloorType.Standard, 0f); // chain → 8
+            Assert.That(run.PerfectChain, Is.EqualTo(8));
+            Assert.That(run.NextSpawnType(FloorType.Standard), Is.EqualTo(FloorType.Premium));
+        }
+
+        [Test] // M2: no pending → NextSpawnType is a passthrough for every type
+        public void Upgrade_NoPending_NextSpawnType_Passthrough()
+        {
+            var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
+            Assert.That(run.NextSpawnType(FloorType.Standard), Is.EqualTo(FloorType.Standard));
+            Assert.That(run.NextSpawnType(FloorType.Balcony), Is.EqualTo(FloorType.Balcony));
+            Assert.That(run.NextSpawnType(FloorType.Premium), Is.EqualTo(FloorType.Premium));
+        }
+
+        [Test] // M3: trophy at chain 8 → 20 residents folded once; RunScore unchanged
+        public void TrophyRoof_Chain8_FoldedIntoRunResult()
+        {
+            var run = Perfects(8);
+            Assert.That(run.TrophyRoofResidents, Is.EqualTo(20));
+            var r = RunResult.From(run);
+            Assert.That(r.TotalResidents, Is.EqualTo(run.TotalResidents + 20));
+            Assert.That(r.RunScore, Is.EqualTo(run.RunScore)); // trophy is population, not leaderboard score
+        }
+
+        [Test] // M4: a run with no Perfects never arms an upgrade and earns no trophy
+        public void Upgrade_NoPerfects_NeverArmed_NoTrophy()
+        {
+            var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
+            for (int i = 0; i < 6; i++) run.PlaceBlock(FloorType.Standard, 0.50f * run.CurrentTopWidth); // all Good
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None));
+            Assert.That(run.TrophyRoofResidents, Is.Zero);
+            Assert.That(RunResult.From(run).TotalResidents, Is.EqualTo(run.TotalResidents));
+        }
+
+        [Test] // N1: the Max() resolve relies on FloorType and UpgradeTier sharing integer values
+        public void Upgrade_EnumValues_AlignWithFloorType()
+        {
+            Assert.That((int)UpgradeTier.None, Is.EqualTo((int)FloorType.Standard));
+            Assert.That((int)UpgradeTier.Balcony, Is.EqualTo((int)FloorType.Balcony));
+            Assert.That((int)UpgradeTier.Premium, Is.EqualTo((int)FloorType.Premium));
+        }
+
+        [Test] // N2: upgrade-only is idempotent — Balcony pending on a seeded Balcony stays Balcony
+        public void Upgrade_BalconyOnBalcony_Idempotent()
+        {
+            var run = Perfects(4);
+            Assert.That(run.NextSpawnType(FloorType.Balcony), Is.EqualTo(FloorType.Balcony));
+            Assert.That(run.PendingUpgrade, Is.EqualTo(UpgradeTier.None));
         }
     }
 }

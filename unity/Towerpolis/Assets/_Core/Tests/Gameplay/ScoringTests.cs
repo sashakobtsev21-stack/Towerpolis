@@ -41,6 +41,22 @@ namespace Towerpolis.Core.Tests.Gameplay
             Assert.That(Scoring.ComboResidentBonus(cfg, 2), Is.Zero);
         }
 
+        // Trophy-roof bonus (Phase C): defaults {4→8, 8→20, 12→40, 20→70}, largest threshold ≤ maxChain.
+        [TestCase(0, 0)]
+        [TestCase(3, 0)]
+        [TestCase(4, 8)]
+        [TestCase(7, 8)]
+        [TestCase(8, 20)]
+        [TestCase(11, 20)]
+        [TestCase(12, 40)]
+        [TestCase(19, 40)]
+        [TestCase(20, 70)]
+        [TestCase(100, 70)]
+        public void TrophyRoofBonus_TierBoundaries(int maxChain, int expected)
+        {
+            Assert.That(Scoring.TrophyRoofBonus(Cfg(), maxChain), Is.EqualTo(expected));
+        }
+
         [TestCase(FloorType.Standard, 100)]
         [TestCase(FloorType.Balcony, 150)]
         [TestCase(FloorType.Premium, 200)]

@@ -56,6 +56,15 @@ namespace Towerpolis.Core.Gameplay
         public int[] ComboResidentBonus = { 0, 1, 2, 4 }; // residents/floor by combo level (tune by feel)
         public int ComboLevelCap = 3;                      // max combo level (= last bonus-table index)
 
+        // --- Phase C: earned specialty blocks (Tower-Bloxx). A streak of consecutive Perfects grants a
+        //     pending upgrade that raises the NEXT spawned block (Standard→Balcony→Premium, more residents).
+        //     Deterministic (driven by PerfectChain, no RNG) → daily-seed safe. ---
+        public int StreakUpgradeTier1Threshold = 4; // consecutive Perfects → next block ≥ Balcony
+        public int StreakUpgradeTier2Threshold = 8; // consecutive Perfects → next block = Premium (then every +Tier1)
+        // Run-end "trophy roof": bonus residents by the run's longest Perfect chain. Parallel arrays, ascending.
+        public int[] TrophyRoofChainThresholds = { 4, 8, 12, 20 };
+        public int[] TrophyRoofBonusResidents  = { 8, 20, 40, 70 };
+
         // --- Economy / meta (Phase 3 — meta-spec §5). Earn-only; spending is Phase 4. ---
         public int CoinPerFloor = 1;            // coins per placed floor (any grade)
         public int CoinBonusPerfect = 2;        // extra coins per Perfect drop

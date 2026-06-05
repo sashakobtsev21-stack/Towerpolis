@@ -77,6 +77,21 @@ namespace Towerpolis.Core.Gameplay
             };
         }
 
+        /// <summary>Run-end "trophy roof" bonus residents for the run's longest Perfect chain (Phase C).
+        /// Returns the bonus for the largest threshold ≤ <paramref name="maxChain"/>, or 0 if below the first.</summary>
+        public static int TrophyRoofBonus(CoreConfig cfg, int maxChain)
+        {
+            if (cfg is null) throw new ArgumentNullException(nameof(cfg));
+            int[] thresholds = cfg.TrophyRoofChainThresholds;
+            int[] bonuses = cfg.TrophyRoofBonusResidents;
+            if (thresholds is null || bonuses is null) return 0;
+            int bonus = 0;
+            int len = Math.Min(thresholds.Length, bonuses.Length);
+            for (int i = 0; i < len; i++)
+                if (maxChain >= thresholds[i]) bonus = bonuses[i];
+            return bonus;
+        }
+
         /// <summary>Score for one placed floor (spec §6.1). Chain bonus applies on Perfect only;
         /// <paramref name="perfectChain"/> is the chain length AFTER this drop.</summary>
         public static int FloorScore(CoreConfig cfg, FloorType type, Grade grade, int perfectChain)
