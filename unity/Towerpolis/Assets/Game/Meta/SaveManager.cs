@@ -33,9 +33,12 @@ namespace Towerpolis.Game.Meta
             {
                 Debug.LogError("[Towerpolis] Save failed: " + e.Message);
             }
+            CloudSave.Backend.Push(data); // sync to the cloud backend (no-op until GPGS is wired — ADR-0009)
         }
 
-        /// <summary>Load + migrate the city save; returns a fresh default if none exists or both copies are corrupt.</summary>
+        /// <summary>Load + migrate the city save; returns a fresh default if none exists or both copies are corrupt.
+        /// Local-first; cloud reconciliation (CloudSave.Backend.Pull + newest-wins by a save timestamp) lands when
+        /// GPGS is wired in Phase 7 — ADR-0009.</summary>
         public static SaveData Load()
         {
             SaveData data = TryRead(MainPath);
