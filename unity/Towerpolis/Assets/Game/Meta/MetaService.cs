@@ -136,6 +136,14 @@ namespace Towerpolis.Game.Meta
             ProgressionChanged?.Invoke();
         }
 
+        /// <summary>Wipe ALL progress to a fresh guest city (the "start over" / Заново action) and persist.</summary>
+        public void ResetProgress()
+        {
+            _city = CityState.FromSave(null, _config); // fresh: 0 coins, downtown, default skins, no missions
+            EnsureWeek();
+            Persist(); // save + ProgressionChanged so the HUD repaints
+        }
+
         static string TodayKey => DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         // ISO week key + the Monday-of-week seed, so the same 3 missions are drawn worldwide each week.

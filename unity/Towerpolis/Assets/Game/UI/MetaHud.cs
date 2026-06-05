@@ -76,6 +76,9 @@ namespace Towerpolis.Game.UI
 
         GameObject _settingsPanel;
         Image _langRuImg, _langEnImg; // highlight the active language
+        Image _soundImg; TMP_Text _soundLbl; bool _soundOn = true;
+        Image _resetImg; TMP_Text _resetLbl; bool _resetArmed; // "Заново" needs a 2nd tap to confirm
+        static readonly Color Danger = new Color(0.85f, 0.30f, 0.28f);
 
         // Run-end toasts (mission/achievement/district completions)
         static readonly Color Cyan = new Color(0.50f, 0.85f, 1f);
@@ -88,6 +91,8 @@ namespace Towerpolis.Game.UI
         {
             UiFont.EnsureCyrillic(); // render Cyrillic with the default TMP font
             Loc.Init();              // restore the saved/device language (ADR-0008)
+            _soundOn = PlayerPrefs.GetInt("towerpolis.sound", 1) == 1; // restore the sound setting
+            AudioListener.volume = _soundOn ? 1f : 0f;
             _meta = MetaService.Instance != null ? MetaService.Instance : FindFirstObjectByType<MetaService>();
             _controller = FindFirstObjectByType<TowerGameController>();
             EnsureEventSystem(); // UGUI buttons need one to receive clicks
@@ -912,20 +917,33 @@ namespace Towerpolis.Game.UI
             title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.MetaSettings);
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
-            SectionLabel(prt, LocKeys.MetaLanguage, 180f);
+            SectionLabel(prt, LocKeys.MetaLanguage, 250f);
 
             // Language names are endonyms — each shown in its own script, intentionally NOT localized.
-            Button ru = MakeButton(prt, "LangRu", new Vector2(0.5f, 0.5f), new Vector2(-170f, 70f), new Vector2(300f, 96f), Navy, out _langRuImg);
+            Button ru = MakeButton(prt, "LangRu", new Vector2(0.5f, 0.5f), new Vector2(-170f, 170f), new Vector2(300f, 96f), Navy, out _langRuImg);
             ru.onClick.AddListener(() => SetLanguage(SystemLanguage.Russian));
             var rul = NewText("Label", ru.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
             rul.text = "Русский";
             Stretch(rul.rectTransform);
 
-            Button en = MakeButton(prt, "LangEn", new Vector2(0.5f, 0.5f), new Vector2(170f, 70f), new Vector2(300f, 96f), Navy, out _langEnImg);
+            Button en = MakeButton(prt, "LangEn", new Vector2(0.5f, 0.5f), new Vector2(170f, 170f), new Vector2(300f, 96f), Navy, out _langEnImg);
             en.onClick.AddListener(() => SetLanguage(SystemLanguage.English));
             var enl = NewText("Label", en.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
             enl.text = "English";
             Stretch(enl.rectTransform);
+
+            // Sound on/off (global mute via AudioListener.volume; label set in RefreshSettings).
+            Button sound = MakeButton(prt, "SoundToggle", new Vector2(0.5f, 0.5f), new Vector2(0f, 40f), new Vector2(460f, 90f), Navy, out _soundImg);
+            sound.onClick.AddListener(ToggleSound);
+            _soundLbl = NewText("Label", sound.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(_soundLbl.rectTransform);
+
+            // "Заново" — wipes all progress; needs a confirming 2nd tap.
+            Button reset = MakeButton(prt, "ResetProgress", new Vector2(0.5f, 0.5f), new Vector2(0f, -70f), new Vector2(460f, 90f), Danger, out _resetImg);
+            reset.onClick.AddListener(OnResetTapped);
+            _resetLbl = NewText("Label", reset.transform, 34, FontStyles.Bold, TextAlignmentOptions.Center);
+            _resetLbl.color = OffWhite;
+            Stretch(_resetLbl.rectTransform);
 
             Button close = MakeButton(prt, "SettingsClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(420f, 100f), Gold, out _);
             close.onClick.AddListener(CloseSettings);
@@ -940,11 +958,12 @@ namespace Towerpolis.Game.UI
         void OpenSettings()
         {
             if (_settingsPanel == null) return;
+            _resetArmed = false; // always open in the safe state
             RefreshSettings();
             ShowPanel(_settingsPanel);
         }
 
-        void CloseSettings() => HidePanel(_settingsPanel);
+        void CloseSettings() { _resetArmed = false; HidePanel(_settingsPanel); }
 
         void SetLanguage(SystemLanguage lang)
         {
@@ -952,12 +971,37 @@ namespace Towerpolis.Game.UI
             RefreshSettings();
         }
 
-        // Highlight the active language button (gold) vs the other (navy).
+        void ToggleSound()
+        {
+            _soundOn = !_soundOn;
+            AudioListener.volume = _soundOn ? 1f : 0f;
+            PlayerPrefs.SetInt("towerpolis.sound", _soundOn ? 1 : 0);
+            PlayerPrefs.Save();
+            RefreshSettings();
+        }
+
+        // First tap arms ("ТОЧНО?"), second tap wipes progress and restarts.
+        void OnResetTapped()
+        {
+            if (!_resetArmed) { _resetArmed = true; RefreshSettings(); return; }
+            _resetArmed = false;
+            if (_meta != null) _meta.ResetProgress();
+            if (_controller != null) _controller.NewRun();
+            RefreshTopBar();
+            CloseSettings();
+        }
+
+        // Highlight the active language button + refresh the sound/reset button labels.
         void RefreshSettings()
         {
             bool ru = Loc.Language == SystemLanguage.Russian;
             if (_langRuImg != null) _langRuImg.color = ru ? Gold : Navy;
             if (_langEnImg != null) _langEnImg.color = ru ? Navy : Gold;
+            if (_soundLbl != null) _soundLbl.text = Loc.T(_soundOn ? LocKeys.MetaSoundOn : LocKeys.MetaSoundOff);
+            if (_soundLbl != null) _soundLbl.color = _soundOn ? Navy : OffWhite;
+            if (_soundImg != null) _soundImg.color = _soundOn ? Gold : Navy;
+            if (_resetLbl != null) _resetLbl.text = Loc.T(_resetArmed ? LocKeys.MetaResetConfirm : LocKeys.MetaReset);
+            if (_resetImg != null) _resetImg.color = _resetArmed ? Danger : Navy;
         }
 
         // ---------- helpers ----------
