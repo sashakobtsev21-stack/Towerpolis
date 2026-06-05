@@ -50,6 +50,11 @@ namespace Towerpolis.Core.Meta
         public int StreakCurrent;
         public int StreakLongest;
         public string StreakLastDate = "";
+        // Reserved for Phase 5 (meta-spec TODO-2): the UTC date a daily run was last STARTED, so quitting
+        // mid-daily consumes the attempt (anti quit-and-retry) once online boards make it matter. Deferred by
+        // owner ruling 2026-06-06; not yet read/written by CityState — present so the save schema reserves the
+        // key (additive string, safe ""-default → no migration needed).
+        public string LastDailyAttemptDate = "";
         public List<DistrictSave> Districts = new();
         public List<IntEntry> Leaderboard = new();
         public List<string> RewardedDistricts = new();
