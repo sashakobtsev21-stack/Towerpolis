@@ -57,13 +57,6 @@ namespace Towerpolis.Game.UI
         TMP_Text _loginLbl;
         Image _loginImg;
 
-        // Skins panel
-        static readonly Color Buyable = new Color(0.40f, 0.74f, 0.42f);
-        GameObject _skinPanel;
-        TMP_Text _skinCoins;
-        Image[] _blockSkinImg, _craneSkinImg;
-        TMP_Text[] _blockSkinLbl, _craneSkinLbl;
-
         // Missions panel
         static readonly Color LockedText = new Color(0.62f, 0.64f, 0.68f);
         GameObject _missionPanel;
@@ -114,9 +107,7 @@ namespace Towerpolis.Game.UI
         {
             RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
-            if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
-            if (_skinPanel != null && _skinPanel.activeSelf) PopulateSkins();
-            if (_missionPanel != null && _missionPanel.activeSelf) PopulateMissions();
+            if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();            if (_missionPanel != null && _missionPanel.activeSelf) PopulateMissions();
             if (_settingsPanel != null && _settingsPanel.activeSelf) RefreshSettings();
         }
 
@@ -154,9 +145,7 @@ namespace Towerpolis.Game.UI
 
         void OnProgressionChanged()
         {
-            if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
-            if (_skinPanel != null && _skinPanel.activeSelf) PopulateSkins();
-        }
+            if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();        }
 
         void OnSystemsResolved(RunSystemsOutcome sys)
         {
@@ -446,90 +435,6 @@ namespace Towerpolis.Game.UI
             if (img != null) img.color = maxed ? Navy : (afford ? Gold : Locked);
         }
 
-        // ---------- skins view ----------
-
-        void OpenSkins()
-        {
-            if (_skinPanel == null) return;
-            PopulateSkins();
-            ShowPanel(_skinPanel);
-        }
-
-        void CloseSkins() => HidePanel(_skinPanel);
-
-        void TapBlockSkin(string id)
-        {
-            bool ok = _meta != null && _meta.BuyOrEquipBlockSkin(id);
-            PopulateSkins();
-            int i = BlockSkinIndex(id);
-            if (ok && i >= 0 && _blockSkinImg[i] != null) PopButton(_blockSkinImg[i].transform);
-        }
-
-        void TapCraneSkin(string id)
-        {
-            bool ok = _meta != null && _meta.BuyOrEquipCraneSkin(id);
-            PopulateSkins();
-            int i = CraneSkinIndex(id);
-            if (ok && i >= 0 && _craneSkinImg[i] != null) PopButton(_craneSkinImg[i].transform);
-        }
-
-        static int BlockSkinIndex(string id)
-        {
-            BlockSkin[] a = CosmeticCatalog.BlockSkins;
-            for (int i = 0; i < a.Length; i++) if (a[i].Id == id) return i;
-            return -1;
-        }
-
-        static int CraneSkinIndex(string id)
-        {
-            CraneSkin[] a = CosmeticCatalog.CraneSkins;
-            for (int i = 0; i < a.Length; i++) if (a[i].Id == id) return i;
-            return -1;
-        }
-
-        void PopulateSkins()
-        {
-            if (_meta == null) return;
-            int coins = _meta.Coins;
-            if (_skinCoins != null) _skinCoins.text = Loc.T(LocKeys.MetaCoins, coins);
-
-            BlockSkin[] blocks = CosmeticCatalog.BlockSkins;
-            for (int i = 0; i < blocks.Length; i++)
-                SetSkin(_blockSkinImg[i], _blockSkinLbl[i], blocks[i].DisplayName, blocks[i].Cost, blocks[i].RequiredDistrictId,
-                    _meta.IsBlockSkinEquipped(blocks[i].Id), _meta.IsBlockSkinOwned(blocks[i].Id), coins);
-
-            CraneSkin[] cranes = CosmeticCatalog.CraneSkins;
-            for (int i = 0; i < cranes.Length; i++)
-                SetSkin(_craneSkinImg[i], _craneSkinLbl[i], cranes[i].DisplayName, cranes[i].Cost, cranes[i].RequiredDistrictId,
-                    _meta.IsCraneSkinEquipped(cranes[i].Id), _meta.IsCraneSkinOwned(cranes[i].Id), coins);
-        }
-
-        void SetSkin(Image img, TMP_Text lbl, string name, int cost, string gate, bool equipped, bool owned, int coins)
-        {
-            bool unlocked = _meta.IsDistrictRewarded(gate);
-            string state;
-            Color bg, fg;
-            if (equipped) { state = Loc.T(LocKeys.MetaSkinEquipped); bg = Gold; fg = Navy; }
-            else if (owned) { state = Loc.T(LocKeys.MetaSkinEquip); bg = Navy; fg = OffWhite; }
-            else if (!unlocked) { state = Loc.T(LocKeys.MetaSkinLocked); bg = Locked; fg = Disabled; }
-            else
-            {
-                bool afford = coins >= cost;
-                state = Loc.T(LocKeys.MetaBuy, cost);
-                bg = afford ? Buyable : Locked;
-                fg = afford ? Navy : Disabled;
-            }
-            if (lbl != null) { lbl.text = Loc.T(name) + "\n" + state; lbl.color = fg; }
-            if (img != null) img.color = bg;
-        }
-
-        // Centre n equal cells of width w (gap g) and return the x of cell i.
-        static float RowX(int n, int i, float w, float g)
-        {
-            float total = n * w + (n - 1) * g;
-            return -total * 0.5f + w * 0.5f + i * (w + g);
-        }
-
         // ---------- goals view (weekly missions + achievements) ----------
 
         void OpenMissions()
@@ -608,7 +513,6 @@ namespace Towerpolis.Game.UI
             MenuButton(safe); // ☰ top-right corner → opens the menu with every section
             BuildCityPanel(canvasGo.transform);
             BuildUpgradePanel(canvasGo.transform);
-            BuildSkinPanel(canvasGo.transform);
             BuildMissionPanel(canvasGo.transform);
             BuildSettingsPanel(canvasGo.transform);
             BuildMenuPanel(canvasGo.transform);
@@ -655,11 +559,10 @@ namespace Towerpolis.Game.UI
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
 
             // One row per section; each closes the menu, then opens its panel.
-            MenuItem(prt, LocKeys.MetaCity,      260f, OpenCity);
-            MenuItem(prt, LocKeys.MetaBonuses,   150f, OpenUpgrades);
-            MenuItem(prt, LocKeys.MetaSkins,      40f, OpenSkins);
+            MenuItem(prt, LocKeys.MetaCity,      210f, OpenCity);
+            MenuItem(prt, LocKeys.MetaBonuses,    70f, OpenUpgrades);
             MenuItem(prt, LocKeys.MetaGoals,     -70f, OpenMissions);
-            MenuItem(prt, LocKeys.MetaSettings, -180f, OpenSettings);
+            MenuItem(prt, LocKeys.MetaSettings, -210f, OpenSettings);
 
             Button close = MakeButton(prt, "MenuClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(420f, 100f), Gold, out _);
             close.onClick.AddListener(CloseMenu);
@@ -803,71 +706,12 @@ namespace Towerpolis.Game.UI
             Stretch(_upgBuyLbl[i].rectTransform);
         }
 
-        void BuildSkinPanel(Transform parent)
-        {
-            BlockSkin[] blocks = CosmeticCatalog.BlockSkins;
-            CraneSkin[] cranes = CosmeticCatalog.CraneSkins;
-            _blockSkinImg = new Image[blocks.Length];
-            _blockSkinLbl = new TMP_Text[blocks.Length];
-            _craneSkinImg = new Image[cranes.Length];
-            _craneSkinLbl = new TMP_Text[cranes.Length];
-
-            _skinPanel = new GameObject("SkinPanel", typeof(RectTransform), typeof(Image));
-            _skinPanel.transform.SetParent(parent, false);
-            var prt = (RectTransform)_skinPanel.transform;
-            Stretch(prt);
-            _skinPanel.GetComponent<Image>().color = Dim;
-            PanelCard(prt);
-
-            var title = NewText("Title", prt, 64, FontStyles.Bold, TextAlignmentOptions.Top);
-            title.color = OffWhite;
-            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.MetaSkins);
-            Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 90f));
-
-            _skinCoins = NewText("Coins", prt, 40, FontStyles.Bold, TextAlignmentOptions.Top);
-            _skinCoins.color = Gold;
-            Place(_skinCoins.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(900f, 60f));
-
-            SectionLabel(prt, LocKeys.MetaSectionBlocks, 260f);
-            for (int i = 0; i < blocks.Length; i++)
-            {
-                string id = blocks[i].Id; // capture
-                Button b = SkinButton(prt, "Bskin_" + id, RowX(blocks.Length, i, 196f, 12f), 170f, out _blockSkinImg[i], out _blockSkinLbl[i]);
-                b.onClick.AddListener(() => TapBlockSkin(id));
-            }
-
-            SectionLabel(prt, LocKeys.MetaSectionCrane, -40f);
-            for (int i = 0; i < cranes.Length; i++)
-            {
-                string id = cranes[i].Id; // capture
-                Button b = SkinButton(prt, "Cskin_" + id, RowX(cranes.Length, i, 196f, 12f), -130f, out _craneSkinImg[i], out _craneSkinLbl[i]);
-                b.onClick.AddListener(() => TapCraneSkin(id));
-            }
-
-            Button close = MakeButton(prt, "SkinClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(420f, 100f), Gold, out _);
-            close.onClick.AddListener(CloseSkins);
-            var clbl = NewText("Label", close.transform, 40, FontStyles.Bold, TextAlignmentOptions.Center);
-            clbl.color = Navy;
-            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.MetaClose);
-            Stretch(clbl.rectTransform);
-
-            _skinPanel.SetActive(false);
-        }
-
         void SectionLabel(Transform parent, string key, float y)
         {
             var t = NewText("Section_" + key, parent, 32, FontStyles.Bold, TextAlignmentOptions.Center);
             t.color = OffWhite;
             t.gameObject.AddComponent<LocalizedLabel>().Bind(t, key); // also fixes a latent bug: text was never set
             Place(t.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, y), new Vector2(900f, 50f));
-        }
-
-        Button SkinButton(Transform parent, string name, float x, float y, out Image img, out TMP_Text lbl)
-        {
-            Button btn = MakeButton(parent, name, new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(196f, 150f), Navy, out img);
-            lbl = NewText("Lbl", btn.transform, 26, FontStyles.Bold, TextAlignmentOptions.Center);
-            Stretch(lbl.rectTransform);
-            return btn;
         }
 
         void BuildMissionPanel(Transform parent)
