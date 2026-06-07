@@ -81,6 +81,12 @@ namespace Towerpolis.Core.Gameplay
         public float[] CityBonusMultipliers = { 1.0f, 1.15f, 1.30f, 1.50f }; // ×district-completion reward
         public int[] CityBonusUpgradeCosts = { 120, 320, 700 };
 
+        // --- Prestige / endless loop (endless-spec §2). Complete all districts → prestige: bank population
+        //     into permanent Stars (a residents multiplier), wipe grids/rewards/upgrades, climb again. ---
+        public int PrestigeStarsPerPop = 200;         // population per Star earned at prestige
+        public float PrestigeStarBonusPerStar = 0.01f; // +1% residents per cumulative Star
+        public float PrestigeCoinRetainFraction = 0.5f; // fraction of coins kept on prestige [0,1]
+
         // --- Phase 4 — streak freeze (progression-spec §3.1). A freeze bridges ONE missed day. ---
         public int StreakFreezeMaxCharges = 3;
         public int StreakFreezeCost = 80; // coins per charge

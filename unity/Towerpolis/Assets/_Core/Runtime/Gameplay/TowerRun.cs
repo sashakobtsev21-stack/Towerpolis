@@ -44,6 +44,7 @@ namespace Towerpolis.Core.Gameplay
     public sealed class TowerRun
     {
         readonly CoreConfig _cfg;
+        readonly float _residentMult; // prestige bonus applied to every resident earned (1.0 = none)
 
         public float CurrentTopWidth { get; private set; }
         public float LeanOffset { get; private set; }
@@ -55,8 +56,9 @@ namespace Towerpolis.Core.Gameplay
         public int MaxComboLevel { get; private set; }   // highest combo level reached this run
         public UpgradeTier PendingUpgrade { get; private set; } // earned block upgrade for the NEXT spawn (Phase C)
 
-        /// <summary>Run-end "trophy roof" bonus residents for this run's longest Perfect chain (Phase C).</summary>
-        public int TrophyRoofResidents => Scoring.TrophyRoofBonus(_cfg, MaxPerfectChain);
+        /// <summary>Run-end "trophy roof" bonus residents for this run's longest Perfect chain (Phase C),
+        /// scaled by the prestige residents multiplier.</summary>
+        public int TrophyRoofResidents => (int)(Scoring.TrophyRoofBonus(_cfg, MaxPerfectChain) * _residentMult);
         public int TotalPerfects { get; private set; }   // cumulative Perfect drops (coins/stats — meta §5)
         public int FloorCount { get; private set; }     // placed floors, excluding the base
         public int TotalResidents { get; private set; }
@@ -65,12 +67,13 @@ namespace Towerpolis.Core.Gameplay
         /// <summary>Total run score = floor scores + resident bonus (spec §6.3).</summary>
         public int RunScore => Score + TotalResidents * _cfg.ResidentScoreValue;
 
-        public TowerRun(CoreConfig cfg)
+        public TowerRun(CoreConfig cfg, float residentMult = 1.0f)
         {
             if (cfg is null) throw new ArgumentNullException(nameof(cfg));
             if (cfg.ComboResidentBonus is null || cfg.ComboResidentBonus.Length <= cfg.ComboLevelCap)
                 throw new ArgumentException("ComboResidentBonus must have an entry for every level 0..ComboLevelCap.", nameof(cfg));
             _cfg = cfg;
+            _residentMult = residentMult > 0f ? residentMult : 1.0f;
             CurrentTopWidth = cfg.InitialBlockWidth;
         }
 
@@ -139,6 +142,7 @@ namespace Towerpolis.Core.Gameplay
                     break;
             }
 
+            residentsAdded = (int)(residentsAdded * _residentMult); // prestige bonus
             Score += scoreGained;
             TotalResidents += residentsAdded;
 

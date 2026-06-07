@@ -77,7 +77,7 @@ namespace Towerpolis.Core.Tests.Meta
         {
             var v1 = new SaveData { SchemaVersion = 1, Coins = 500, Gems = 12, StreakCurrent = 4, StreakLongest = 9 };
             SaveData m = SaveMigration.Migrate(v1);
-            Assert.That(m.SchemaVersion, Is.EqualTo(2));
+            Assert.That(m.SchemaVersion, Is.EqualTo(SaveData.CurrentVersion));
             Assert.That(m.Coins, Is.EqualTo(500));
             Assert.That(m.Gems, Is.EqualTo(12));
             Assert.That(m.StreakCurrent, Is.EqualTo(4));

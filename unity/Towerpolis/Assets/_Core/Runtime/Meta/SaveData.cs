@@ -41,7 +41,7 @@ namespace Towerpolis.Core.Meta
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public int SchemaVersion = CurrentVersion;
         public int Coins;
@@ -58,6 +58,11 @@ namespace Towerpolis.Core.Meta
         public List<DistrictSave> Districts = new();
         public List<IntEntry> Leaderboard = new();
         public List<string> RewardedDistricts = new();
+
+        // --- Prestige (endless-spec §5.5; schema v3). v2 saves leave these at 0 = "never prestiged". ---
+        public int TotalPrestigeStars;
+        public int PrestigeCount;
+        public int LifetimeBestPopulation;
 
         // --- Phase 4 progression (schema v2; progression-spec §7). Defaults below ARE the v1→v2 values;
         //     a v1 JSON simply leaves them at these initialisers. Not yet round-tripped through CityState
@@ -94,6 +99,9 @@ namespace Towerpolis.Core.Meta
                 StreakLastDate = s.Streak.LastDate,
                 StreakFreezeCharges = s.Streak.FreezeCharges,
                 RewardedDistricts = new List<string>(s.RewardedDistricts),
+                TotalPrestigeStars = s.TotalPrestigeStars,
+                PrestigeCount = s.PrestigeCount,
+                LifetimeBestPopulation = s.LifetimeBestPopulation,
                 Districts = new List<DistrictSave>(),
                 Leaderboard = new List<IntEntry>(),
                 MagnetLevel = s.Upgrades.MagnetLevel,

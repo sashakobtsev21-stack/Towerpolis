@@ -124,7 +124,10 @@ namespace Towerpolis.Game.Gameplay
             DistrictSky.SetDistrict(theme); // ground sky; the Atmosphere driver lerps it toward space with height
 
             _coreConfig = tuning != null ? tuning.BuildCoreConfig() : new CoreConfig();
-            _run = new TowerRun(_coreConfig);
+            // Apply the permanent prestige residents multiplier (1.0 if never prestiged).
+            float prestigeMult = MetaService.Instance != null && MetaService.Instance.City != null
+                ? MetaService.Instance.City.PrestigeBonusMult : 1f;
+            _run = new TowerRun(_coreConfig, prestigeMult);
 
             ulong seed = Mode == RunMode.Daily
                 ? DailySeed.ForDateUtc(DateTime.UtcNow)                            // shared global daily seed

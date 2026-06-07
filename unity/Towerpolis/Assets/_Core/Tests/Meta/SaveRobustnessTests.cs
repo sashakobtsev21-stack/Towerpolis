@@ -40,7 +40,7 @@ namespace Towerpolis.Core.Tests.Meta
                 LoginCalendarLastClaim = null, ActiveWeekKey = null,
             };
             SaveMigration.Migrate(s);
-            Assert.That(s.SchemaVersion, Is.EqualTo(2));
+            Assert.That(s.SchemaVersion, Is.EqualTo(SaveData.CurrentVersion));
             Assert.That(s.ActiveMissionIds, Is.Not.Null);
             Assert.That(s.MissionProgress, Is.Not.Null);
             Assert.That(s.CompletedMissionIds, Is.Not.Null);

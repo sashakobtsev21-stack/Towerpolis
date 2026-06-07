@@ -89,6 +89,13 @@ namespace Towerpolis.Core.Meta
         public LocalLeaderboard Leaderboard { get; private set; } = new();
         public string ActiveDistrictId { get; set; } = "downtown";
 
+        // --- Prestige / endless loop (endless-spec §2) ---
+        public int TotalPrestigeStars { get; private set; }    // cumulative, never resets
+        public int PrestigeCount { get; private set; }         // how many times prestiged
+        public int LifetimeBestPopulation { get; private set; } // peak total population across any cycle (trophy)
+        /// <summary>Permanent residents multiplier from accumulated Stars (1.0 = none).</summary>
+        public float PrestigeBonusMult => 1.0f + TotalPrestigeStars * _cfg.PrestigeStarBonusPerStar;
+
         // --- Phase 4 progression (progression-spec §2/§3) ---
         public UpgradeState Upgrades { get; private set; } = UpgradeState.Default;
         public int FreezeCharges => Streak.FreezeCharges;
@@ -238,6 +245,40 @@ namespace Towerpolis.Core.Meta
             return new RunEndOutcome(deposited, coins, gemsEarned, completedNow, newBest, grid.Population, milestoneCoins, districtRewardCoins);
         }
 
+        // --- Prestige (endless-spec §2) ---
+
+        /// <summary>True once every district in <paramref name="allDistricts"/> has been completed this cycle
+        /// (i.e. the player can prestige). The Unity layer calls this after a district-complete.</summary>
+        public bool IsPrestigeReady(IReadOnlyList<DistrictInfo> allDistricts)
+        {
+            if (allDistricts == null || allDistricts.Count == 0) return false;
+            foreach (DistrictInfo d in allDistricts)
+                if (!_rewarded.Contains(d.Id)) return false;
+            return true;
+        }
+
+        /// <summary>Prestige the city: bank the current total population into permanent Stars (a residents
+        /// multiplier), record the lifetime-best population, retain a fraction of coins, then wipe the grids,
+        /// rewarded set, upgrades and active district so the climb restarts faster. Returns the Stars earned.
+        /// Caller should verify <see cref="IsPrestigeReady"/> first. Deterministic; no clock/RNG.</summary>
+        public int Prestige()
+        {
+            int pop = TotalPopulation;
+            if (pop > LifetimeBestPopulation) LifetimeBestPopulation = pop;
+
+            int starsPerPop = Math.Max(1, _cfg.PrestigeStarsPerPop);
+            int newStars = Math.Max(1, pop / starsPerPop); // at least 1 for completing the climb
+            TotalPrestigeStars += newStars;
+            PrestigeCount += 1;
+
+            Coins = (int)(Coins * _cfg.PrestigeCoinRetainFraction / 10f) * 10; // keep a fraction, floored to 10s
+            _grids.Clear();
+            _rewarded.Clear();
+            Upgrades = UpgradeState.Default;
+            ActiveDistrictId = "downtown";
+            return newStars;
+        }
+
         // --- Weekly missions & achievements (progression-spec §4) ---
 
         /// <summary>Ensure this week's 3 missions are drawn for <paramref name="weekKey"/>. On a new week,
@@ -335,6 +376,9 @@ namespace Towerpolis.Core.Meta
             state.ActiveDistrictId = string.IsNullOrEmpty(save.ActiveDistrictId) ? "downtown" : save.ActiveDistrictId;
             state.Streak = new DailyStreakState(save.StreakCurrent, save.StreakLongest, save.StreakLastDate, save.StreakFreezeCharges);
             state.Leaderboard = new LocalLeaderboard(save.LeaderboardMap());
+            state.TotalPrestigeStars = save.TotalPrestigeStars;
+            state.PrestigeCount = save.PrestigeCount;
+            state.LifetimeBestPopulation = save.LifetimeBestPopulation;
 
             // Phase 4 progression.
             state.Upgrades = new UpgradeState(save.MagnetLevel, save.CityBonusLevel);

@@ -19,6 +19,7 @@ namespace Towerpolis.Core.Meta
             while (save.SchemaVersion < SaveData.CurrentVersion)
             {
                 if (save.SchemaVersion == 1) MigrateV1ToV2(save);
+                else if (save.SchemaVersion == 2) MigrateV2ToV3(save);
                 save.SchemaVersion++;
             }
             return save;
@@ -36,5 +37,9 @@ namespace Towerpolis.Core.Meta
             if (s.LoginCalendarLastClaim == null) s.LoginCalendarLastClaim = "";
             if (s.ActiveWeekKey == null) s.ActiveWeekKey = "";
         }
+
+        // v2 predates the prestige fields (stars, count, lifetime-best population). JsonUtility leaves them at
+        // 0 on an old save, which is the correct "never prestiged" starting state — nothing to transform.
+        static void MigrateV2ToV3(SaveData s) { /* intentional no-op — the 0 defaults are correct */ }
     }
 }

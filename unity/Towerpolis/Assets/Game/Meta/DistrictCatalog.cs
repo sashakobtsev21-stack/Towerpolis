@@ -36,14 +36,14 @@ namespace Towerpolis.Game.Meta
         {
             new DistrictInfo("downtown", gridCapacity: 5 * 4, fillGoal: 1200, rewardCoins: 200, rewardGems: 0),
             new DistrictInfo("neon",     gridCapacity: 5 * 4, fillGoal: 1600, rewardCoins: 350, rewardGems: 1),
-            new DistrictInfo("winter",   gridCapacity: 6 * 4, fillGoal: 2200, rewardCoins: 500, rewardGems: 2),
+            new DistrictInfo("winter",   gridCapacity: 7 * 4, fillGoal: 2200, rewardCoins: 500, rewardGems: 2),
         };
 
         static readonly DistrictView[] Views =
         {
             new DistrictView("downtown", LocKeys.DistDowntownName, 5, new Color(0.40f, 0.74f, 1.00f)),
             new DistrictView("neon",     LocKeys.DistNeonName,     5, new Color(0.18f, 0.74f, 0.69f)),
-            new DistrictView("winter",   LocKeys.DistWinterName,   6, new Color(0.90f, 0.95f, 0.99f)),
+            new DistrictView("winter",   LocKeys.DistWinterName,   7, new Color(0.90f, 0.95f, 0.99f)),
         };
 
         public static DistrictInfo Get(string id)
