@@ -6,8 +6,8 @@ namespace Towerpolis.Core.Meta
     /// <summary>
     /// Pure, deterministic upgrade economy (progression-spec §2 / §9 Step 1): purchase validation plus the
     /// effective gameplay effect of an upgrade level. NOTHING here mutates state — <see cref="TryPurchase"/>
-    /// returns the proposed result and the caller applies it. The gameplay tracks (Magnet, Slow-Mo) return
-    /// a NO-EFFECT value in Daily Seed, so a daily run is byte-for-byte identical to an unupgraded run and
+    /// returns the proposed result and the caller applies it. The gameplay track (Magnet) returns a
+    /// NO-EFFECT value in Daily Seed, so a daily run is byte-for-byte identical to an unupgraded run and
     /// the shared seed stays fair (no branch in the grading path — the caller just gets the neutral value).
     /// </summary>
     public static class UpgradeService
@@ -40,14 +40,6 @@ namespace Towerpolis.Core.Meta
             if (isDaily) return 0f; // suppressed regardless of level — daily fairness
             if (cfg == null) throw new ArgumentNullException(nameof(cfg));
             return Sample(cfg.MagnetFractions, level, 0f);
-        }
-
-        /// <summary>Effective swing-speed multiplier for slow-mo — always 1.0 (no slow-mo) in Daily.</summary>
-        public static float GetSlowMoFactor(int level, CoreConfig cfg, bool isDaily)
-        {
-            if (isDaily) return 1f; // suppressed regardless of level — daily fairness
-            if (cfg == null) throw new ArgumentNullException(nameof(cfg));
-            return Sample(cfg.SlowMoFactors, level, 1f);
         }
 
         // Clamp the level into the table; an empty/absent table falls back to the neutral default.

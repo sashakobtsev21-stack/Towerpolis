@@ -67,8 +67,8 @@ namespace Towerpolis.Core.Meta
         }
     }
 
-    /// <summary>The three purchasable upgrade tracks (progression-spec §2).</summary>
-    public enum UpgradeKind { Magnet, SlowMo, CityBonus }
+    /// <summary>The purchasable upgrade tracks (progression-spec §2).</summary>
+    public enum UpgradeKind { Magnet, CityBonus }
 
     /// <summary>
     /// The aggregate, save-able player meta-state (ADR-0007): per-district city grids, currency, daily
@@ -92,13 +92,6 @@ namespace Towerpolis.Core.Meta
         // --- Phase 4 progression (progression-spec §2/§3) ---
         public UpgradeState Upgrades { get; private set; } = UpgradeState.Default;
         public int FreezeCharges => Streak.FreezeCharges;
-
-        readonly List<string> _ownedBlockSkins = new() { "skin_default" };
-        readonly List<string> _ownedCraneSkins = new() { "crane_default" };
-        public string EquippedBlockSkin { get; private set; } = "skin_default";
-        public string EquippedCraneSkin { get; private set; } = "crane_default";
-        public IReadOnlyList<string> OwnedBlockSkins => _ownedBlockSkins;
-        public IReadOnlyList<string> OwnedCraneSkins => _ownedCraneSkins;
 
         public LoginCalendarState Login { get; private set; } = LoginCalendarState.Empty;
 
@@ -160,7 +153,6 @@ namespace Towerpolis.Core.Meta
             switch (kind)
             {
                 case UpgradeKind.Magnet:    level = Upgrades.MagnetLevel;    costs = _cfg.MagnetUpgradeCosts;    break;
-                case UpgradeKind.SlowMo:    level = Upgrades.SlowMoLevel;    costs = _cfg.SlowMoUpgradeCosts;    break;
                 case UpgradeKind.CityBonus: level = Upgrades.CityBonusLevel; costs = _cfg.CityBonusUpgradeCosts; break;
                 default: return false;
             }
@@ -170,39 +162,8 @@ namespace Towerpolis.Core.Meta
             Upgrades = kind switch
             {
                 UpgradeKind.Magnet => Upgrades.WithMagnet(newLevel),
-                UpgradeKind.SlowMo => Upgrades.WithSlowMo(newLevel),
                 _ => Upgrades.WithCityBonus(newLevel),
             };
-            return true;
-        }
-
-        public bool TryBuyBlockSkin(string skinId, int cost, string requiredDistrictId = "")
-            => TryBuySkin(_ownedBlockSkins, skinId, cost, requiredDistrictId);
-
-        public bool TryBuyCraneSkin(string skinId, int cost, string requiredDistrictId = "")
-            => TryBuySkin(_ownedCraneSkins, skinId, cost, requiredDistrictId);
-
-        bool TryBuySkin(List<string> owned, string skinId, int cost, string requiredDistrictId)
-        {
-            if (string.IsNullOrEmpty(skinId) || owned.Contains(skinId)) return false;        // invalid / already owned
-            if (!string.IsNullOrEmpty(requiredDistrictId) && !_rewarded.Contains(requiredDistrictId)) return false; // gate
-            if (Coins < cost) return false;
-            Coins -= cost;
-            owned.Add(skinId);
-            return true;
-        }
-
-        public bool EquipBlockSkin(string skinId)
-        {
-            if (!_ownedBlockSkins.Contains(skinId)) return false;
-            EquippedBlockSkin = skinId;
-            return true;
-        }
-
-        public bool EquipCraneSkin(string skinId)
-        {
-            if (!_ownedCraneSkins.Contains(skinId)) return false;
-            EquippedCraneSkin = skinId;
             return true;
         }
 
@@ -376,11 +337,7 @@ namespace Towerpolis.Core.Meta
             state.Leaderboard = new LocalLeaderboard(save.LeaderboardMap());
 
             // Phase 4 progression.
-            state.Upgrades = new UpgradeState(save.MagnetLevel, save.SlowMoLevel, save.CityBonusLevel);
-            LoadSkins(state._ownedBlockSkins, save.OwnedBlockSkins, "skin_default");
-            LoadSkins(state._ownedCraneSkins, save.OwnedCraneSkins, "crane_default");
-            state.EquippedBlockSkin = string.IsNullOrEmpty(save.EquippedBlockSkin) ? "skin_default" : save.EquippedBlockSkin;
-            state.EquippedCraneSkin = string.IsNullOrEmpty(save.EquippedCraneSkin) ? "crane_default" : save.EquippedCraneSkin;
+            state.Upgrades = new UpgradeState(save.MagnetLevel, save.CityBonusLevel);
             state.Login = new LoginCalendarState(save.LoginCalendarDay, save.LoginCalendarLastClaim);
 
             // Weekly missions, achievements & lifetime stats.
@@ -405,16 +362,6 @@ namespace Towerpolis.Core.Meta
                 state._grids[ds.Id] = grid;
             }
             return state;
-        }
-
-        // Replace a skin list from the save, de-duping and guaranteeing the free default is always owned.
-        static void LoadSkins(List<string> dst, List<string>? src, string fallback)
-        {
-            dst.Clear();
-            if (src != null)
-                foreach (string id in src)
-                    if (!string.IsNullOrEmpty(id) && !dst.Contains(id)) dst.Add(id);
-            if (!dst.Contains(fallback)) dst.Insert(0, fallback);
         }
     }
 }

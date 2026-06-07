@@ -24,19 +24,11 @@ namespace Towerpolis.Core.Meta
             return save;
         }
 
-        // v1 predates the Phase-4 progression fields (upgrades, cosmetics, freeze, login, missions,
-        // achievements). JsonUtility leaves absent fields at their SaveData defaults; this guards against
-        // null/empty so the equipped cosmetics are always valid and the new collections are never null.
+        // v1 predates the Phase-4 progression fields (upgrades, freeze, login, missions, achievements).
+        // JsonUtility leaves absent fields at their SaveData defaults; this guards against null so the new
+        // collections are never null.
         static void MigrateV1ToV2(SaveData s)
         {
-            if (s.OwnedBlockSkins == null || s.OwnedBlockSkins.Count == 0)
-                s.OwnedBlockSkins = new List<string> { "skin_default" };
-            if (string.IsNullOrEmpty(s.EquippedBlockSkin)) s.EquippedBlockSkin = "skin_default";
-
-            if (s.OwnedCraneSkins == null || s.OwnedCraneSkins.Count == 0)
-                s.OwnedCraneSkins = new List<string> { "crane_default" };
-            if (string.IsNullOrEmpty(s.EquippedCraneSkin)) s.EquippedCraneSkin = "crane_default";
-
             if (s.ActiveMissionIds == null) s.ActiveMissionIds = new List<string>();
             if (s.MissionProgress == null) s.MissionProgress = new List<IntEntry>();
             if (s.CompletedMissionIds == null) s.CompletedMissionIds = new List<string>();

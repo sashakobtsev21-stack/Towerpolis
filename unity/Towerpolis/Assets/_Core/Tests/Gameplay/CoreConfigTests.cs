@@ -32,7 +32,6 @@ namespace Towerpolis.Core.Tests.Gameplay
             var c = Cfg();
             // *UpgradeCosts[i] = price to go from level i to i+1, so there's exactly one fewer cost than effect entries.
             Assert.That(c.MagnetUpgradeCosts.Length, Is.EqualTo(c.MagnetFractions.Length - 1));
-            Assert.That(c.SlowMoUpgradeCosts.Length, Is.EqualTo(c.SlowMoFactors.Length - 1));
             Assert.That(c.CityBonusUpgradeCosts.Length, Is.EqualTo(c.CityBonusMultipliers.Length - 1));
         }
 
@@ -41,7 +40,6 @@ namespace Towerpolis.Core.Tests.Gameplay
         {
             var c = Cfg();
             AssertAscending(c.MagnetUpgradeCosts);
-            AssertAscending(c.SlowMoUpgradeCosts);
             AssertAscending(c.CityBonusUpgradeCosts);
         }
 

@@ -93,16 +93,5 @@ namespace Towerpolis.Game.UI
         public const string AchStreak30Name = "ach.streak30.name";     public const string AchStreak30Desc = "ach.streak30.desc";
         public const string AchHeight50Name = "ach.height50.name";     public const string AchHeight50Desc = "ach.height50.desc";
         public const string AchD3Name = "ach.d3.name";                 public const string AchD3Desc = "ach.d3.desc";
-
-        // ----- Cosmetic skins (display names) -----
-        public const string SkinClassic  = "skin.classic";
-        public const string SkinPastel   = "skin.pastel";
-        public const string SkinSteel    = "skin.steel";
-        public const string SkinNeonGlow = "skin.neonglow";
-        public const string SkinArctic   = "skin.arctic";
-        public const string CraneHemp    = "crane.hemp";
-        public const string CraneSteel   = "crane.steel";
-        public const string CraneGold    = "crane.gold";
-        public const string CraneNeon    = "crane.neon";
     }
 }

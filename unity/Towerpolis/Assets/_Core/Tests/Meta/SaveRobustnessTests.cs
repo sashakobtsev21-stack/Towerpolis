@@ -35,41 +35,18 @@ namespace Towerpolis.Core.Tests.Meta
             var s = new SaveData
             {
                 SchemaVersion = 1,
-                OwnedBlockSkins = null, EquippedBlockSkin = null,
-                OwnedCraneSkins = null, EquippedCraneSkin = "",
                 ActiveMissionIds = null, MissionProgress = null,
                 CompletedMissionIds = null, CompletedAchievementIds = null,
                 LoginCalendarLastClaim = null, ActiveWeekKey = null,
             };
             SaveMigration.Migrate(s);
             Assert.That(s.SchemaVersion, Is.EqualTo(2));
-            Assert.That(s.OwnedBlockSkins, Is.EquivalentTo(new[] { "skin_default" }));
-            Assert.That(s.EquippedBlockSkin, Is.EqualTo("skin_default"));
-            Assert.That(s.OwnedCraneSkins, Is.EquivalentTo(new[] { "crane_default" }));
-            Assert.That(s.EquippedCraneSkin, Is.EqualTo("crane_default"));
             Assert.That(s.ActiveMissionIds, Is.Not.Null);
             Assert.That(s.MissionProgress, Is.Not.Null);
             Assert.That(s.CompletedMissionIds, Is.Not.Null);
             Assert.That(s.CompletedAchievementIds, Is.Not.Null);
             Assert.That(s.LoginCalendarLastClaim, Is.Empty);
             Assert.That(s.ActiveWeekKey, Is.Empty);
-        }
-
-        [Test]
-        public void Migrate_V1_PopulatedFields_Preserved() // the not-null side of the guards
-        {
-            var s = new SaveData
-            {
-                SchemaVersion = 1,
-                EquippedBlockSkin = "skin_neon_glow",
-                OwnedBlockSkins = new List<string> { "skin_default", "skin_neon_glow" },
-                EquippedCraneSkin = "crane_gold",
-                OwnedCraneSkins = new List<string> { "crane_default", "crane_gold" },
-            };
-            SaveMigration.Migrate(s);
-            Assert.That(s.EquippedBlockSkin, Is.EqualTo("skin_neon_glow"));
-            Assert.That(s.OwnedBlockSkins, Contains.Item("skin_neon_glow"));
-            Assert.That(s.EquippedCraneSkin, Is.EqualTo("crane_gold"));
         }
 
         [Test]
@@ -89,17 +66,14 @@ namespace Towerpolis.Core.Tests.Meta
             var state = CityState.FromSave(null, Cfg());
             Assert.That(state.Coins, Is.Zero);
             Assert.That(state.ActiveDistrictId, Is.EqualTo("downtown"));
-            Assert.That(state.EquippedBlockSkin, Is.EqualTo("skin_default"));
         }
 
         [Test]
         public void FromSave_EmptyStrings_FallBackToDefaults() // the IsNullOrEmpty/?? branches
         {
-            var s = new SaveData { ActiveDistrictId = "", EquippedBlockSkin = "", EquippedCraneSkin = "", ActiveWeekKey = null };
+            var s = new SaveData { ActiveDistrictId = "", ActiveWeekKey = null };
             var state = CityState.FromSave(s, Cfg());
             Assert.That(state.ActiveDistrictId, Is.EqualTo("downtown"));
-            Assert.That(state.EquippedBlockSkin, Is.EqualTo("skin_default"));
-            Assert.That(state.EquippedCraneSkin, Is.EqualTo("crane_default"));
             Assert.That(state.ActiveWeekKey, Is.Empty);
         }
 

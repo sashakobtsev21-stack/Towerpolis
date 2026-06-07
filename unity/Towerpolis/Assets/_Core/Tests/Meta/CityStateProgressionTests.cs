@@ -62,42 +62,6 @@ namespace Towerpolis.Core.Tests.Meta
             Assert.That(o.CoinsEarned, Is.EqualTo(2 + 750)); // run coins (2) + 500×1.50
         }
 
-        // --- Cosmetics ---
-
-        [Test]
-        public void BuyBlockSkin_ThenEquip()
-        {
-            var s = Rich();
-            Assert.That(s.TryBuyBlockSkin("skin_pastel", 150), Is.True);
-            Assert.That(s.OwnedBlockSkins, Does.Contain("skin_pastel"));
-            Assert.That(s.EquipBlockSkin("skin_pastel"), Is.True);
-            Assert.That(s.EquippedBlockSkin, Is.EqualTo("skin_pastel"));
-        }
-
-        [Test]
-        public void BuySkin_FailsWhenAlreadyOwned()
-        {
-            var s = Rich();
-            Assert.That(s.TryBuyBlockSkin("skin_default", 150), Is.False); // owned by default
-        }
-
-        [Test]
-        public void BuySkin_GatedByDistrict()
-        {
-            var s = Rich(); // "seed" rewarded, "neon" not
-            Assert.That(s.TryBuyCraneSkin("crane_neon", 400, requiredDistrictId: "neon"), Is.False);
-            // complete neon → gate opens
-            s.EndEndlessRun(D("neon", 10, 1, 0, 0), new RunResult(2, 4, 10, 0), 3);
-            Assert.That(s.TryBuyCraneSkin("crane_neon", 400, requiredDistrictId: "neon"), Is.True);
-        }
-
-        [Test]
-        public void EquipSkin_FailsWhenNotOwned()
-        {
-            var s = Rich();
-            Assert.That(s.EquipBlockSkin("skin_pastel"), Is.False); // not bought
-        }
-
         // --- Streak freeze & login ---
 
         [Test]
@@ -130,10 +94,7 @@ namespace Towerpolis.Core.Tests.Meta
         {
             var s = Rich();
             s.TryBuyUpgrade(UpgradeKind.Magnet);
-            s.TryBuyUpgrade(UpgradeKind.SlowMo);
             s.TryBuyUpgrade(UpgradeKind.CityBonus);
-            s.TryBuyBlockSkin("skin_pastel", 150);
-            s.EquipBlockSkin("skin_pastel");
             s.TryBuyFreezeCharge();
             s.ClaimLogin("2026-06-04");
 
@@ -141,10 +102,7 @@ namespace Towerpolis.Core.Tests.Meta
 
             Assert.That(loaded.Coins, Is.EqualTo(s.Coins));
             Assert.That(loaded.Upgrades.MagnetLevel, Is.EqualTo(1));
-            Assert.That(loaded.Upgrades.SlowMoLevel, Is.EqualTo(1));
             Assert.That(loaded.Upgrades.CityBonusLevel, Is.EqualTo(1));
-            Assert.That(loaded.OwnedBlockSkins, Does.Contain("skin_pastel"));
-            Assert.That(loaded.EquippedBlockSkin, Is.EqualTo("skin_pastel"));
             Assert.That(loaded.FreezeCharges, Is.EqualTo(s.FreezeCharges));
             Assert.That(loaded.Login.Day, Is.EqualTo(1));
         }

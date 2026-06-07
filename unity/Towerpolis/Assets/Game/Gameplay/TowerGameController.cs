@@ -66,33 +66,7 @@ namespace Towerpolis.Game.Gameplay
         void Start()
         {
             EnsureJuice();
-            // Re-tint blocks/crane live when a cosmetic is equipped (otherwise a skin only showed next run).
-            if (MetaService.Instance != null) MetaService.Instance.ProgressionChanged += ReapplyCosmetics;
             NewRun();
-        }
-
-        void OnDestroy()
-        {
-            if (MetaService.Instance != null) MetaService.Instance.ProgressionChanged -= ReapplyCosmetics;
-        }
-
-        // Apply the equipped block/crane skins (over the active district theme) to the live materials, WITHOUT
-        // resetting the sky/ascent — so equipping a skin recolours the tower immediately, not just next run.
-        void ReapplyCosmetics()
-        {
-            if (spawner != null)
-            {
-                string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
-                spawner.ApplyTheme(DistrictThemes.For(district)); // restore base colours so switching back to default works
-                string blockSkinId = MetaService.Instance != null ? MetaService.Instance.EquippedBlockSkin : "skin_default";
-                spawner.ApplyBlockSkin(CosmeticCatalog.GetBlockSkin(blockSkinId));
-            }
-            if (crane != null)
-            {
-                string craneSkinId = MetaService.Instance != null ? MetaService.Instance.EquippedCraneSkin : "crane_default";
-                CraneSkin cs = CosmeticCatalog.GetCraneSkin(craneSkinId);
-                crane.ApplySkin(cs.RopeColor, cs.HookColor);
-            }
         }
 
         // Bring up the juice (audio + VFX) with zero scene wiring; if one was added manually (to tune it),
@@ -142,22 +116,11 @@ namespace Towerpolis.Game.Gameplay
             ClearTower();
             DiscardLooseBlock(); // drop any in-flight crane/falling block (e.g. switching districts mid-run)
 
-            // Dress the run for the active district (block palette + sky) + the equipped cosmetic skins.
+            // Dress the run for the active district (block palette + sky).
             string district = MetaService.Instance != null ? MetaService.Instance.ActiveDistrictId : "downtown";
             DistrictTheme theme = DistrictThemes.For(district);
-            if (spawner != null)
-            {
-                spawner.ApplyTheme(theme);
-                string blockSkinId = MetaService.Instance != null ? MetaService.Instance.EquippedBlockSkin : "skin_default";
-                spawner.ApplyBlockSkin(CosmeticCatalog.GetBlockSkin(blockSkinId)); // overrides body colours if non-default
-            }
+            if (spawner != null) spawner.ApplyTheme(theme);
             DistrictSky.SetDistrict(theme); // ground sky; the Atmosphere driver lerps it toward space with height
-            if (crane != null)
-            {
-                string craneSkinId = MetaService.Instance != null ? MetaService.Instance.EquippedCraneSkin : "crane_default";
-                CraneSkin cs = CosmeticCatalog.GetCraneSkin(craneSkinId);
-                crane.ApplySkin(cs.RopeColor, cs.HookColor);
-            }
 
             _coreConfig = tuning != null ? tuning.BuildCoreConfig() : new CoreConfig();
             _run = new TowerRun(_coreConfig);

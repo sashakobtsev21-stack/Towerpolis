@@ -62,7 +62,6 @@ namespace Towerpolis.Core.Tests
         {
             Assert.Throws<ArgumentNullException>(() => UpgradeService.TryPurchase("id", 0, null!, 3, 100));
             Assert.Throws<ArgumentNullException>(() => UpgradeService.GetMagnetFraction(0, null!, isDaily: false));
-            Assert.Throws<ArgumentNullException>(() => UpgradeService.GetSlowMoFactor(0, null!, isDaily: false));
         }
 
         [Test]

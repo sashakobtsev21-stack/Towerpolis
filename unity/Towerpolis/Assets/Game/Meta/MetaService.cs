@@ -35,20 +35,16 @@ namespace Towerpolis.Game.Meta
         public int FreezeCharges => _city != null ? _city.FreezeCharges : 0;
         public int FreezeCost => _config.StreakFreezeCost;
         public int FreezeMax => _config.StreakFreezeMaxCharges;
-        public string EquippedBlockSkin => _city != null ? _city.EquippedBlockSkin : "skin_default";
-        public string EquippedCraneSkin => _city != null ? _city.EquippedCraneSkin : "crane_default";
 
         public int UpgradeLevel(UpgradeKind kind) => _city == null ? 0 : kind switch
         {
             UpgradeKind.Magnet => _city.Upgrades.MagnetLevel,
-            UpgradeKind.SlowMo => _city.Upgrades.SlowMoLevel,
             _ => _city.Upgrades.CityBonusLevel,
         };
 
         int[] UpgradeCosts(UpgradeKind kind) => kind switch
         {
             UpgradeKind.Magnet => _config.MagnetUpgradeCosts,
-            UpgradeKind.SlowMo => _config.SlowMoUpgradeCosts,
             _ => _config.CityBonusUpgradeCosts,
         };
 
@@ -64,11 +60,9 @@ namespace Towerpolis.Game.Meta
         // Effective gameplay effect — Endless only; the caller passes isDaily so it's suppressed in Daily.
         public float MagnetFraction(bool isDaily)
             => _city == null ? 0f : UpgradeService.GetMagnetFraction(_city.Upgrades.MagnetLevel, _config, isDaily);
-        public float SlowMoFactor(bool isDaily)
-            => _city == null ? 1f : UpgradeService.GetSlowMoFactor(_city.Upgrades.SlowMoLevel, _config, isDaily);
 
         // --- Phase 4 progression: spend (persist + notify) ---
-        /// <summary>Fires whenever coins/upgrades/cosmetics change from a purchase or claim (UI refresh).</summary>
+        /// <summary>Fires whenever coins/upgrades change from a purchase or claim (UI refresh).</summary>
         public event Action ProgressionChanged;
 
         public bool BuyUpgrade(UpgradeKind kind)
@@ -95,41 +89,6 @@ namespace Towerpolis.Game.Meta
             return r;
         }
 
-        // --- cosmetics (purchase-or-equip in one tap; persist + notify) ---
-        public bool IsBlockSkinOwned(string id) => _city != null && Contains(_city.OwnedBlockSkins, id);
-        public bool IsCraneSkinOwned(string id) => _city != null && Contains(_city.OwnedCraneSkins, id);
-        public bool IsBlockSkinEquipped(string id) => _city != null && _city.EquippedBlockSkin == id;
-        public bool IsCraneSkinEquipped(string id) => _city != null && _city.EquippedCraneSkin == id;
-        public bool IsDistrictRewarded(string id) => string.IsNullOrEmpty(id) || (_city != null && _city.IsRewarded(id));
-
-        /// <summary>One-tap buy-or-equip: equip if already owned, else buy (gated/affordable) and equip.</summary>
-        public bool BuyOrEquipBlockSkin(string id)
-        {
-            if (_city == null) return false;
-            if (Contains(_city.OwnedBlockSkins, id)) return EquipAndSave(_city.EquipBlockSkin(id));
-            BlockSkin s = CosmeticCatalog.GetBlockSkin(id);
-            if (_city.TryBuyBlockSkin(id, s.Cost, s.RequiredDistrictId)) { _city.EquipBlockSkin(id); Persist(); return true; }
-            return false;
-        }
-
-        public bool BuyOrEquipCraneSkin(string id)
-        {
-            if (_city == null) return false;
-            if (Contains(_city.OwnedCraneSkins, id)) return EquipAndSave(_city.EquipCraneSkin(id));
-            CraneSkin s = CosmeticCatalog.GetCraneSkin(id);
-            if (_city.TryBuyCraneSkin(id, s.Cost, s.RequiredDistrictId)) { _city.EquipCraneSkin(id); Persist(); return true; }
-            return false;
-        }
-
-        bool EquipAndSave(bool ok) { if (ok) Persist(); return ok; }
-
-        static bool Contains(System.Collections.Generic.IReadOnlyList<string> list, string id)
-        {
-            if (list == null) return false;
-            for (int i = 0; i < list.Count; i++) if (list[i] == id) return true;
-            return false;
-        }
-
         void Persist()
         {
             SaveManager.Save(SaveData.From(_city));
@@ -139,7 +98,7 @@ namespace Towerpolis.Game.Meta
         /// <summary>Wipe ALL progress to a fresh guest city (the "start over" / Заново action) and persist.</summary>
         public void ResetProgress()
         {
-            _city = CityState.FromSave(null, _config); // fresh: 0 coins, downtown, default skins, no missions
+            _city = CityState.FromSave(null, _config); // fresh: 0 coins, downtown, no missions
             EnsureWeek();
             Persist(); // save + ProgressionChanged so the HUD repaints
         }

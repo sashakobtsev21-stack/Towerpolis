@@ -97,17 +97,6 @@ namespace Towerpolis.Game.UI
             { LocKeys.AchStreak30Name,    "Month Straight" }, { LocKeys.AchStreak30Desc,    "A 30-day streak" },
             { LocKeys.AchHeight50Name,    "Skyscraper" },     { LocKeys.AchHeight50Desc,    "50 floors in one run" },
             { LocKeys.AchD3Name,          "Three Districts" },{ LocKeys.AchD3Desc,          "Finish all 3 districts" },
-
-            // ----- Cosmetic skins -----
-            { LocKeys.SkinClassic,  "Classic" },
-            { LocKeys.SkinPastel,   "Pastel" },
-            { LocKeys.SkinSteel,    "Steel" },
-            { LocKeys.SkinNeonGlow, "Neon Glow" },
-            { LocKeys.SkinArctic,   "Arctic" },
-            { LocKeys.CraneHemp,    "Hemp" },
-            { LocKeys.CraneSteel,   "Steel" },
-            { LocKeys.CraneGold,    "Gold" },
-            { LocKeys.CraneNeon,    "Neon" },
         };
     }
 }

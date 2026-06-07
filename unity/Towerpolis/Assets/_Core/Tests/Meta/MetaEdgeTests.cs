@@ -7,8 +7,8 @@ using Towerpolis.Core.Meta;
 namespace Towerpolis.Core.Tests.Meta
 {
     /// <summary>Edge branches across the meta layer: the empty SaveData entry ctor, every mission &
-    /// achievement metric (incl. an unknown one), the upgrade default arm, crane-skin equip, and a
-    /// freeze-granting login claim.</summary>
+    /// achievement metric (incl. an unknown one), the upgrade default arm, and a freeze-granting login
+    /// claim.</summary>
     public class MetaEdgeTests
     {
         static CoreConfig Cfg() => new CoreConfig();
@@ -70,16 +70,6 @@ namespace Towerpolis.Core.Tests.Meta
         {
             var s = new CityState(Cfg());
             Assert.That(s.TryBuyUpgrade((UpgradeKind)99), Is.False);
-        }
-
-        [Test]
-        public void CityState_EquipCraneSkin_OnlyWhenOwned()
-        {
-            var s = new CityState(Cfg());
-            Assert.That(s.EquipCraneSkin("crane_steel"), Is.False);     // not owned yet
-            Assert.That(s.TryBuyCraneSkin("crane_steel", 0), Is.True);  // free → now owned
-            Assert.That(s.EquipCraneSkin("crane_steel"), Is.True);
-            Assert.That(s.EquippedCraneSkin, Is.EqualTo("crane_steel"));
         }
 
         [Test]

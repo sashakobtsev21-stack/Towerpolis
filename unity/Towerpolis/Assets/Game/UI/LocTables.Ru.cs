@@ -97,17 +97,6 @@ namespace Towerpolis.Game.UI
             { LocKeys.AchStreak30Name,    "Месяц подряд" },   { LocKeys.AchStreak30Desc,    "Серия 30 дней" },
             { LocKeys.AchHeight50Name,    "Небоскрёб" },      { LocKeys.AchHeight50Desc,    "50 этажей за забег" },
             { LocKeys.AchD3Name,          "Три района" },     { LocKeys.AchD3Desc,          "Заверши все 3 района" },
-
-            // ----- Cosmetic skins -----
-            { LocKeys.SkinClassic,  "Классика" },
-            { LocKeys.SkinPastel,   "Пастель" },
-            { LocKeys.SkinSteel,    "Сталь" },
-            { LocKeys.SkinNeonGlow, "Неон" },
-            { LocKeys.SkinArctic,   "Арктика" },
-            { LocKeys.CraneHemp,    "Канат" },
-            { LocKeys.CraneSteel,   "Сталь" },
-            { LocKeys.CraneGold,    "Золото" },
-            { LocKeys.CraneNeon,    "Неон" },
         };
     }
 }

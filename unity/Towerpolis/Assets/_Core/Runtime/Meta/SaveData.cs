@@ -63,13 +63,7 @@ namespace Towerpolis.Core.Meta
         //     a v1 JSON simply leaves them at these initialisers. Not yet round-tripped through CityState
         //     (that's the upcoming Unity integration) — added here so the schema + migration are in place. ---
         public int MagnetLevel;     // 0–4
-        public int SlowMoLevel;     // 0–4
         public int CityBonusLevel;  // 0–3
-
-        public List<string> OwnedBlockSkins = new() { "skin_default" };
-        public string EquippedBlockSkin = "skin_default";
-        public List<string> OwnedCraneSkins = new() { "crane_default" };
-        public string EquippedCraneSkin = "crane_default";
 
         public int StreakFreezeCharges; // 0–StreakFreezeMaxCharges
 
@@ -103,12 +97,7 @@ namespace Towerpolis.Core.Meta
                 Districts = new List<DistrictSave>(),
                 Leaderboard = new List<IntEntry>(),
                 MagnetLevel = s.Upgrades.MagnetLevel,
-                SlowMoLevel = s.Upgrades.SlowMoLevel,
                 CityBonusLevel = s.Upgrades.CityBonusLevel,
-                OwnedBlockSkins = new List<string>(s.OwnedBlockSkins),
-                EquippedBlockSkin = s.EquippedBlockSkin,
-                OwnedCraneSkins = new List<string>(s.OwnedCraneSkins),
-                EquippedCraneSkin = s.EquippedCraneSkin,
                 LoginCalendarDay = s.Login.Day,
                 LoginCalendarLastClaim = s.Login.LastClaim,
                 ActiveWeekKey = s.ActiveWeekKey,

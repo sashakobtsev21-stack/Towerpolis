@@ -72,19 +72,6 @@ namespace Towerpolis.Core.Tests.Meta
         }
 
         [Test]
-        public void SlowMoFactor_IsOneWhenDaily_RegardlessOfLevel()
-        {
-            Assert.That(UpgradeService.GetSlowMoFactor(3, Cfg, isDaily: true), Is.EqualTo(1f));
-        }
-
-        [Test]
-        public void SlowMoFactor_AppliesConfigWhenEndless()
-        {
-            Assert.That(UpgradeService.GetSlowMoFactor(1, Cfg, isDaily: false), Is.EqualTo(0.55f).Within(1e-6f));
-            Assert.That(UpgradeService.GetSlowMoFactor(0, Cfg, isDaily: false), Is.EqualTo(1f)); // unupgraded = full speed
-        }
-
-        [Test]
         public void Fraction_ClampsLevelAboveTable()
         {
             // A level beyond the table clamps to the last entry (defensive against a stale save).
@@ -98,7 +85,6 @@ namespace Towerpolis.Core.Tests.Meta
         {
             var s = UpgradeState.Default;
             Assert.That(s.MagnetLevel, Is.Zero);
-            Assert.That(s.SlowMoLevel, Is.Zero);
             Assert.That(s.CityBonusLevel, Is.Zero);
         }
 
@@ -107,7 +93,6 @@ namespace Towerpolis.Core.Tests.Meta
         {
             var s = UpgradeState.Default.WithMagnet(3);
             Assert.That(s.MagnetLevel, Is.EqualTo(3));
-            Assert.That(s.SlowMoLevel, Is.Zero);
             Assert.That(s.CityBonusLevel, Is.Zero);
         }
     }

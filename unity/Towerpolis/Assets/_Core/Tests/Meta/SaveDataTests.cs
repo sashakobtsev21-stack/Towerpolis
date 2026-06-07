@@ -89,31 +89,9 @@ namespace Towerpolis.Core.Tests.Meta
         {
             SaveData m = SaveMigration.Migrate(new SaveData { SchemaVersion = 1 });
             Assert.That(m.MagnetLevel, Is.Zero);
-            Assert.That(m.SlowMoLevel, Is.Zero);
             Assert.That(m.CityBonusLevel, Is.Zero);
             Assert.That(m.StreakFreezeCharges, Is.Zero);
             Assert.That(m.LoginCalendarDay, Is.Zero);
-            Assert.That(m.OwnedBlockSkins, Is.EqualTo(new[] { "skin_default" }));
-            Assert.That(m.EquippedBlockSkin, Is.EqualTo("skin_default"));
-            Assert.That(m.OwnedCraneSkins, Is.EqualTo(new[] { "crane_default" }));
-            Assert.That(m.EquippedCraneSkin, Is.EqualTo("crane_default"));
-        }
-
-        [Test]
-        public void Migrate_V1ToV2_RestoresCosmeticDefaultsWhenBlank()
-        {
-            // Simulate a v1 JSON whose new cosmetic fields came back empty/blank.
-            var v1 = new SaveData { SchemaVersion = 1 };
-            v1.OwnedBlockSkins.Clear();
-            v1.EquippedBlockSkin = "";
-            v1.OwnedCraneSkins.Clear();
-            v1.EquippedCraneSkin = "";
-
-            SaveData m = SaveMigration.Migrate(v1);
-            Assert.That(m.OwnedBlockSkins, Does.Contain("skin_default"));
-            Assert.That(m.EquippedBlockSkin, Is.EqualTo("skin_default"));
-            Assert.That(m.OwnedCraneSkins, Does.Contain("crane_default"));
-            Assert.That(m.EquippedCraneSkin, Is.EqualTo("crane_default"));
         }
     }
 }
