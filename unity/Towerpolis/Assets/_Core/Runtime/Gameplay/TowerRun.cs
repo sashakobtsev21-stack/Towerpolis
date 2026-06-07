@@ -13,11 +13,13 @@ namespace Towerpolis.Core.Gameplay
         public readonly float LeanOffset;      // accumulated lean after this drop
         public readonly int MissStrikes;
         public readonly int PerfectChain;
-        public readonly int ComboLevel;        // post-drop combo level (0..cap) — drives the HUD combo meter
+        public readonly int ComboLevel;        // post-drop combo level (0..cap) — drives the HUD combo bar
+        public readonly int ComboBonusScore;   // >0 only on the drop that FILLED the combo bar (then it reset)
         public readonly bool Toppled;          // true on the drop that ends the run
 
         public DropOutcome(Grade grade, bool floorPlaced, int scoreGained, int residentsAdded,
-            float topWidth, float leanOffset, int missStrikes, int perfectChain, int comboLevel, bool toppled)
+            float topWidth, float leanOffset, int missStrikes, int perfectChain, int comboLevel,
+            int comboBonusScore, bool toppled)
         {
             Grade = grade;
             FloorPlaced = floorPlaced;
@@ -28,6 +30,7 @@ namespace Towerpolis.Core.Gameplay
             MissStrikes = missStrikes;
             PerfectChain = perfectChain;
             ComboLevel = comboLevel;
+            ComboBonusScore = comboBonusScore;
             Toppled = toppled;
         }
     }
@@ -79,6 +82,7 @@ namespace Towerpolis.Core.Gameplay
             Grade grade = Grading.Evaluate(_cfg, offsetX, CurrentTopWidth);
             int scoreGained = 0;
             int residentsAdded = 0;
+            int comboBonusScore = 0;
             // Tower-Bloxx: only a clean-enough catch (Perfect/Good) lands; Sloppy & Miss tip off and fall.
             bool floorPlaced = grade == Grade.Perfect || grade == Grade.Good;
 
@@ -88,16 +92,22 @@ namespace Towerpolis.Core.Gameplay
                     PerfectChain += 1;
                     if (PerfectChain > MaxPerfectChain) MaxPerfectChain = PerfectChain;
                     TotalPerfects += 1;
-                    ComboLevel = ComboLevel < _cfg.ComboLevelCap ? ComboLevel + 1 : _cfg.ComboLevelCap; // raise (capped)
+                    ComboLevel += 1; // each Perfect raises the combo bar
                     if (ComboLevel > MaxComboLevel) MaxComboLevel = ComboLevel;
                     // Phase C: a streak milestone arms an upgrade for the next spawned block (upgrade-only).
                     UpgradeTier earned = EvaluateStreakUpgrade(_cfg, PerfectChain);
                     if (earned > PendingUpgrade) PendingUpgrade = earned;
                     LeanOffset *= 1f - _cfg.PerfectLeanCorrectionFraction;
-                    // Tower-Bloxx: residents = base + the Perfect bonus + the live combo bonus.
+                    // Tower-Bloxx: residents = base + the Perfect bonus + the live combo bonus (level reached).
                     residentsAdded = Scoring.BaseResidents(_cfg, type) + Scoring.PerfectResidentBonus(_cfg, type)
                                    + Scoring.ComboResidentBonus(_cfg, ComboLevel);
                     scoreGained = Scoring.FloorScore(_cfg, type, grade, PerfectChain);
+                    if (ComboLevel >= _cfg.ComboLevelCap) // the bar filled → award the completion bonus, then start over
+                    {
+                        comboBonusScore = _cfg.ComboCompleteScoreBonus;
+                        scoreGained += comboBonusScore;
+                        ComboLevel = 0;
+                    }
                     FloorCount += 1;
                     break;
 
@@ -136,7 +146,7 @@ namespace Towerpolis.Core.Gameplay
             if (toppled) IsOver = true;
 
             return new DropOutcome(grade, floorPlaced, scoreGained, residentsAdded,
-                CurrentTopWidth, LeanOffset, MissStrikes, PerfectChain, ComboLevel, toppled);
+                CurrentTopWidth, LeanOffset, MissStrikes, PerfectChain, ComboLevel, comboBonusScore, toppled);
         }
 
         /// <summary>Resolve the floor type for the NEXT block to spawn: raise the seeded type to any earned

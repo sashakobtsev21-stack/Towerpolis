@@ -131,11 +131,11 @@ namespace Towerpolis.Core.Tests.Gameplay
             };
             foreach (var g in script) Place(run, FloorType.Standard, g);
 
-            Assert.That(run.Score, Is.EqualTo(2100), "floor scores (Miss F9 bounced) — combo doesn't change score");
-            // Residents include the live combo bonus. Combo (Good holds, Miss resets): 1,2,3,4,5,5,5,5,(miss 0),1.
-            // Per placed floor (base2 +perfect1 only on P +combo bonus): 4,5,6,8,11,10,10,10,(–),4 = 68.
-            Assert.That(run.TotalResidents, Is.EqualTo(68));
-            Assert.That(run.RunScore, Is.EqualTo(2780), "2100 + residents 680");
+            Assert.That(run.Score, Is.EqualTo(2600), "floor scores 2100 + combo-complete bonus 500");
+            // Combo (Good holds, Miss resets, fills→bonus→reset at 5): 1,2,3,4,5(→bonus,reset 0),0,0,0,(miss),1.
+            // residents per placed floor (base2 +perfect1 on P +combo bonus): 4,5,6,8,11,2,2,2,(–),4 = 44.
+            Assert.That(run.TotalResidents, Is.EqualTo(44));
+            Assert.That(run.RunScore, Is.EqualTo(3040), "2600 + residents 440");
             Assert.That(run.MissStrikes, Is.EqualTo(1));
             Assert.That(run.FloorCount, Is.EqualTo(9)); // F1-8 + F10 (F9 bounced)
             Assert.That(run.IsOver, Is.False);
@@ -210,16 +210,17 @@ namespace Towerpolis.Core.Tests.Gameplay
         // ---------- Phase A: combo → residents (Tower-Bloxx) ----------
 
         [Test] // E1
-        public void Combo_RisesOnPerfects_CapsAtFive()
+        public void Combo_FillsThenCompletesAndResets()
         {
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             Assert.That(Place(run, FloorType.Standard, Grade.Perfect).ComboLevel, Is.EqualTo(1));
             Place(run, FloorType.Standard, Grade.Perfect); // 2
             Place(run, FloorType.Standard, Grade.Perfect); // 3
             Place(run, FloorType.Standard, Grade.Perfect); // 4
-            Assert.That(Place(run, FloorType.Standard, Grade.Perfect).ComboLevel, Is.EqualTo(5));
-            Place(run, FloorType.Standard, Grade.Perfect); // would be 6
-            Assert.That(Place(run, FloorType.Standard, Grade.Perfect).ComboLevel, Is.EqualTo(5)); // capped
+            var fifth = Place(run, FloorType.Standard, Grade.Perfect); // fills the bar → bonus + reset
+            Assert.That(fifth.ComboLevel, Is.Zero);              // reset to start over
+            Assert.That(fifth.ComboBonusScore, Is.EqualTo(500)); // ComboCompleteScoreBonus
+            Assert.That(Place(run, FloorType.Standard, Grade.Perfect).ComboLevel, Is.EqualTo(1)); // fills again
         }
 
         [Test] // E2
@@ -325,12 +326,12 @@ namespace Towerpolis.Core.Tests.Gameplay
             Assert.That(o.ResidentsAdded, Is.EqualTo(2 + 1));    // base 2 + combo[1] (1)
         }
 
-        [Test] // QA gap: combo saturates at the cap across a long perfect run
-        public void Combo_HeldAtCap_OverLongPerfectRun()
+        [Test] // QA gap: the combo bar fills + resets repeatedly across a long perfect run
+        public void Combo_CyclesOverLongPerfectRun()
         {
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             for (int i = 0; i < 10; i++) Place(run, FloorType.Standard, Grade.Perfect);
-            Assert.That(run.ComboLevel, Is.EqualTo(5));
+            Assert.That(run.ComboLevel, Is.Zero);          // 10 perfects = exactly 2 full bars → reset to 0
             Assert.That(run.MaxComboLevel, Is.EqualTo(5));
         }
 

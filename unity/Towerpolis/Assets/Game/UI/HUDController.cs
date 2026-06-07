@@ -51,10 +51,10 @@ namespace Towerpolis.Game.UI
 
         RectTransform _comboRoot;
         readonly Image[] _comboSegs = new Image[5]; // vertical combo bar, bottom→top
-        TMP_Text _comboLabel;
-        int _shownComboLevel = -1, _shownChain = -1;
-        bool _runLive;
-        Coroutine _comboPulseCo;
+        TMP_Text _comboPop;          // transient "+N" shown when the bar fills
+        int _shownComboLevel = -1;
+        bool _runLive, _comboFlashing;
+        Coroutine _comboFlashCo;
 
         TMP_Text _perfectLabel;
         RectTransform _perfectRect;
@@ -87,6 +87,7 @@ namespace Towerpolis.Game.UI
                 _game.FloorAdded += OnFloorAdded;
                 _game.StrikeAdded += OnStrikeAdded;
                 _game.PerfectHit += OnPerfect;
+                _game.ComboCompleted += OnComboCompleted;
                 _game.RunToppled += OnToppled;
                 _game.RunStarted += OnRunStarted;
             }
@@ -100,6 +101,7 @@ namespace Towerpolis.Game.UI
             _game.FloorAdded -= OnFloorAdded;
             _game.StrikeAdded -= OnStrikeAdded;
             _game.PerfectHit -= OnPerfect;
+            _game.ComboCompleted -= OnComboCompleted;
             _game.RunToppled -= OnToppled;
             _game.RunStarted -= OnRunStarted;
         }
@@ -175,8 +177,7 @@ namespace Towerpolis.Game.UI
             _summitShown = false;
             if (_summitLabel != null) _summitLabel.gameObject.SetActive(false);
             _runLive = true;
-            _shownComboLevel = -1; // force a repaint of the combo embers on the first drop
-            _shownChain = -1;
+            _shownComboLevel = -1; // force a repaint of the combo bar on the first drop
             StopComboAnim();
         }
 
@@ -300,9 +301,10 @@ namespace Towerpolis.Game.UI
                 rt.offsetMax = new Vector2(-2f, i == n - 1 ? -2f : -3f);
             }
 
-            _comboLabel = NewText("ComboLabel", _comboRoot, 28, FontStyles.Bold, TextAlignmentOptions.Left);
-            _comboLabel.color = ComboLit[5];
-            Place(_comboLabel.rectTransform, new Vector2(1f, 0.5f), new Vector2(60f, 0f), new Vector2(180f, 44f));
+            _comboPop = NewText("ComboPop", _comboRoot, 40, FontStyles.Bold, TextAlignmentOptions.Left);
+            _comboPop.color = ComboLit[5];
+            Place(_comboPop.rectTransform, new Vector2(1f, 0.5f), new Vector2(40f, 0f), new Vector2(220f, 56f));
+            _comboPop.gameObject.SetActive(false);
 
             _comboRoot.gameObject.SetActive(false);
         }
@@ -313,56 +315,65 @@ namespace Towerpolis.Game.UI
             if (_comboRoot == null || _game == null) return;
             bool show = _runLive && !_game.IsOver && !InputGate.Suppress;
             if (_comboRoot.gameObject.activeSelf != show) _comboRoot.gameObject.SetActive(show);
-            if (!show) return;
+            if (!show || _comboFlashing) return; // the completion flash owns the segments while it plays
 
-            int level = _game.ComboLevel; // 0..5
-            int chain = _game.PerfectChain;
-            if (level == _shownComboLevel && chain == _shownChain) return;
+            int level = _game.ComboLevel; // 0..4 (it fills to 5, then the completion flash drains + resets it)
+            if (level == _shownComboLevel) return;
             _shownComboLevel = level;
-            _shownChain = chain;
 
             int lit = Mathf.Clamp(level, 1, 5);
             for (int i = 0; i < _comboSegs.Length; i++)
                 if (_comboSegs[i] != null) _comboSegs[i].color = i < level ? ComboLit[lit] : ComboGhost;
-
-            if (_comboLabel != null)
-            {
-                bool showLabel = chain > 0;
-                if (_comboLabel.gameObject.activeSelf != showLabel) _comboLabel.gameObject.SetActive(showLabel);
-                if (showLabel)
-                {
-                    _comboLabel.text = Loc.T(level >= 5 ? LocKeys.HudStreak : LocKeys.HudChain, chain);
-                    _comboLabel.color = ComboLit[lit];
-                }
-            }
-
-            // Top tier "on fire" breathes; below it, a steady fill.
-            if (level >= 5)
-            {
-                if (_comboPulseCo == null) _comboPulseCo = StartCoroutine(ComboPulseCo());
-            }
-            else if (_comboPulseCo != null)
-            {
-                StopCoroutine(_comboPulseCo); _comboPulseCo = null;
-            }
         }
 
-        // Reset the combo bar tween — used on run start / topple so nothing leaks into the next run.
+        // Stop the combo flash — used on run start / topple so nothing leaks into the next run.
         void StopComboAnim()
         {
-            if (_comboPulseCo != null) { StopCoroutine(_comboPulseCo); _comboPulseCo = null; }
+            if (_comboFlashCo != null) { StopCoroutine(_comboFlashCo); _comboFlashCo = null; }
+            _comboFlashing = false;
+            if (_comboPop != null) _comboPop.gameObject.SetActive(false);
         }
 
-        IEnumerator ComboPulseCo() // gentle alpha breathe on the lit segments while "on fire" (level 5)
+        // The combo bar filled → flash it full gold, pop "+N", drain it, then resume the steady fill at 0.
+        void OnComboCompleted(int bonus)
         {
-            while (_comboRoot != null)
+            if (_comboFlashCo != null) StopCoroutine(_comboFlashCo);
+            _comboFlashCo = StartCoroutine(ComboCompleteFlash(bonus));
+        }
+
+        IEnumerator ComboCompleteFlash(int bonus)
+        {
+            _comboFlashing = true;
+            if (_comboPop != null)
             {
-                float a = 0.65f + 0.35f * Mathf.Sin(Time.time * (2f * Mathf.PI / 0.8f));
-                Color c = ComboLit[5]; c.a = a;
+                _comboPop.text = "+" + bonus;
+                _comboPop.gameObject.SetActive(true);
+            }
+            float t = 0f; const float dur = 0.6f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float p = Mathf.Clamp01(t / dur);
+                int litCount = Mathf.CeilToInt((1f - p) * _comboSegs.Length); // drain top→bottom
                 for (int i = 0; i < _comboSegs.Length; i++)
-                    if (_comboSegs[i] != null) _comboSegs[i].color = c;
+                    if (_comboSegs[i] != null) _comboSegs[i].color = i < litCount ? ComboLit[5] : ComboGhost;
+                if (_comboPop != null)
+                {
+                    _comboPop.rectTransform.anchoredPosition = new Vector2(40f, Mathf.Lerp(0f, 90f, p));
+                    Color c = ComboLit[5]; c.a = 1f - p; _comboPop.color = c;
+                    _comboPop.rectTransform.localScale = Vector3.one * Mathf.Lerp(1.3f, 1f, Mathf.Min(p * 3f, 1f));
+                }
                 yield return null;
             }
+            if (_comboPop != null)
+            {
+                _comboPop.gameObject.SetActive(false);
+                _comboPop.rectTransform.anchoredPosition = new Vector2(40f, 0f);
+                _comboPop.rectTransform.localScale = Vector3.one;
+            }
+            _comboFlashing = false;
+            _comboFlashCo = null;
+            _shownComboLevel = -1; // force a repaint to the post-reset level (0)
         }
 
         // ---------- animations ----------

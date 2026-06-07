@@ -58,6 +58,7 @@ namespace Towerpolis.Game.Gameplay
         public event Action<int> StrikeAdded;     // strike number reached (1 or 2)
         public event Action<Vector3> PerfectHit;  // world position for the "PERFECT!" pop
         public event Action<Vector3, bool, int> FloorPlacedAt; // world base pos + isPerfect + residentsAdded — for VFX (dust/confetti/residents)
+        public event Action<int> ComboCompleted; // the combo bar filled → bonus score awarded (HUD flash + "+N")
         public event Action RunToppled;
         public event Action RunStarted;
 
@@ -254,6 +255,7 @@ namespace Towerpolis.Game.Gameplay
             if (outcome.Grade == Grade.Perfect)
                 PerfectHit?.Invoke(placedPos + Vector3.up * tuning.floorHeight);
             if (outcome.Grade == Grade.Miss) StrikeAdded?.Invoke(Strikes);
+            if (outcome.ComboBonusScore > 0) ComboCompleted?.Invoke(outcome.ComboBonusScore);
 
             if (outcome.Toppled)
             {
