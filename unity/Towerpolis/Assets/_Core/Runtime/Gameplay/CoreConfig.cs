@@ -53,8 +53,8 @@ namespace Towerpolis.Core.Gameplay
         //     Index = ComboLevel (0..ComboLevelCap). A Perfect raises the level (+1, capped), a Good lowers
         //     it (−1), a strike (Sloppy/Miss) zeroes it. EVERY placed floor gets ComboResidentBonus[level]
         //     extra residents while the combo is alive. Deterministic (no clock) → daily-seed safe. ---
-        public int[] ComboResidentBonus = { 0, 1, 2, 4 }; // residents/floor by combo level (tune by feel)
-        public int ComboLevelCap = 3;                      // max combo level (= last bonus-table index)
+        public int[] ComboResidentBonus = { 0, 1, 2, 3, 5, 8 }; // residents/floor by combo level (tune by feel)
+        public int ComboLevelCap = 5;                            // max combo level (= last bonus-table index)
 
         // --- Phase C: earned specialty blocks (Tower-Bloxx). A streak of consecutive Perfects grants a
         //     pending upgrade that raises the NEXT spawned block (Standard→Balcony→Premium, more residents).

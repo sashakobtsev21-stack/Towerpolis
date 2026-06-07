@@ -106,8 +106,8 @@ namespace Towerpolis.Core.Gameplay
                     // the overhang accumulates as lean that drives the building's sway.
                     LeanOffset += offsetX * _cfg.GoodLeanFactor;
                     PerfectChain = 0;
-                    ComboLevel = ComboLevel > 0 ? ComboLevel - 1 : 0; // a Good is a partial success → decay one tier
-                    // The combo is still alive (level > 0), so this floor still earns the combo bonus.
+                    // A Good HOLDS the combo level (only a strike breaks it) — so the on-screen series bar fills
+                    // on Perfects and resets only on a miss. This floor still earns the live combo bonus.
                     residentsAdded = Scoring.BaseResidents(_cfg, type) + Scoring.ComboResidentBonus(_cfg, ComboLevel);
                     scoreGained = Scoring.FloorScore(_cfg, type, grade, PerfectChain);
                     FloorCount += 1;
