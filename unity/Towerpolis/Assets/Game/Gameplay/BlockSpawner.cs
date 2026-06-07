@@ -56,10 +56,7 @@ namespace Towerpolis.Game.Gameplay
             ("TP_Ground",   new Color(0.90f, 0.90f, 0.88f), 0.30f, 0f),
         };
 
-        // Body-colour fallback per type (used when a model slot's name doesn't match the palette).
-        static readonly Color ColStandard = new Color(0.49f, 0.66f, 0.48f);
-        static readonly Color ColBalcony = new Color(0.90f, 0.73f, 0.38f);
-        static readonly Color ColPremium = new Color(0.44f, 0.57f, 0.70f);
+        // Brick fallback colour for the base when no textured brick material is available.
         static readonly Color ColBrick = new Color(0.71f, 0.46f, 0.39f);
 
         // Three muted body-colour variants per floor TYPE, so the city isn't monotone. Purely cosmetic —
@@ -91,7 +88,7 @@ namespace Towerpolis.Game.Gameplay
         readonly Dictionary<string, GameObject> _models = new Dictionary<string, GameObject>();
         readonly Dictionary<string, Material> _palette = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase);
         Shader _lit;
-        Material _matStandard, _matBalcony, _matPremium, _matBrick, _hiddenMat;
+        Material _matBrick, _hiddenMat;
         Material[] _standardBodies, _balconyBodies, _premiumBodies;
         Texture2D _wallTex, _brickTex;
         Dictionary<string, Material> _baseOverrides;
@@ -119,9 +116,6 @@ namespace Towerpolis.Game.Gameplay
             }
             else _matBrick = MakeMaterial(ColBrick);
 
-            _matStandard = MakeMaterial(ColStandard);
-            _matBalcony = MakeMaterial(ColBalcony);
-            _matPremium = MakeMaterial(ColPremium);
             _hiddenMat = MakeHidden(); // fully transparent → "removes" a slot's geometry at runtime
 
             _standardBodies = MakeBodies(StandardVariants);
@@ -258,16 +252,6 @@ namespace Towerpolis.Game.Gameplay
             bounds = rends[0].bounds;
             for (int i = 1; i < rends.Length; i++) bounds.Encapsulate(rends[i].bounds);
             return true;
-        }
-
-        /// <summary>Enable/disable a block's collider (off during the scripted fall; on once it is a
-        /// welded obstacle or a tumbling miss).</summary>
-        public void SetColliderEnabled(Transform blockRoot, bool on)
-        {
-            var mesh = blockRoot.Find("Mesh");
-            if (mesh == null) return;
-            var col = mesh.GetComponent<Collider>();
-            if (col != null) col.enabled = on;
         }
 
         Material MakeMaterial(Color color, float smoothness = 0.25f, float metallic = 0f, float emission = 0f)
@@ -446,11 +430,5 @@ namespace Towerpolis.Game.Gameplay
             return us >= 0 && int.TryParse(label.Substring(us + 1), out int n) ? n : 0;
         }
 
-        Material MaterialFor(FloorType type) => type switch
-        {
-            FloorType.Balcony => _matBalcony,
-            FloorType.Premium => _matPremium,
-            _ => _matStandard,
-        };
     }
 }

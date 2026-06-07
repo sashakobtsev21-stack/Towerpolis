@@ -30,7 +30,6 @@ namespace Towerpolis.Game.Gameplay
 
         LineRenderer _rope;
         Transform _hook;
-        Material _hookMat;
 
         public float Phase => _phase;
         public float CurrentX => _block != null ? _block.position.x : (_tower != null ? _tower.TopWorldX : 0f);
@@ -137,7 +136,7 @@ namespace Towerpolis.Game.Gameplay
                 _rope.material = UnlitMaterial(cableColor);
                 _rope.startColor = _rope.endColor = cableColor;
             }
-            if (_hook == null) _hook = BuildHook(_hookMat = LitMetal(hookColor));
+            if (_hook == null) _hook = BuildHook(LitMetal(hookColor));
         }
 
         // A recognizable crane hook (local +Y points up the cable): a pulley block on top, a straight
