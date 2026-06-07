@@ -20,6 +20,7 @@ A premium-feel casual **3D physics tower-stacker** (Unity 6.3, Android-first →
 
 ## Workflow discipline
 - **Test-first on Core:** write/adjust NUnit tests with every Core change; run `dotnet test`; commit only when green.
+- **Keep `README.md` current:** after any change that affects how the project is built/run, its structure, the tech stack/decisions, the doc set, or the phase status, update `README.md` in the same change — its Status/phase-progress, "Build & run", repo layout, and document list must match reality. Treat a stale README as part of the diff, not a follow-up.
 - **Gate-driven phases** (see BUILD_PLAN). The Phase-2 MVP gate ("is the core FUN?") is HARD — do not build meta until it passes.
 - **Perf budget (non-negotiable):** URP mobile, < 200 draw calls, SRP Batcher on, pool everything, shared materials, no GC spikes. Weak Android Vitals = auto-exclusion from Play featuring.
 - **Monetization stays OFF at launch** — wire hooks, flip on only after D1 ≥ 30% / D7 ≥ 12% / rating ≥ 4.0.
