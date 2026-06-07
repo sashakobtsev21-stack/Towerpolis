@@ -155,6 +155,7 @@ namespace Towerpolis.Game.UI
             BuildSettingsPanel(canvasGo.transform);
             BuildMenuPanel(canvasGo.transform);
             BuildCompletePanel(canvasGo.transform);
+            BuildPrestigePanel(canvasGo.transform);
         }
 
         // Hamburger (☰) in the top-right corner — the single entry point to every meta section.
@@ -323,6 +324,85 @@ namespace Towerpolis.Game.UI
                 yield return null;
             }
             if (_completeContent != null) _completeContent.localScale = Vector3.one;
+        }
+
+        // ---------- prestige screen (endless-spec §2) ----------
+
+        void BuildPrestigePanel(Transform parent)
+        {
+            _prestigePanel = new GameObject("PrestigePanel", typeof(RectTransform), typeof(Image));
+            _prestigePanel.transform.SetParent(parent, false);
+            var prt = (RectTransform)_prestigePanel.transform;
+            Stretch(prt);
+            _prestigePanel.GetComponent<Image>().color = Dim;
+            PanelCard(prt);
+
+            var contentGo = new GameObject("Content", typeof(RectTransform));
+            contentGo.transform.SetParent(prt, false);
+            _prestigeContent = (RectTransform)contentGo.transform;
+            _prestigeContent.anchorMin = _prestigeContent.anchorMax = _prestigeContent.pivot = new Vector2(0.5f, 0.5f);
+            _prestigeContent.anchoredPosition = Vector2.zero;
+            _prestigeContent.sizeDelta = new Vector2(1000f, 1500f);
+
+            var title = NewText("Title", _prestigeContent, 68, FontStyles.Bold, TextAlignmentOptions.Center);
+            title.color = Gold;
+            title.gameObject.AddComponent<LocalizedLabel>().Bind(title, LocKeys.PrestigeTitle);
+            Place(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 360f), new Vector2(960f, 110f));
+
+            _prestigePop = NewText("Pop", _prestigeContent, 40, FontStyles.Normal, TextAlignmentOptions.Center);
+            _prestigePop.color = OffWhite;
+            Place(_prestigePop.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 230f), new Vector2(960f, 56f));
+
+            _prestigeStars = NewText("Stars", _prestigeContent, 48, FontStyles.Bold, TextAlignmentOptions.Center);
+            _prestigeStars.color = Gold;
+            Place(_prestigeStars.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 130f), new Vector2(960f, 64f));
+
+            _prestigeBonus = NewText("Bonus", _prestigeContent, 42, FontStyles.Bold, TextAlignmentOptions.Center);
+            _prestigeBonus.color = Cyan;
+            Place(_prestigeBonus.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 50f), new Vector2(960f, 56f));
+
+            _prestigeCoins = NewText("Kept", _prestigeContent, 34, FontStyles.Normal, TextAlignmentOptions.Center);
+            _prestigeCoins.color = OffWhite;
+            Place(_prestigeCoins.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -30f), new Vector2(960f, 48f));
+
+            Button go = MakeButton(prt, "PrestigeGo", new Vector2(0.5f, 0f), new Vector2(0f, 270f), new Vector2(460f, 110f), Gold, out _);
+            go.onClick.AddListener(DoPrestigeTapped);
+            var glbl = NewText("Label", go.transform, 42, FontStyles.Bold, TextAlignmentOptions.Center);
+            glbl.color = Navy;
+            glbl.gameObject.AddComponent<LocalizedLabel>().Bind(glbl, LocKeys.PrestigeButton);
+            Stretch(glbl.rectTransform);
+
+            Button close = MakeButton(prt, "PrestigeClose", new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(460f, 100f), Navy, out _);
+            close.onClick.AddListener(() => HidePanel(_prestigePanel));
+            var clbl = NewText("Label", close.transform, 38, FontStyles.Bold, TextAlignmentOptions.Center);
+            clbl.color = OffWhite;
+            clbl.gameObject.AddComponent<LocalizedLabel>().Bind(clbl, LocKeys.MetaClose);
+            Stretch(clbl.rectTransform);
+
+            _prestigePanel.SetActive(false);
+        }
+
+        void OnPrestigeReady() => ShowPrestige();
+
+        // Populate from the live preview (population this cycle, stars to earn, new multiplier, coins kept) + show.
+        void ShowPrestige()
+        {
+            if (_prestigePanel == null || _meta == null) return;
+            if (_prestigePop != null) _prestigePop.text = Loc.T(LocKeys.PrestigePopLine, _meta.PrestigePopulation);
+            if (_prestigeStars != null) _prestigeStars.text = Loc.T(LocKeys.PrestigeStarsLine, _meta.PrestigePreviewStars);
+            if (_prestigeBonus != null)
+                _prestigeBonus.text = Loc.T(LocKeys.PrestigeBonusLine,
+                    _meta.PrestigePreviewMult.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+            if (_prestigeCoins != null) _prestigeCoins.text = Loc.T(LocKeys.PrestigeKeptLine, _meta.PrestigeCoinsKept);
+            ShowPanel(_prestigePanel);
+        }
+
+        void DoPrestigeTapped()
+        {
+            if (_meta != null) _meta.DoPrestige();
+            HidePanel(_prestigePanel);
+            if (_controller != null) _controller.NewRun(); // restart in the fresh (wiped) city
+            if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
         }
     }
 }

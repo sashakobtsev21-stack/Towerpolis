@@ -58,6 +58,7 @@ Towerpolis/
 
 ## Documents (source of truth)
 
+- [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) — **living status: what's done, what's left, history & plan** (start here)
 - [`docs/game/GDD.md`](docs/game/GDD.md) — Game Design Document · [`docs/game/pillars.md`](docs/game/pillars.md) — the 3 design pillars
 - [`docs/game/mvp-core-loop-spec.md`](docs/game/mvp-core-loop-spec.md) · [`docs/game/meta-spec.md`](docs/game/meta-spec.md) · [`docs/game/progression-spec.md`](docs/game/progression-spec.md) — phase specs
 - [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) — phased build plan + the 15-agent studio per phase

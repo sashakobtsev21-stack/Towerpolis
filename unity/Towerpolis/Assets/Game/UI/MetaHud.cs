@@ -76,6 +76,12 @@ namespace Towerpolis.Game.UI
         RectTransform _completeContent;
         TMP_Text _completeName, _completeCoins, _completeGems, _completeNext;
 
+        // Prestige screen (endless-spec §2)
+        GameObject _prestigePanel;
+        RectTransform _prestigeContent;
+        TMP_Text _prestigePop, _prestigeStars, _prestigeBonus, _prestigeCoins;
+        GameObject _cityPrestigeBtn; // re-access button in the city view, shown when CanPrestige
+
         void Start()
         {
             UiFont.EnsureCyrillic(); // render Cyrillic with the default TMP font
@@ -91,6 +97,7 @@ namespace Towerpolis.Game.UI
                 _meta.RunBanked += OnBanked;
                 _meta.ProgressionChanged += OnProgressionChanged;
                 _meta.SystemsResolved += OnSystemsResolved;
+                _meta.PrestigeReady += OnPrestigeReady;
             }
             Loc.LanguageChanged += OnLanguageChanged;   // re-resolve dynamic labels on a language switch
         }
@@ -118,6 +125,7 @@ namespace Towerpolis.Game.UI
                 _meta.RunBanked -= OnBanked;
                 _meta.ProgressionChanged -= OnProgressionChanged;
                 _meta.SystemsResolved -= OnSystemsResolved;
+                _meta.PrestigeReady -= OnPrestigeReady;
             }
             Loc.LanguageChanged -= OnLanguageChanged;
         }
@@ -268,6 +276,7 @@ namespace Towerpolis.Game.UI
 
             if (_cityTitle != null) _cityTitle.text = Loc.T(view.DisplayName);
             if (_cityPop != null) _cityPop.text = Loc.T(LocKeys.MetaPopulation, population, info.FillGoal);
+            if (_cityPrestigeBtn != null) _cityPrestigeBtn.SetActive(_meta.CanPrestige()); // show only when the whole city is done
 
             if (_gridLayout != null) _gridLayout.constraintCount = Mathf.Max(1, view.GridWidth);
 

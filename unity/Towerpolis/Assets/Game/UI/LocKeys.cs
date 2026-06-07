@@ -59,6 +59,14 @@ namespace Towerpolis.Game.UI
         public const string CompleteNextNone = "complete.next.none"; // "ГОРОД ПОСТРОЕН ПОЛНОСТЬЮ!"
         public const string CompleteContinue = "complete.continue";  // "ПРОДОЛЖИТЬ"
 
+        // ----- Prestige / endless loop (endless-spec §2) -----
+        public const string PrestigeTitle     = "prestige.title";  // "ГОРОД ПОСТРОЕН!"
+        public const string PrestigePopLine   = "prestige.pop";    // "Население  {0}"
+        public const string PrestigeStarsLine = "prestige.stars";  // "+{0} звёзд престижа"
+        public const string PrestigeBonusLine = "prestige.bonus";  // "Бонус жильцов  ×{0}"
+        public const string PrestigeKeptLine  = "prestige.kept";   // "Монеты сохранены  {0}"
+        public const string PrestigeButton    = "prestige.btn";    // "ПРЕСТИЖ"
+
         // ----- Upgrade tracks -----
         public const string UpgMagnetName     = "upg.magnet.name";     // "МАГНИТ"
         public const string UpgMagnetDesc     = "upg.magnet.desc";

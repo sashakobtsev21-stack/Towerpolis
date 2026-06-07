@@ -145,6 +145,25 @@ namespace Towerpolis.Game.Meta
         /// <summary>Coins the in-progress run would bank (for a live HUD preview).</summary>
         public int PreviewCoins(in RunResult r) => CoinEarnCalculator.RunCoins(in r, _config);
 
+        // --- Prestige / endless loop (endless-spec §2) ---
+        /// <summary>Fires at run-end when the whole city is complete (all districts) → the prestige prompt.</summary>
+        public event Action PrestigeReady;
+        public bool CanPrestige() => _city != null && _city.IsPrestigeReady(DistrictCatalog.All);
+        public int PrestigePopulation => _city != null ? _city.TotalPopulation : 0;
+        public int PrestigePreviewStars => _city == null ? 0 : Math.Max(1, _city.TotalPopulation / Math.Max(1, _config.PrestigeStarsPerPop));
+        public float PrestigePreviewMult => _city == null ? 1f : 1f + (_city.TotalPrestigeStars + PrestigePreviewStars) * _config.PrestigeStarBonusPerStar;
+        public int PrestigeCoinsKept => _city == null ? 0 : (int)(_city.Coins * _config.PrestigeCoinRetainFraction / 10f) * 10;
+
+        /// <summary>Prestige the city (bank Stars, wipe grids/rewards/upgrades, restart faster) + persist + notify.
+        /// Returns the Stars earned. The caller restarts the run so the wiped city begins fresh.</summary>
+        public int DoPrestige()
+        {
+            if (_city == null) return 0;
+            int stars = _city.Prestige();
+            Persist();
+            return stars;
+        }
+
         /// <summary>Is the district available to play? Linear gate (meta-spec §2.3): Downtown is always open;
         /// Neon unlocks once Downtown's fill goal is reached (rewarded), Winter once Neon is.</summary>
         public bool IsDistrictUnlocked(string id) => id switch
@@ -237,6 +256,8 @@ namespace Towerpolis.Game.Meta
                     _city.ActiveDistrictId = next;
                     SaveManager.Save(SaveData.From(_city));
                 }
+                // Completing the LAST district → the whole city is done → offer prestige (endless-spec §2).
+                if (_city.IsPrestigeReady(DistrictCatalog.All)) PrestigeReady?.Invoke();
             }
 
             Debug.Log($"[Towerpolis] Run banked: +{outcome.CoinsEarned} coins (total {_city.Coins}), " +

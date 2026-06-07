@@ -63,6 +63,14 @@ namespace Towerpolis.Game.UI
             { LocKeys.CompleteNextNone, "ГОРОД ПОСТРОЕН ПОЛНОСТЬЮ!" },
             { LocKeys.CompleteContinue, "ПРОДОЛЖИТЬ" },
 
+            // ----- Prestige -----
+            { LocKeys.PrestigeTitle,     "ГОРОД ПОСТРОЕН!" },
+            { LocKeys.PrestigePopLine,   "Население  {0}" },
+            { LocKeys.PrestigeStarsLine, "+{0} звёзд престижа" },
+            { LocKeys.PrestigeBonusLine, "Бонус жильцов  ×{0}" },
+            { LocKeys.PrestigeKeptLine,  "Монеты сохранены  {0}" },
+            { LocKeys.PrestigeButton,    "ПРЕСТИЖ" },
+
             // ----- Upgrades -----
             { LocKeys.UpgMagnetName,    "МАГНИТ" },
             { LocKeys.UpgMagnetDesc,    "Подтягивает блок к центру (Endless)" },

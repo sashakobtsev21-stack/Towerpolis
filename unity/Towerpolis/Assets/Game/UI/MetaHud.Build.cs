@@ -45,6 +45,16 @@ namespace Towerpolis.Game.UI
             _gridLayout.constraintCount = 5;
             _gridLayout.childAlignment = TextAnchor.MiddleCenter;
 
+            // Re-access prestige from the city view once the whole city is complete (hidden otherwise — see PopulateCity).
+            Button prestige = MakeButton(prt, "CityPrestige", new Vector2(0.5f, 0f), new Vector2(0f, 260f), new Vector2(420f, 96f), Gold, out _);
+            prestige.onClick.AddListener(ShowPrestige);
+            _cityPrestigeBtn = prestige.gameObject;
+            var plbl = NewText("Label", prestige.transform, 36, FontStyles.Bold, TextAlignmentOptions.Center);
+            plbl.color = Navy;
+            plbl.gameObject.AddComponent<LocalizedLabel>().Bind(plbl, LocKeys.PrestigeButton);
+            Stretch(plbl.rectTransform);
+            _cityPrestigeBtn.SetActive(false);
+
             CloseButton(prt);
             _cityPanel.SetActive(false);
         }
