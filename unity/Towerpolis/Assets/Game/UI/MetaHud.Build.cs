@@ -30,8 +30,6 @@ namespace Towerpolis.Game.UI
             _cityPop.color = Gold;
             Place(_cityPop.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(900f, 60f));
 
-            DistrictButtons(prt);
-
             var gridGo = new GameObject("Grid", typeof(RectTransform));
             gridGo.transform.SetParent(prt, false);
             _grid = (RectTransform)gridGo.transform;
@@ -273,7 +271,6 @@ namespace Towerpolis.Game.UI
             _resetArmed = false;
             if (_meta != null) _meta.ResetProgress();
             if (_controller != null) _controller.NewRun();
-            RefreshTopBar();
             CloseSettings();
         }
 

@@ -146,12 +146,8 @@ namespace Towerpolis.Game.UI
             Stretch(safe);
             safeGo.AddComponent<SafeAreaRoot>();
 
-            // Only POPULATION is shown in the top bar now (coins/streak are tracked in Core for later,
-            // not displayed — owner: "нужно только население и этажей"; height is the HUD's big number).
-            _popLabel = NewText("CityPop", safe, 40, FontStyles.Bold, TextAlignmentOptions.TopLeft);
-            _popLabel.color = Gold;
-            Place(_popLabel.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -36f), new Vector2(420f, 56f));
-
+            // Residents + height live on the gameplay HUD (HUDController, left column); the meta HUD only
+            // owns the ☰ menu + its panels.
             MenuButton(safe); // ☰ top-right corner → opens the menu with every section
             BuildCityPanel(canvasGo.transform);
             BuildUpgradePanel(canvasGo.transform);

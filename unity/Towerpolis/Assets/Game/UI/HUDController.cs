@@ -24,34 +24,37 @@ namespace Towerpolis.Game.UI
         static readonly Color Mint = new Color(0.40f, 0.73f, 0.40f);
         static readonly Color PipEmpty = new Color(0.12f, 0.23f, 0.37f, 0.6f);
 
-        // Combo meter (Phase B): three "ember" pips that light as the combo climbs (0..3).
-        static readonly Color ComboGhost = new Color(0.18f, 0.28f, 0.42f, 0.30f); // unlit pip
+        // Combo bar (СЕРИЯ): a 5-segment vertical fill that climbs in colour as the streak rises (0..5).
+        static readonly Color ComboGhost = new Color(0.18f, 0.28f, 0.42f, 0.30f); // unlit segment
         static readonly Color[] ComboLit =
         {
-            new Color(0.18f, 0.28f, 0.42f, 0.30f), // 0 (no lit pip)
+            new Color(0.18f, 0.28f, 0.42f, 0.30f), // 0
             new Color(1.00f, 0.60f, 0.18f, 1f),    // 1 — amber
-            new Color(1.00f, 0.38f, 0.12f, 1f),    // 2 — orange-red
-            new Color(1.00f, 0.84f, 0.18f, 1f),    // 3 — gold ("on fire")
+            new Color(1.00f, 0.48f, 0.14f, 1f),    // 2 — orange
+            new Color(1.00f, 0.34f, 0.12f, 1f),    // 3 — orange-red
+            new Color(1.00f, 0.58f, 0.12f, 1f),    // 4 — bright amber
+            new Color(1.00f, 0.84f, 0.18f, 1f),    // 5 — gold ("on fire")
         };
 
         TowerGameController _game;
         Camera _cam;
 
         RectTransform _safeRoot;
-        TMP_Text _scoreLabel;
+        TMP_Text _scoreLabel;       // building HEIGHT (floors) — left column
+        TMP_Text _residentsLabel;   // this-run residents — left column, above height
         TMP_Text _coinsLabel;   // live coin tally (top-right): wallet + this-run earned-so-far
         Image _coinIcon;        // gold coin disc next to the tally (generated sprite — no font glyph)
         int _shownCoins = -1;
-        static Sprite _coinSprite;
+        static Sprite _coinSprite, _personSprite, _barsSprite;
         readonly Image[] _pips = new Image[2];
         Image _vignette;
 
         RectTransform _comboRoot;
-        readonly Image[] _comboPips = new Image[3];
+        readonly Image[] _comboSegs = new Image[5]; // vertical combo bar, bottom→top
         TMP_Text _comboLabel;
         int _shownComboLevel = -1, _shownChain = -1;
         bool _runLive;
-        Coroutine _comboPulseCo, _comboPunchCo;
+        Coroutine _comboPulseCo;
 
         TMP_Text _perfectLabel;
         RectTransform _perfectRect;
@@ -121,7 +124,8 @@ namespace Towerpolis.Game.UI
             // Headline = building HEIGHT (floors placed; the base floor is 0).
             if (_scoreLabel != null) _scoreLabel.text = floors.ToString();
             Punch(_scoreLabel != null ? _scoreLabel.rectTransform : null, 1.2f);
-            RefreshCoins(); // each placed floor banks +1 coin (+2 on a Perfect) → show it immediately
+            RefreshResidents(); // residents tick up with the combo bonus on each placed floor
+            RefreshCoins();     // each placed floor banks +1 coin (+2 on a Perfect) → show it immediately
 
             if (floors >= SummitHeight && !_summitShown)
             {
@@ -163,6 +167,7 @@ namespace Towerpolis.Game.UI
         void OnRunStarted()
         {
             if (_scoreLabel != null) _scoreLabel.text = "0";
+            if (_residentsLabel != null) _residentsLabel.text = "0";
             RefreshCoins();
             for (int i = 0; i < _pips.Length; i++)
                 if (_pips[i] != null) _pips[i].color = PipEmpty;
@@ -190,6 +195,14 @@ namespace Towerpolis.Game.UI
             _coinsLabel.text = total.ToString();
         }
 
+        // This-run residents (base + perfect + live combo bonus) — updates as floors land.
+        void RefreshResidents()
+        {
+            if (_residentsLabel == null) return;
+            int res = _game != null ? _game.BuildRunResult().TotalResidents : 0;
+            _residentsLabel.text = res.ToString();
+        }
+
         // A small filled gold disc for the coin icon — generated once so it needs no font glyph or art asset.
         static Sprite CoinSprite()
         {
@@ -210,35 +223,91 @@ namespace Towerpolis.Game.UI
             return _coinSprite;
         }
 
-        // ---------- combo meter (Phase B) ----------
-
-        // Three "ember" pips in the cleared bottom-centre band + a chain badge below them.
-        void BuildComboMeter(Transform parent)
+        // A simple person silhouette (head + shoulders) for the residents readout — generated, font-independent.
+        static Sprite PersonSprite()
         {
-            var go = new GameObject("ComboMeter", typeof(RectTransform));
+            if (_personSprite != null) return _personSprite;
+            const int s = 64;
+            var tex = new Texture2D(s, s, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[s * s];
+            const float headCx = 32f, headCy = 44f, headR = 12f; // head circle (y up)
+            for (int y = 0; y < s; y++)
+                for (int x = 0; x < s; x++)
+                {
+                    float hdx = x - headCx, hdy = y - headCy;
+                    bool on = hdx * hdx + hdy * hdy <= headR * headR;     // head
+                    float bx = (x - 32f) / 20f, by = (y - 8f) / 24f;       // shoulders: upper half-ellipse
+                    if (!on && y >= 8 && y <= 30 && bx * bx + by * by <= 1f) on = true;
+                    px[y * s + x] = new Color32(255, 255, 255, (byte)(on ? 255 : 0));
+                }
+            tex.SetPixels32(px); tex.Apply();
+            _personSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f);
+            return _personSprite;
+        }
+
+        // Three ascending bars for the height/floors readout — reads as "tower height", generated.
+        static Sprite BarsSprite()
+        {
+            if (_barsSprite != null) return _barsSprite;
+            const int s = 64;
+            var tex = new Texture2D(s, s, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[s * s];
+            int[] hts = { 24, 42, 58 };
+            const int bw = 16, gap = 2, x0 = 5, baseY = 4;
+            for (int y = 0; y < s; y++)
+                for (int x = 0; x < s; x++)
+                {
+                    bool on = false;
+                    for (int b = 0; b < 3; b++)
+                    {
+                        int bx = x0 + b * (bw + gap);
+                        if (x >= bx && x < bx + bw && y >= baseY && y < baseY + hts[b]) { on = true; break; }
+                    }
+                    px[y * s + x] = new Color32(255, 255, 255, (byte)(on ? 255 : 0));
+                }
+            tex.SetPixels32(px); tex.Apply();
+            _barsSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f);
+            return _barsSprite;
+        }
+
+        // ---------- combo bar (СЕРИЯ) ----------
+
+        // A thin vertical fill bar on the left edge: 5 segments that fill bottom→top as the streak climbs
+        // (a Perfect raises it, a Good holds it, a miss empties it — see TowerRun). Colour climbs by level;
+        // the top "on fire" tier breathes. A small "×N" chain badge sits to the right of the bar.
+        void BuildComboBar(Transform parent)
+        {
+            var go = new GameObject("ComboBar", typeof(RectTransform));
             go.transform.SetParent(parent, false);
             _comboRoot = (RectTransform)go.transform;
-            _comboRoot.anchorMin = _comboRoot.anchorMax = _comboRoot.pivot = new Vector2(0.5f, 0f);
-            _comboRoot.anchoredPosition = new Vector2(0f, 220f);
-            _comboRoot.sizeDelta = new Vector2(360f, 96f);
+            _comboRoot.anchorMin = _comboRoot.anchorMax = _comboRoot.pivot = new Vector2(0f, 0.5f); // left edge, centred
+            _comboRoot.anchoredPosition = new Vector2(34f, 0f);
+            _comboRoot.sizeDelta = new Vector2(22f, 460f);
 
-            float[] xs = { -100f, 0f, 100f };
-            for (int i = 0; i < 3; i++)
+            Image track = NewImage("Track", _comboRoot, new Color(0.10f, 0.16f, 0.24f, 0.55f));
+            Stretch(track.rectTransform);
+            track.raycastTarget = false;
+
+            int n = _comboSegs.Length; // 5
+            for (int i = 0; i < n; i++)
             {
-                _comboPips[i] = NewImage("ComboPip" + i, _comboRoot, ComboGhost);
-                _comboPips[i].sprite = CoinSprite(); // reuse the generated disc
-                _comboPips[i].raycastTarget = false;
-                Place(_comboPips[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(xs[i], 12f), new Vector2(72f, 72f));
+                _comboSegs[i] = NewImage("Seg" + i, _comboRoot, ComboGhost);
+                _comboSegs[i].raycastTarget = false;
+                var rt = _comboSegs[i].rectTransform;
+                rt.anchorMin = new Vector2(0f, (float)i / n);
+                rt.anchorMax = new Vector2(1f, (float)(i + 1) / n);
+                rt.offsetMin = new Vector2(2f, i == 0 ? 2f : 3f);
+                rt.offsetMax = new Vector2(-2f, i == n - 1 ? -2f : -3f);
             }
 
-            _comboLabel = NewText("ComboLabel", _comboRoot, 30, FontStyles.Bold, TextAlignmentOptions.Center);
-            _comboLabel.color = ComboLit[3];
-            Place(_comboLabel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -38f), new Vector2(320f, 40f));
+            _comboLabel = NewText("ComboLabel", _comboRoot, 28, FontStyles.Bold, TextAlignmentOptions.Left);
+            _comboLabel.color = ComboLit[5];
+            Place(_comboLabel.rectTransform, new Vector2(1f, 0.5f), new Vector2(60f, 0f), new Vector2(180f, 44f));
 
             _comboRoot.gameObject.SetActive(false);
         }
 
-        // Show only during a live run with no modal open; repaint the embers when the level/chain changes.
+        // Show only during a live run with no modal open; repaint the bar when the level/chain changes.
         void UpdateComboMeter()
         {
             if (_comboRoot == null || _game == null) return;
@@ -246,80 +315,52 @@ namespace Towerpolis.Game.UI
             if (_comboRoot.gameObject.activeSelf != show) _comboRoot.gameObject.SetActive(show);
             if (!show) return;
 
-            int level = _game.ComboLevel; // 0..3
+            int level = _game.ComboLevel; // 0..5
             int chain = _game.PerfectChain;
             if (level == _shownComboLevel && chain == _shownChain) return;
-            int prev = _shownComboLevel;
             _shownComboLevel = level;
             _shownChain = chain;
 
-            int lit = Mathf.Clamp(level, 1, 3);
-            for (int i = 0; i < 3; i++)
-                if (_comboPips[i] != null) _comboPips[i].color = i < level ? ComboLit[lit] : ComboGhost;
+            int lit = Mathf.Clamp(level, 1, 5);
+            for (int i = 0; i < _comboSegs.Length; i++)
+                if (_comboSegs[i] != null) _comboSegs[i].color = i < level ? ComboLit[lit] : ComboGhost;
 
             if (_comboLabel != null)
             {
-                bool showLabel = level > 0;
+                bool showLabel = chain > 0;
                 if (_comboLabel.gameObject.activeSelf != showLabel) _comboLabel.gameObject.SetActive(showLabel);
                 if (showLabel)
                 {
-                    _comboLabel.text = Loc.T(level >= 3 ? LocKeys.HudStreak : LocKeys.HudChain, chain);
+                    _comboLabel.text = Loc.T(level >= 5 ? LocKeys.HudStreak : LocKeys.HudChain, chain);
                     _comboLabel.color = ComboLit[lit];
                 }
             }
 
-            if (level == prev) return; // only the chain count changed → no scale animation
-
-            if (level >= 3)
+            // Top tier "on fire" breathes; below it, a steady fill.
+            if (level >= 5)
             {
-                if (_comboPulseCo == null) _comboPulseCo = StartCoroutine(ComboPulseCo()); // breathe owns the scale at L3
+                if (_comboPulseCo == null) _comboPulseCo = StartCoroutine(ComboPulseCo());
             }
-            else
+            else if (_comboPulseCo != null)
             {
-                if (_comboPulseCo != null) { StopCoroutine(_comboPulseCo); _comboPulseCo = null; } // leaving L3
-                if (prev < 0) { if (_comboRoot != null) _comboRoot.localScale = Vector3.one; } // first paint, no punch
-                else if (level > prev) StartComboPunch(1.22f); // tier up → pop
-                else if (level > 0) StartComboPunch(0.90f);    // decay one tier → small dip
-                else StartComboPunch(0.80f);                   // break → crush
+                StopCoroutine(_comboPulseCo); _comboPulseCo = null;
             }
         }
 
-        // Stop both combo tweens and reset scale — used on run start / topple so nothing leaks into the next run.
+        // Reset the combo bar tween — used on run start / topple so nothing leaks into the next run.
         void StopComboAnim()
         {
             if (_comboPulseCo != null) { StopCoroutine(_comboPulseCo); _comboPulseCo = null; }
-            if (_comboPunchCo != null) { StopCoroutine(_comboPunchCo); _comboPunchCo = null; }
-            if (_comboRoot != null) _comboRoot.localScale = Vector3.one;
         }
 
-        void StartComboPunch(float peak)
+        IEnumerator ComboPulseCo() // gentle alpha breathe on the lit segments while "on fire" (level 5)
         {
-            if (_comboPunchCo != null) StopCoroutine(_comboPunchCo);
-            _comboPunchCo = StartCoroutine(ComboPunchCo(peak));
-        }
-
-        IEnumerator ComboPunchCo(float peak)
-        {
-            RectTransform rt = _comboRoot;
-            float t = 0f, dur = 0.2f;
-            while (t < dur && rt != null)
+            while (_comboRoot != null)
             {
-                t += Time.deltaTime;
-                float s = 1f + (peak - 1f) * Mathf.Sin(t / dur * Mathf.PI);
-                rt.localScale = new Vector3(s, s, 1f);
-                yield return null;
-            }
-            if (rt != null) rt.localScale = Vector3.one;
-            _comboPunchCo = null;
-        }
-
-        IEnumerator ComboPulseCo() // gentle breathe while "on fire" (level 3)
-        {
-            RectTransform rt = _comboRoot;
-            while (rt != null)
-            {
-                float s = 1.08f + 0.06f * Mathf.Sin(Time.time * (2f * Mathf.PI / 1.1f));
-                rt.localScale = new Vector3(s, s, 1f);
+                float a = 0.65f + 0.35f * Mathf.Sin(Time.time * (2f * Mathf.PI / 0.8f));
+                Color c = ComboLit[5]; c.a = a;
+                for (int i = 0; i < _comboSegs.Length; i++)
+                    if (_comboSegs[i] != null) _comboSegs[i].color = c;
                 yield return null;
             }
         }
@@ -487,8 +528,21 @@ namespace Towerpolis.Game.UI
             Stretch(_safeRoot);
             safeGo.AddComponent<SafeAreaRoot>(); // insets to the device safe area each frame
 
-            _scoreLabel = NewText("Score", _safeRoot, 72, FontStyles.Bold, TextAlignmentOptions.Top);
-            Place(_scoreLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -32f), new Vector2(700f, 100f));
+            // Left column: residents (icon + number) over height (icon + number) — compact and glanceable,
+            // out of the way of the action at the top of the building.
+            var resIcon = NewImage("ResIcon", _safeRoot, Mint);
+            resIcon.sprite = PersonSprite(); resIcon.raycastTarget = false;
+            Place(resIcon.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -34f), new Vector2(44f, 44f));
+            _residentsLabel = NewText("Residents", _safeRoot, 46, FontStyles.Bold, TextAlignmentOptions.Left);
+            _residentsLabel.color = Mint;
+            Place(_residentsLabel.rectTransform, new Vector2(0f, 1f), new Vector2(84f, -32f), new Vector2(200f, 56f));
+
+            var htIcon = NewImage("HeightIcon", _safeRoot, OffWhite);
+            htIcon.sprite = BarsSprite(); htIcon.raycastTarget = false;
+            Place(htIcon.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -92f), new Vector2(44f, 44f));
+            _scoreLabel = NewText("Height", _safeRoot, 46, FontStyles.Bold, TextAlignmentOptions.Left);
+            _scoreLabel.color = OffWhite;
+            Place(_scoreLabel.rectTransform, new Vector2(0f, 1f), new Vector2(84f, -90f), new Vector2(200f, 56f));
 
             _coinIcon = NewImage("CoinIcon", _safeRoot, Yellow); // gold disc (generated sprite, font-independent)
             _coinIcon.sprite = CoinSprite();
@@ -505,7 +559,7 @@ namespace Towerpolis.Game.UI
                 Place(_pips[i].rectTransform, new Vector2(0f, 0f), new Vector2(34f + i * 64f, 56f), new Vector2(52f, 52f));
             }
 
-            BuildComboMeter(_safeRoot);
+            BuildComboBar(_safeRoot);
 
             _perfectLabel = NewText("Perfect", canvasGo.transform, 80, FontStyles.Bold, TextAlignmentOptions.Center);
             _perfectLabel.color = Yellow;

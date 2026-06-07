@@ -29,13 +29,7 @@ namespace Towerpolis.Game.UI
         MetaService _meta;
         TowerGameController _controller;
 
-        TMP_Text _popLabel;
-
-        static readonly string[] DistIds = { "downtown", "neon", "winter" };
-        static readonly string[] DistNames = { LocKeys.DistDowntownShort, LocKeys.DistNeonShort, LocKeys.DistWinterShort };
-        static readonly Color Locked = new Color(0.22f, 0.24f, 0.30f, 0.95f);
-        Image[] _distImg;
-        TMP_Text[] _distLbl;
+        static readonly Color Locked = new Color(0.22f, 0.24f, 0.30f, 0.95f); // "too dear" buy-button state
 
         GameObject _cityPanel;
         TMP_Text _cityTitle;
@@ -98,19 +92,12 @@ namespace Towerpolis.Game.UI
                 _meta.ProgressionChanged += OnProgressionChanged;
                 _meta.SystemsResolved += OnSystemsResolved;
             }
-            if (_controller != null)
-            {
-                _controller.FloorAdded += OnFloorLive;  // tick coins/population up as you build
-                _controller.RunStarted += OnRunStartLive;
-            }
             Loc.LanguageChanged += OnLanguageChanged;   // re-resolve dynamic labels on a language switch
-            RefreshTopBar();
         }
 
         // Static captions re-resolve themselves via LocalizedLabel; repaint the dynamic labels + open panel.
         void OnLanguageChanged()
         {
-            RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();            if (_missionPanel != null && _missionPanel.activeSelf) PopulateMissions();
             if (_settingsPanel != null && _settingsPanel.activeSelf) RefreshSettings();
@@ -132,17 +119,11 @@ namespace Towerpolis.Game.UI
                 _meta.ProgressionChanged -= OnProgressionChanged;
                 _meta.SystemsResolved -= OnSystemsResolved;
             }
-            if (_controller != null)
-            {
-                _controller.FloorAdded -= OnFloorLive;
-                _controller.RunStarted -= OnRunStartLive;
-            }
             Loc.LanguageChanged -= OnLanguageChanged;
         }
 
         void OnBanked(RunEndOutcome outcome)
         {
-            RefreshTopBar();
             if (_cityPanel != null && _cityPanel.activeSelf) PopulateCity();
             if (_upgPanel != null && _upgPanel.activeSelf) PopulateUpgrades();
             if (outcome.DistrictCompletedNow) ShowDistrictComplete(outcome); // a distinct celebration, not a toast
@@ -263,19 +244,6 @@ namespace Towerpolis.Game.UI
             if (deactivateAtEnd && panel != null) panel.SetActive(false);
         }
 
-        void OnFloorLive(int floors) => RefreshTopBar();
-        void OnRunStartLive() => RefreshTopBar();
-
-        void RefreshTopBar()
-        {
-            if (_meta == null) return;
-
-            // THIS building's residents (current run) — starts at 0 each run, grows as you stack. The
-            // cumulative city population (the meta-score) is shown in the city view.
-            int residents = _controller != null ? _controller.BuildRunResult().TotalResidents : 0;
-            if (_popLabel != null) _popLabel.text = Loc.T(LocKeys.MetaResidents, residents);
-        }
-
         // ---------- city view ----------
 
         void OpenCity()
@@ -286,51 +254,6 @@ namespace Towerpolis.Game.UI
         }
 
         void CloseCity() => HidePanel(_cityPanel);
-
-        void DistrictButtons(Transform parent)
-        {
-            _distImg = new Image[DistIds.Length];
-            _distLbl = new TMP_Text[DistIds.Length];
-            float[] xs = { -310f, 0f, 310f };
-            for (int i = 0; i < DistIds.Length; i++)
-            {
-                int idx = i; // capture for the listener
-                var btnGo = new GameObject("Dist_" + DistIds[i], typeof(RectTransform), typeof(Image), typeof(Button));
-                btnGo.transform.SetParent(parent, false);
-                var rt = (RectTransform)btnGo.transform;
-                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 1f);
-                rt.anchoredPosition = new Vector2(xs[i], -300f);
-                rt.sizeDelta = new Vector2(290f, 80f);
-                _distImg[i] = btnGo.GetComponent<Image>();
-                btnGo.GetComponent<Button>().onClick.AddListener(() => SwitchDistrict(DistIds[idx]));
-                _distLbl[i] = NewText("L", rt, 28, FontStyles.Bold, TextAlignmentOptions.Center);
-                Stretch(_distLbl[i].rectTransform);
-            }
-        }
-
-        void RefreshDistrictButtons()
-        {
-            if (_meta == null || _distImg == null) return;
-            string active = _meta.ActiveDistrictId;
-            for (int i = 0; i < DistIds.Length; i++)
-            {
-                bool unlocked = _meta.IsDistrictUnlocked(DistIds[i]);
-                bool isActive = DistIds[i] == active;
-                if (_distImg[i] != null) _distImg[i].color = !unlocked ? Locked : isActive ? Gold : Navy;
-                if (_distLbl[i] != null)
-                {
-                    _distLbl[i].text = Loc.T(DistNames[i]);
-                    _distLbl[i].color = unlocked ? (isActive ? Navy : OffWhite) : new Color(0.55f, 0.57f, 0.62f);
-                }
-            }
-        }
-
-        void SwitchDistrict(string id)
-        {
-            if (_meta == null || !_meta.SetActiveDistrict(id)) return; // locked → ignored
-            CloseCity();
-            if (_controller != null) _controller.NewRun(); // restart in the new district → applies its look
-        }
 
         void PopulateCity()
         {
@@ -345,7 +268,6 @@ namespace Towerpolis.Game.UI
 
             if (_cityTitle != null) _cityTitle.text = Loc.T(view.DisplayName);
             if (_cityPop != null) _cityPop.text = Loc.T(LocKeys.MetaPopulation, population, info.FillGoal);
-            RefreshDistrictButtons();
 
             if (_gridLayout != null) _gridLayout.constraintCount = Mathf.Max(1, view.GridWidth);
 

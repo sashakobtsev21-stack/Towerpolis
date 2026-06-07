@@ -223,8 +223,22 @@ namespace Towerpolis.Game.Meta
 
             SaveManager.Save(SaveData.From(_city));
 
-            RunBanked?.Invoke(outcome);
-            SystemsResolved?.Invoke(sys);
+            RunBanked?.Invoke(outcome);          // (fires BEFORE the auto-advance so the celebration shows the
+            SystemsResolved?.Invoke(sys);        //  district that was just completed)
+
+            // The district-switch UI is gone (meta-spec §2.3 — linear, art-gated re-intro later), so once a
+            // district is completed auto-advance the active district to the next one; the next run dresses +
+            // deposits there. No-op on the last district (NextId == "").
+            if (outcome.DistrictCompletedNow)
+            {
+                string next = DistrictCatalog.NextId(district.Id);
+                if (!string.IsNullOrEmpty(next) && _city.ActiveDistrictId != next)
+                {
+                    _city.ActiveDistrictId = next;
+                    SaveManager.Save(SaveData.From(_city));
+                }
+            }
+
             Debug.Log($"[Towerpolis] Run banked: +{outcome.CoinsEarned} coins (total {_city.Coins}), " +
                       $"district pop {outcome.DistrictPopulation}, city pop {_city.TotalPopulation}" +
                       (outcome.DistrictCompletedNow ? " — DISTRICT COMPLETE!" : "") +
