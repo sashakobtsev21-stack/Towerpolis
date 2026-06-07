@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Towerpolis — статус проекта</title>
+<style>
+  :root{--navy:#16263c;--navy2:#1e3b5e;--gold:#ffd24d;--mint:#6cbb6c;--cyan:#7fd6ff;--text:#e8edf2;--dim:#9fb2c6;--line:#23415f}
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(160deg,#0a1320,#10243c 60%,#0a1320);color:var(--text);font:16px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 20px 80px}
+  header{text-align:center;padding:24px 0 8px}
+  h1{font-size:40px;margin:0;letter-spacing:.5px}
+  h1 .em{color:var(--gold)}
+  .tag{color:var(--dim);font-size:18px;margin:6px 0 18px}
+  .badges{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0 6px}
+  .badge{background:var(--navy);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px}
+  .badge b{color:var(--gold)}
+  section{background:rgba(15,28,44,.7);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin:22px 0}
+  h2{font-size:24px;margin:0 0 14px;color:var(--gold)}
+  h3{font-size:17px;margin:18px 0 6px;color:var(--cyan)}
+  p{margin:8px 0}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .lead{color:var(--dim)}
+  code{background:#0c1622;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:13px}
+  .wedge{background:var(--navy);border-left:3px solid var(--gold);border-radius:8px;padding:10px 14px;margin:14px 0}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:8px 26px}
+  @media(max-width:680px){.cols{grid-template-columns:1fr}}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-right:8px;vertical-align:middle}
+  .done{background:#1f4a2b;color:#aef0bd}.wip{background:#5a4a16;color:#ffe39a}.todo{background:#3a2740;color:#e6b9f0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #1b324a}
+  th{color:var(--dim);font-weight:600;position:sticky;top:0;background:#0f1c2c}
+  td.hash{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--gold);white-space:nowrap}
+  td.date{color:var(--dim);white-space:nowrap}
+  tbody tr:hover{background:rgba(127,214,255,.06)}
+  .scroll{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .muted{color:var(--dim);font-size:13px}
+  footer{text-align:center;color:var(--dim);font-size:13px;margin-top:26px}
+  a{color:var(--cyan)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Tower<span class="em">polis</span> 🏙️</h1>
+  <div class="tag">Премиальный казуальный 3D-стэкер башен · <i>Строй город до небес</i></div>
+  <div class="badges">
+    <span class="badge">Движок: <b>Unity 6.3 URP</b></span>
+    <span class="badge">Платформа: <b>Android → iOS</b></span>
+    <span class="badge">Core-тесты: <b>291 / 291</b></span>
+    <span class="badge">Коммитов: <b>143</b></span>
+    <span class="badge">Языки: <b>RU + EN</b></span>
+    <span class="badge">Обновлено: <b>2026-06-08</b></span>
+  </div>
+</header>
+
+<section>
+  <h2>Что за проект</h2>
+  <p>Современный взгляд на петлю <b>Tower Bloxx</b>: кран качает блок-этаж, тапаешь — он падает и должен чисто лечь на предыдущий. Идеальные постановки держат башню ровной и <b>парашютируют новых жильцов</b>; небрежные — дают <b>крен и физическое шатание</b>. Чем выше башня, тем напряжённее. Готовые башни населяют постоянный <b>3D-город</b>, который ты растишь.</p>
+  <div class="wedge">🎯 <b>Уникальность (чего нет у конкурентов):</b> <b>daily-seed</b> стэкер (один паттерн крана для всех в мире каждый день — «Wordle для стэкеров») <b>+</b> постоянный «<b>Город</b>» с <b>престижем</b> (бесконечная петля).</p>
+  <p class="lead">Детерминированная логика (счёт, грейд, сид, экономика) живёт в Unity-независимой библиотеке <code>Towerpolis.Core</code> с NUnit-тестами — никогда не из PhysX (честность daily-seed). Физика активна только пока блок падает; дальше — заморозка + сварка + скриптовое шатание.</p>
+</section>
+
+<section>
+  <h2>Что сделано <span class="muted">(фазы 0–5)</span></h2>
+  <p><span class="pill done">✓</span><b>Фаза 0–1</b> — концепт, GDD, пиллары; Unity 6.3 URP проект, <code>Towerpolis.Core</code> + двойной тест-харнес, CI, ADR-ы.</p>
+  <p><span class="pill done">✓</span><b>Фаза 2 — ядро игры</b> — кран → тап → детерминированный грейд → сварка → скриптовое шатание + juice. Гейт «весело?» пройден.</p>
+  <p><span class="pill wip">~</span><b>Фаза 3 — Город</b> — районы, daily-seed, локальные лидерборды, монеты, серии, экран «район застроен», хуки музыки районов, сетка <b>best-N</b> (без soft-lock). Остался on-device гейт.</p>
+  <p><span class="pill wip">~</span><b>Фаза 4 — прогрессия / бесконечность</b> — апгрейды (Магнит, Бонус города), недельные миссии, достижения, логин-календарь, заморозка серии, <b>престиж / бесконечная петля</b>. Core готов и оттестирован; UI частично.</p>
+  <p><span class="pill wip">~</span><b>Фаза 5 — UI/UX и локализация</b> — кастомный RU/EN Loc-сервис, HUD + MetaHud переведены, safe-area, настройки. Полный проход по экранам — впереди.</p>
+  <h3>Ключевые системы</h3>
+  <div class="cols">
+    <ul>
+      <li><b>Ядро рана:</b> грейд/счёт/крен/страйки, сид крана + последовательность блоков</li>
+      <li><b>Серия (combo):</b> заполняется идеальными, любой не-идеальный сбрасывает; на 5 → <b>+монеты</b> и сброс</li>
+      <li><b>Город:</b> best-N сетка, депозит → монеты → серия → награда за район</li>
+      <li><b>Престиж:</b> звёзды = постоянный множитель жильцов, сброс цикла</li>
+    </ul>
+    <ul>
+      <li><b>HUD:</b> этажи+жильцы слева (иконки), монеты справа, вертикальная combo-полоса</li>
+      <li><b>Мета-HUD:</b> ☰ меню → Город / Бонусы / Цели / Настройки; экраны «район готов» + престиж</li>
+      <li><b>Сейв:</b> схема v3 + forward-миграции</li>
+      <li><b>Прочее:</b> аудио (SFX + музыка районов), VFX, темы районов, Loc (RU/EN, кириллица)</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Что осталось</h2>
+  <h3>Ближайшее (приоритет)</h3>
+  <ul>
+    <li><span class="pill todo">!</span><b>Проверка на устройстве</b> — большой объём Unity-кода собран, но не плейтестился. Прогнать <code>PHASE3_GATE_CHECKLIST.md</code> + проверить combo-полосу, экран престижа, HUD, физику промаха. Это гейт перед стройкой нового.</li>
+    <li><b>Баланс-пас (гейт Фазы 4):</b> монетный бонус серии, кривые звёзд/монет престижа, цели районов vs достижимость — тюнинг данных <code>CoreConfig</code> после плейтеста.</li>
+    <li><b>Полиш Фазы 4/5:</b> ощущение экрана престижа (VFX), главное меню, end-screen / share-card, аудит хардкод-строк, persist настроек на устройстве.</li>
+  </ul>
+  <h3>Роадмап</h3>
+  <ul>
+    <li><span class="pill todo">6</span><b>Арт и аудио (главный остаток контента)</b> — модели блоков/жителей, палитры, риг парашютиста, VFX (конфетти/пыль), URP look-dev, <b>авторские SFX + 3 трека музыки районов</b>, фоны/скайбоксы. Вернуть переключение районов, когда они станут визуально разными. Бюджет: &lt;200 draw calls, 60 fps на среднем Android.</li>
+    <li><span class="pill todo">7</span><b>Монетизация (спящая)</b> — rewarded + лёгкий interstitial + IAP за remote-флагом, OFF на старте.</li>
+    <li><span class="pill todo">8</span><b>Полиш / перф / QA</b> — матрица устройств, GC-хитчи, чистый Android Vitals.</li>
+    <li><span class="pill todo">9</span><b>ASO / soft-launch</b> — подписанный AAB, Play Console, RU+EN листинги, 1–2 tier-2 рынка; гейт D1≥30% / D7≥12%.</li>
+    <li><span class="pill todo">10</span><b>Live-ops</b> — daily-seed (авто), еженедельный сброс лидерборда + ротация миссий, ежемесячный тематический район/скин.</li>
+  </ul>
+  <p class="muted">Подробности — <code>docs/PROJECT_STATUS.md</code>, <code>docs/BUILD_PLAN.md</code>, <code>docs/game/GDD.md</code>.</p>
+</section>
+
+<section>
+  <h2>История коммитов <span class="muted">(143, новые сверху)</span></h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Хэш</th><th>Дата</th><th>Описание</th></tr></thead>
+    <tbody>
+      <tr><td class="hash">c4c2508</td><td class="date">2026-06-08</td><td>Prestige screen (endless loop now functional) + PROJECT_STATUS doc</td></tr>
+      <tr><td class="hash">28df4dc</td><td class="date">2026-06-08</td><td>Combo: any non-perfect resets the bar; fill bonus is COINS (+labeled "+N монет" pop)</td></tr>
+      <tr><td class="hash">193cfd2</td><td class="date">2026-06-08</td><td>Prestige / endless loop — Core spine (endless-spec)</td></tr>
+      <tr><td class="hash">aaee6fa</td><td class="date">2026-06-08</td><td>Combo bar: fill -&gt; score bonus -&gt; reset -&gt; repeat; drop the confusing "xN" label</td></tr>
+      <tr><td class="hash">dc2ec7e</td><td class="date">2026-06-07</td><td>HUD + districts: combo bar (left), height+residents (left), drop district switcher</td></tr>
+      <tr><td class="hash">f283ba2</td><td class="date">2026-06-07</td><td>Combo (СЕРИЯ): raise cap 3-&gt;5 and make a Good HOLD the level</td></tr>
+      <tr><td class="hash">f17286c</td><td class="date">2026-06-07</td><td>Bring README up to date (Phase 3) + require README upkeep going forward</td></tr>
+      <tr><td class="hash">26d4696</td><td class="date">2026-06-07</td><td>Remove dead code left by the physics + skins/Slow-Mo changes</td></tr>
+      <tr><td class="hash">5cd185e</td><td class="date">2026-06-07</td><td>Split MetaHud into partial classes (CLAUDE.md &lt;500-line rule)</td></tr>
+      <tr><td class="hash">6b3a00a</td><td class="date">2026-06-07</td><td>Remove cosmetic skins + Slow-Mo upgrade (owner: drop both features)</td></tr>
+      <tr><td class="hash">383e019</td><td class="date">2026-06-06</td><td>Fix miss-block snagging on "air": decouple the tumble from physics</td></tr>
+      <tr><td class="hash">0f5d71e</td><td class="date">2026-06-06</td><td>Repo hygiene: commit editor-generated .meta + Cyrillic font kerning</td></tr>
+      <tr><td class="hash">a4fd816</td><td class="date">2026-06-06</td><td>Phase 3 TODO-2: reserve LastDailyAttemptDate in the save schema</td></tr>
+      <tr><td class="hash">72e91d0</td><td class="date">2026-06-06</td><td>Phase 3: district-complete screen, per-district music, best-N city grid</td></tr>
+      <tr><td class="hash">dc56330</td><td class="date">2026-06-05</td><td>Cut the skins feature from the UI</td></tr>
+      <tr><td class="hash">602d811</td><td class="date">2026-06-05</td><td>Replace the 5-button top bar with a ☰ menu button (top-right)</td></tr>
+      <tr><td class="hash">80c4e75</td><td class="date">2026-06-05</td><td>Add PlayMode test scaffold for the Unity Game layer</td></tr>
+      <tr><td class="hash">7559d87</td><td class="date">2026-06-05</td><td>Push Core coverage to ~100% line / 94% branch (+37 tests)</td></tr>
+      <tr><td class="hash">58985ad</td><td class="date">2026-06-05</td><td>Add Unity .meta for Phase 5 files (editor-generated)</td></tr>
+      <tr><td class="hash">69c20c7</td><td class="date">2026-06-05</td><td>Expand Core tests: determinism, config integrity, run integration (+19)</td></tr>
+      <tr><td class="hash">e567ac4</td><td class="date">2026-06-05</td><td>Phase 5: scaffold cloud save behind ICloudSave (ADR-0009)</td></tr>
+      <tr><td class="hash">629a712</td><td class="date">2026-06-05</td><td>Phase 5: device safe-area handling (notches/rounded corners)</td></tr>
+      <tr><td class="hash">2d4e743</td><td class="date">2026-06-05</td><td>Fix skins applying late; expand settings (sound + reset)</td></tr>
+      <tr><td class="hash">493be1e</td><td class="date">2026-06-05</td><td>Phase 5: settings screen + RU/EN language toggle</td></tr>
+      <tr><td class="hash">6e39e05</td><td class="date">2026-06-05</td><td>Phase 5: localize MetaHud + catalogs (RU/EN)</td></tr>
+      <tr><td class="hash">c415296</td><td class="date">2026-06-05</td><td>Phase 5: localization foundation (Loc service) + HUDController RU/EN</td></tr>
+      <tr><td class="hash">6c7d054</td><td class="date">2026-06-05</td><td>Rename app to Towerpolis (was URP-blank template defaults)</td></tr>
+      <tr><td class="hash">b987100</td><td class="date">2026-06-05</td><td>Phase C: earned specialty blocks + trophy roof (Tower-Bloxx)</td></tr>
+      <tr><td class="hash">4ef0f6e</td><td class="date">2026-06-05</td><td>Phase B: HUD combo meter + combo sparkles (Tower-Bloxx juice)</td></tr>
+      <tr><td class="hash">2826330</td><td class="date">2026-06-05</td><td>Phase A: combo -&gt; residents (Tower-Bloxx combo)</td></tr>
+      <tr><td class="hash">f318cc4</td><td class="date">2026-06-05</td><td>docs: Tower Bloxx analysis + phased integration plan</td></tr>
+      <tr><td class="hash">cd7dd78</td><td class="date">2026-06-05</td><td>HUD/meta overhaul: fix vanishing UI, live coins, drop Slow-Mo &amp; Daily</td></tr>
+      <tr><td class="hash">2f39139</td><td class="date">2026-06-04</td><td>Fix CS0246: add using Towerpolis.Core.Meta to HUDController (RunResult)</td></tr>
+      <tr><td class="hash">f776d0a</td><td class="date">2026-06-04</td><td>Game-over coin breakdown (floors/perfects/total) + bank diagnostics</td></tr>
+      <tr><td class="hash">84c77a8</td><td class="date">2026-06-04</td><td>Top bar: shorten the УЛУЧШЕНИЯ button to БОНУСЫ (was wrapping to two lines)</td></tr>
+      <tr><td class="hash">333ad7f</td><td class="date">2026-06-04</td><td>Fix residents hanging in mid-air: ride the tower + hard despawn</td></tr>
+      <tr><td class="hash">0ec0749</td><td class="date">2026-06-04</td><td>Show coins earned on the game-over screen; shorten balcony door canopy</td></tr>
+      <tr><td class="hash">8d21a23</td><td class="date">2026-06-04</td><td>Balcony: add a single code-built door canopy (body colour)</td></tr>
+      <tr><td class="hash">6202d0a</td><td class="date">2026-06-04</td><td>Remove the balcony block's canopies (runtime + Blender source)</td></tr>
+      <tr><td class="hash">5c0a027</td><td class="date">2026-06-04</td><td>Stop tracking Unity _Recovery auto-backup (gitignore it)</td></tr>
+      <tr><td class="hash">8119b1e</td><td class="date">2026-06-04</td><td>Residents vanish passing through the side wall, not at the centre</td></tr>
+      <tr><td class="hash">93a035a</td><td class="date">2026-06-04</td><td>Residents glide in from the side, not through the roof</td></tr>
+      <tr><td class="hash">b3c624f</td><td class="date">2026-06-04</td><td>Resident fly-in: umbrella tenants parachute into each placed floor</td></tr>
+      <tr><td class="hash">b4d881d</td><td class="date">2026-06-04</td><td>Canopies match block colour + upgrade descriptions; raise balcony awning</td></tr>
+      <tr><td class="hash">4382e6d</td><td class="date">2026-06-04</td><td>Russian UI: translate all on-screen strings + enable Cyrillic font</td></tr>
+      <tr><td class="hash">eab9b5e</td><td class="date">2026-06-04</td><td>Phase 4 polish: buy/equip button pop + panel card backing</td></tr>
+      <tr><td class="hash">c14c8fb</td><td class="date">2026-06-04</td><td>Phase 4 polish: panel fade in/out + toast pop-in</td></tr>
+      <tr><td class="hash">3fca950</td><td class="date">2026-06-04</td><td>Phase 4 polish: run-end reward toasts (missions / achievements / district)</td></tr>
+      <tr><td class="hash">36355ac</td><td class="date">2026-06-04</td><td>Phase 4 polish: Slow-Mo "HOLD TO SLOW" hint + tidy top bar</td></tr>
+      <tr><td class="hash">24bb84b</td><td class="date">2026-06-04</td><td>Phase 4 (Unity): missions + achievements catalogs, wiring &amp; GOALS panel</td></tr>
+      <tr><td class="hash">93ab5ed</td><td class="date">2026-06-04</td><td>Phase 4 integration (Core): missions + achievements at run-end</td></tr>
+      <tr><td class="hash">d13ee80</td><td class="date">2026-06-04</td><td>Phase 4 (Unity): Slow-Mo hold gesture</td></tr>
+      <tr><td class="hash">d9bb94d</td><td class="date">2026-06-04</td><td>Phase 4 (Unity): cosmetics — block &amp; crane skins, buy/equip + live recolour</td></tr>
+      <tr><td class="hash">dfaa052</td><td class="date">2026-06-04</td><td>Phase 4 (Unity): upgrades shop + Magnet in the drop path</td></tr>
+      <tr><td class="hash">ab67063</td><td class="date">2026-06-04</td><td>Phase 4 integration (Core): CityState owns + persists progression</td></tr>
+      <tr><td class="hash">d34104c</td><td class="date">2026-06-04</td><td>Phase 4 Step 7: RunResult.MaxPerfectChain + SaveData v2 migration (Core)</td></tr>
+      <tr><td class="hash">c503986</td><td class="date">2026-06-04</td><td>Phase 4 Steps 5-6: MissionTracker + AchievementEvaluator (Core)</td></tr>
+      <tr><td class="hash">4b883d5</td><td class="date">2026-06-04</td><td>Phase 4 Steps 2-4: City Bonus, streak freeze, login calendar (Core)</td></tr>
+      <tr><td class="hash">bb5b9dd</td><td class="date">2026-06-04</td><td>Phase 4 Step 1: UpgradeService + UpgradeState (Core, test-first)</td></tr>
+      <tr><td class="hash">583b996</td><td class="date">2026-06-04</td><td>Crane swings continuously: no freeze on release, new block attaches at hook</td></tr>
+      <tr><td class="hash">bac15ee</td><td class="date">2026-06-04</td><td>Make city + balloon reserved drop-in slots (no procedural placeholder)</td></tr>
+      <tr><td class="hash">945f687</td><td class="date">2026-06-04</td><td>TEST: fast atmospheric ascent (AscentFloors 150 -&gt; 25)</td></tr>
+      <tr><td class="hash">a0d6d30</td><td class="date">2026-06-04</td><td>Smooth + slow the atmospheric ascent; fix aurora/city placeholders</td></tr>
+      <tr><td class="hash">d98cf18</td><td class="date">2026-06-04</td><td>Multi-layer parallax backdrop for the atmospheric ascent</td></tr>
+      <tr><td class="hash">e7421fb</td><td class="date">2026-06-04</td><td>Simple animated backdrop: drifting clouds + twinkling stars by altitude</td></tr>
+      <tr><td class="hash">e1834ea</td><td class="date">2026-06-04</td><td>Hook + rope are world-space (don't get dragged by the swaying crane)</td></tr>
+      <tr><td class="hash">f1e6799</td><td class="date">2026-06-04</td><td>Lower ascent/summit test thresholds + sky diagnostic log</td></tr>
+      <tr><td class="hash">3df2050</td><td class="date">2026-06-04</td><td>Discard the in-flight block on run start (fixes stray block on switch)</td></tr>
+      <tr><td class="hash">e922dbe</td><td class="date">2026-06-04</td><td>Fix atmosphere not changing; constant crane speed; ×1.5 sway</td></tr>
+      <tr><td class="hash">30e27b4</td><td class="date">2026-06-04</td><td>SUMMIT! beat at the height milestone (run continues)</td></tr>
+      <tr><td class="hash">dc7d2fc</td><td class="date">2026-06-04</td><td>Atmospheric ascent (sky+light change with height) + swing/sway tuning</td></tr>
+      <tr><td class="hash">c06e62a</td><td class="date">2026-06-04</td><td>Unlock all districts (testing) + harder: wider swing with height, more sway</td></tr>
+      <tr><td class="hash">7e9df4a</td><td class="date">2026-06-04</td><td>Temporarily low district fill goals (100/150/200) for testing</td></tr>
+      <tr><td class="hash">22f6222</td><td class="date">2026-06-04</td><td>Phase 3: district visuals — per-district palette, sky, and switcher</td></tr>
+      <tr><td class="hash">60f97c2</td><td class="date">2026-06-04</td><td>Per-type Perfect resident bonus: Standard +1, Balcony +2, Premium +3</td></tr>
+      <tr><td class="hash">a6cd3d8</td><td class="date">2026-06-04</td><td>Flat residents per floor type (drop the Perfect bonus)</td></tr>
+      <tr><td class="hash">392436c</td><td class="date">2026-06-04</td><td>Fix CS8632 nullable warning; HUD shows this-building residents (from 0)</td></tr>
+      <tr><td class="hash">a279dd8</td><td class="date">2026-06-04</td><td>Fix crane hook spinning loose from the rope</td></tr>
+      <tr><td class="hash">adc2db7</td><td class="date">2026-06-04</td><td>Drop coins from the HUD; premium floor houses 5 residents</td></tr>
+      <tr><td class="hash">43b336b</td><td class="date">2026-06-04</td><td>Phase 3 fixes: height headline, live coins/population, persistent hook</td></tr>
+      <tr><td class="hash">40e3ec9</td><td class="date">2026-06-04</td><td>Phase 3: daily-seed mode + endless random seeds + UI input fixes</td></tr>
+      <tr><td class="hash">73cd390</td><td class="date">2026-06-04</td><td>Phase 3 Unity: visible meta — coins/population HUD + city view</td></tr>
+      <tr><td class="hash">722eacb</td><td class="date">2026-06-04</td><td>Phase 3 Unity: persistence + run-end deposit backbone</td></tr>
+      <tr><td class="hash">5259ed9</td><td class="date">2026-06-04</td><td>Phase 3 Core: leaderboard, city-state run-end flow, save + migration</td></tr>
+      <tr><td class="hash">0735f25</td><td class="date">2026-06-04</td><td>Phase 3 kickoff: meta spec + ADR + deterministic Core meta spine</td></tr>
+      <tr><td class="hash">15b7170</td><td class="date">2026-06-04</td><td>Visual polish: brighter palette, textures, gray brick base, sky, hook/rope</td></tr>
+      <tr><td class="hash">4a5ece6</td><td class="date">2026-06-04</td><td>Phase-2 juice + look-dev pass + block visual polish</td></tr>
+      <tr><td class="hash">762ee5d</td><td class="date">2026-06-03</td><td>Wire HUD into scene + vendor TextMesh Pro essentials</td></tr>
+      <tr><td class="hash">3efe094</td><td class="date">2026-06-03</td><td>Replace placeholder cubes with the Blender house models</td></tr>
+      <tr><td class="hash">6866f99</td><td class="date">2026-06-03</td><td>Real face collision for misses: re-enable block colliders + continuous detection on the falling block, and make the miss GENTLE so it lands on the top block's edge and tips off under its own weight (no fast tunnelling that caught on 'air')</td></tr>
+      <tr><td class="hash">f65d11f</td><td class="date">2026-06-03</td><td>Missed block carries downward speed past the contact line (no velocity-reset pause that read as a 'bounce off the top block') + sideways fling</td></tr>
+      <tr><td class="hash">fe613fe</td><td class="date">2026-06-03</td><td>Kill mid-air snagging for good: disable the base collider too (zero active colliders anywhere) and remove the upward fling on a miss (it was hanging at the arc apex). Missed block now flings sideways and falls straight</td></tr>
+      <tr><td class="hash">17f7b5a</td><td class="date">2026-06-03</td><td>Missed blocks now fall with NO collider (just gravity + a strong outward fling): no bounce, but no more snagging on far floors/debris in mid-air. Remove TumbleDebris.</td></tr>
+      <tr><td class="hash">4669ca9</td><td class="date">2026-06-03</td><td>Fix missed block snagging in mid-air: keep its collider only for a 0.4s bounce window near the tower, then disable it so it free-falls cleanly without catching on far floors/other debris</td></tr>
+      <tr><td class="hash">c057c03</td><td class="date">2026-06-03</td><td>Declutter GameTuning: remove 10 dead fields (old height-based wobble + damping + manual camera distance) that no longer affect anything; add inspector tooltips to the live ones</td></tr>
+      <tr><td class="hash">b560d6e</td><td class="date">2026-06-03</td><td>Tuning: widen crane horizontal travel +15% (swingHalfArc 1.8 -&gt; 2.07)</td></tr>
+      <tr><td class="hash">aecce5c</td><td class="date">2026-06-03</td><td>MVP HUD (UGUI+TMP, built in code, no wiring): score top-centre + height top-right + 2 strike pips + PERFECT! world pop + miss/topple vignette + restart panel. TowerGameController fires HUD events; restart gated 1s after topple</td></tr>
+      <tr><td class="hash">12f6fed</td><td class="date">2026-06-03</td><td>Flush local-space stacking (no more gaps/overlaps under the sway) + camera follows the structural top (sway stays visible) + craneTiltFactor (0.4) to reduce the block's twist on the crane without changing the arc/speed</td></tr>
+      <tr><td class="hash">ad5f781</td><td class="date">2026-06-03</td><td>Tuning: wider crane arc (0.9-&gt;1.8) so misses/off-placements are possible again, much stronger lean-driven sway (leanBias 1.5-&gt;6, ampMax-&gt;6, leanAngle-&gt;4)</td></tr>
+      <tr><td class="hash">2ded8c6</td><td class="date">2026-06-03</td><td>Sway driven purely by lean (centred tower = no sway; off-centre sways toward the lean and never decays with idle time; Perfect/magnet calms it). Smaller crane arc + distinct crane/building speeds (3 vs 6) + capped sway amplitude so it stays on-screen</td></tr>
+      <tr><td class="hash">afb84fa</td><td class="date">2026-06-03</td><td>Lower catch tolerance 90% -&gt; 80% offset (bounce when &lt;20% overlaps). Core 66/66.</td></tr>
+      <tr><td class="hash">be7a04c</td><td class="date">2026-06-03</td><td>Forgiving catch + magnet + desync fix: Perfect=snap-to-centre zone (15%), Good caught up to 90% offset, Miss/bounce only &lt;10% overlap. Grade &amp; crane aim at the swaying top (clean hits no longer bounce). Gentler tumble spin. Core 66/66.</td></tr>
+      <tr><td class="hash">9ca9ef4</td><td class="date">2026-06-03</td><td>Real bounce physics: blocks keep colliders (off during the scripted fall, on once welded/tumbling) so a missed block physically bounces off the tower &amp; base and tumbles down</td></tr>
+      <tr><td class="hash">74b97f9</td><td class="date">2026-06-03</td><td>Missed/Sloppy blocks fling outward (toward the miss side) + spin so they fall clear of the leaning tower instead of clipping through the floors below</td></tr>
+      <tr><td class="hash">a05e480</td><td class="date">2026-06-03</td><td>Sloppy/Miss blocks now tip off and fall (only Perfect/Good catch); slow the sway way down + wider/flatter/slower crane + smaller crane gap (edit GameTuning.asset directly). Core 69/69.</td></tr>
+      <tr><td class="hash">0271e51</td><td class="date">2026-06-03</td><td>Realism pass: pendulum crane (block hangs, arcs &amp; tilts), block falls tilted then rights itself on landing, much slower/weightier sway defaults</td></tr>
+      <tr><td class="hash">c4e0ea5</td><td class="date">2026-06-03</td><td>Pivot Stack-&gt;Tower-Bloxx: blocks stay whole and overhang (no slice), perpetual lean-driven sway (no ring-out), block welds where it lands (no jump/squash), camera shows the crane block + follows the tower's lean. Core 69/69.</td></tr>
+      <tr><td class="hash">5c5ff1d</td><td class="date">2026-06-03</td><td>Juice pass 1: slice overhang into a falling fragment + landing squash-stretch; restore the auto-fit follow camera</td></tr>
+      <tr><td class="hash">d1fc812</td><td class="date">2026-06-03</td><td>Fix invisible base/floors: TowerController.Init forces the tower root to unit scale + origin (a zero scale on the host GameObject shrank all welded children to nothing)</td></tr>
+      <tr><td class="hash">5dacaef</td><td class="date">2026-06-03</td><td>TEMP debug: fixed camera aimed at origin to isolate whether the base renders (follow-camera removed temporarily)</td></tr>
+      <tr><td class="hash">76f13ba</td><td class="date">2026-06-03</td><td>Camera: auto-fit the whole tower (base..top + headroom) instead of chasing the top, so the base never scrolls off-screen as it grows</td></tr>
+      <tr><td class="hash">9fbd649</td><td class="date">2026-06-03</td><td>Make the base visible: light-concrete colour (was brick, blended into the brown skybox) + 20% wider plinth</td></tr>
+      <tr><td class="hash">aceb22f</td><td class="date">2026-06-03</td><td>Phase 2 Unity layer: playable core-loop scripts (crane-&gt;drop-&gt;contact-&gt;Core-&gt;wobble)</td></tr>
+      <tr><td class="hash">312ad5f</td><td class="date">2026-06-03</td><td>Phase 2 Core: deterministic grading, scoring, block sequence (test-first, 69 tests)</td></tr>
+      <tr><td class="hash">0e16d98</td><td class="date">2026-06-03</td><td>Unity clean-open artifacts: regenerated packages-lock (inputsystem 1.19.0), .meta GUIDs for Core/Game sources, URP 17.3.0 re-serialized assets; ignore Unity-generated *.slnx</td></tr>
+      <tr><td class="hash">376be0f</td><td class="date">2026-06-03</td><td>Drop stale packages-lock.json so UPM re-resolves inputsystem to 1.19.0 on a clean reopen</td></tr>
+      <tr><td class="hash">17abc11</td><td class="date">2026-06-03</td><td>Fix Unity package versions for editor 6000.3.16f1 (inputsystem 1.12.0 -&gt; 1.19.0, URP 17.0.1 -&gt; 17.3.0, etc.); drop stale packages-lock so UPM re-resolves</td></tr>
+      <tr><td class="hash">51a5514</td><td class="date">2026-06-03</td><td>Fix ProjectVersion.txt so Unity Hub detects 6000.3.16f1 (LF + revision a56f230f6470); force LF on Unity text files in gitattributes</td></tr>
+      <tr><td class="hash">b770d01</td><td class="date">2026-06-03</td><td>Phase 1: Unity 6.3 URP scaffold + deterministic Towerpolis.Core + ADRs + CI</td></tr>
+      <tr><td class="hash">4c0639b</td><td class="date">2026-06-03</td><td>Commit gameplay blocks as real assets (blend + glb + fbx + preview)</td></tr>
+      <tr><td class="hash">bfb37ac</td><td class="date">2026-06-03</td><td>Add floor variants (Floor_Balcony_2 orange, Base_Ground_2 sandstone) + lower balcony/premium doors + residents back</td></tr>
+      <tr><td class="hash">e91e1d0</td><td class="date">2026-06-03</td><td>Final polish 2: canopies 2x shorter again (proj 0.09), base entrance canopy raised, glass slightly proud (no z-fighting), smaller door handles</td></tr>
+      <tr><td class="hash">4db57e4</td><td class="date">2026-06-03</td><td>Final polish: shorter canopies (proj 0.36-&gt;0.18), recessed window+door frames (glass flush, frame half into wall), narrower balcony door canopy, removed premium corner posts</td></tr>
+      <tr><td class="hash">80e9852</td><td class="date">2026-06-03</td><td>Robust awnings: anchor BACK-TOP edge above the frame, slope only down-out (never pokes the floor top); balcony door awning full-width; thinner + longer</td></tr>
+      <tr><td class="hash">84b9a8c</td><td class="date">2026-06-03</td><td>Canopies: raise above window/door frames (no clipping), half thickness, longer projection</td></tr>
+      <tr><td class="hash">dce3ec8</td><td class="date">2026-06-03</td><td>FIX flying canopies (transform_apply reset origin -&gt; rotation about world 0) + residents v4</td></tr>
+      <tr><td class="hash">fa23404</td><td class="date">2026-06-03</td><td>Fix detached canopies (anchor inner edge to wall) + parachutes = big round domes</td></tr>
+      <tr><td class="hash">a335e4d</td><td class="date">2026-06-03</td><td>Clean scene (remove stray/old objects) + residents v3 (umbrella=cone, parachute=wing/dome)</td></tr>
+      <tr><td class="hash">06f99c1</td><td class="date">2026-06-03</td><td>Blocks v9 (tilted canopies, front canopy on balcony floor, wider premium side canopies, raised door + closer steps + handrails) + residents v2 (human, 2 wings + 1 dome)</td></tr>
+      <tr><td class="hash">0eafd82</td><td class="date">2026-06-03</td><td>Add render/preview helper scripts (EEVEE + material/solid framing)</td></tr>
+      <tr><td class="hash">12121be</td><td class="date">2026-06-03</td><td>Blocks v8 (no roof, full-width premium balcony + continuous canopies, slimmer bracketless canopies, much bluer glossy glass) + 6 residents</td></tr>
+      <tr><td class="hash">a8754df</td><td class="date">2026-06-03</td><td>Blocks v7: bright colors (pink-&gt;green), window canopies, blank back walls, no base windows, wood/marble balconies, themed canopies, bluer glass</td></tr>
+      <tr><td class="hash">70cbda2</td><td class="date">2026-06-03</td><td>Blocks v6: bluer glossy glass, real doors w/ handles, premium re-layout, pastel-bright colors</td></tr>
+      <tr><td class="hash">888dbd1</td><td class="date">2026-06-03</td><td>Blocks v5: fix glass visibility, real entrance w/ canopy, brick taller base, clean roof, thinner frames/mullions, centered windows, premium composition, varied colors</td></tr>
+      <tr><td class="hash">e127660</td><td class="date">2026-06-03</td><td>Blocks v4: bright color, real framed windows, +50% floor height, 3-sided balcony, premium floor-to-ceiling + 2 side balconies</td></tr>
+      <tr><td class="hash">95efdc1</td><td class="date">2026-06-03</td><td>Blocks v3: match reference — clean apartment tower (single pastel body + white trim)</td></tr>
+      <tr><td class="hash">23a3b52</td><td class="date">2026-06-03</td><td>Blocks v2: premium look (framed emissive windows, bevels, gloss/gold, glass balcony, roof+base detail) + preview helpers</td></tr>
+      <tr><td class="hash">7cbe8a2</td><td class="date">2026-06-03</td><td>Add direct BlenderMCP socket bridge + build the 5 blocks</td></tr>
+      <tr><td class="hash">771197d</td><td class="date">2026-06-03</td><td>Lock art style = Direction 1 (Tower Bloxx revival) + freeze hero palette</td></tr>
+      <tr><td class="hash">d982f54</td><td class="date">2026-06-03</td><td>Lock design from player answers + art/Blender docs + BlenderMCP</td></tr>
+      <tr><td class="hash">a9ae506</td><td class="date">2026-06-03</td><td>Wire full agent orchestration + city/districts/auth/bonuses + 30 questions</td></tr>
+      <tr><td class="hash">6ee5da6</td><td class="date">2026-06-02</td><td>Integrate 15-agent Unity game-dev studio + reorganize docs</td></tr>
+      <tr><td class="hash">7ceee8e</td><td class="date">2026-06-02</td><td>Phase 0: Towerpolis concept, GDD, market analysis, build plan, art bible</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>Towerpolis · собрано Claude Code · полная история — <code>git log</code></footer>
+</div>
+</body>
+</html>
