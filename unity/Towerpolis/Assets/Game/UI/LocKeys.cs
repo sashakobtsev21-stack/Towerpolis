@@ -13,6 +13,7 @@ namespace Towerpolis.Game.UI
         public const string HudChain      = "hud.chain";       // "×{0}"
         public const string HudStreak     = "hud.streak";      // "СЕРИЯ ×{0}"
         public const string HudRunCoins   = "hud.runcoins";    // "+{0} МОНЕТ\nэтажи {1} · идеально {2} · всего {3}"
+        public const string HudComboCoins  = "hud.combo.coins"; // "+{0} монет" — combo-bar completion pop
         public const string HudTrophyLine = "hud.trophyline";  // "\nТРОФЕЙ ЗА СЕРИЮ  +{0} жильцов"
 
         // ----- Meta HUD (MetaHud) chrome -----

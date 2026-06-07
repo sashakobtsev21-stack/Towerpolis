@@ -15,9 +15,10 @@ namespace Towerpolis.Core.Meta
         public readonly int PerfectDrops;     // cumulative Perfect placements (coins + stats)
         public readonly int MaxPerfectChain;  // longest Perfect chain this run (weekly-mission metric)
         public readonly int TrophyRoofResidents; // run-end streak bonus residents, already folded into TotalResidents (Phase C)
+        public readonly int ComboBonusCoins;   // coins from filling the combo bar this run (added to run coins)
 
         public RunResult(int floorCount, int totalResidents, int runScore, int perfectDrops,
-            int maxPerfectChain = 0, int trophyRoofResidents = 0)
+            int maxPerfectChain = 0, int trophyRoofResidents = 0, int comboBonusCoins = 0)
         {
             FloorCount = floorCount;
             TotalResidents = totalResidents;
@@ -25,6 +26,7 @@ namespace Towerpolis.Core.Meta
             PerfectDrops = perfectDrops;
             MaxPerfectChain = maxPerfectChain;
             TrophyRoofResidents = trophyRoofResidents;
+            ComboBonusCoins = comboBonusCoins;
         }
 
         /// <summary>Snapshot the final state of a (typically ended) run. The Phase C trophy-roof bonus is
@@ -35,7 +37,7 @@ namespace Towerpolis.Core.Meta
             if (run is null) throw new System.ArgumentNullException(nameof(run));
             int trophy = run.TrophyRoofResidents;
             return new RunResult(run.FloorCount, run.TotalResidents + trophy, run.RunScore,
-                run.TotalPerfects, run.MaxPerfectChain, trophy);
+                run.TotalPerfects, run.MaxPerfectChain, trophy, run.ComboBonusCoins);
         }
     }
 }

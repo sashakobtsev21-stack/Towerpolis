@@ -17,6 +17,7 @@ namespace Towerpolis.Game.UI
             { LocKeys.HudChain,      "×{0}" },
             { LocKeys.HudStreak,     "СЕРИЯ ×{0}" },
             { LocKeys.HudRunCoins,   "+{0} МОНЕТ\nэтажи {1}  ·  идеально {2}  ·  всего {3}" },
+            { LocKeys.HudComboCoins, "+{0} монет" },
             { LocKeys.HudTrophyLine, "\nТРОФЕЙ ЗА СЕРИЮ  +{0} жильцов" },
 
             // ----- Meta HUD chrome -----

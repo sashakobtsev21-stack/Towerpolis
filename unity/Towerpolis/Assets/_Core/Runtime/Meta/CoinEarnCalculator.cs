@@ -14,7 +14,9 @@ namespace Towerpolis.Core.Meta
         public static int RunCoins(in RunResult result, CoreConfig cfg)
         {
             if (cfg is null) throw new ArgumentNullException(nameof(cfg));
-            return result.FloorCount * cfg.CoinPerFloor + result.PerfectDrops * cfg.CoinBonusPerfect;
+            return result.FloorCount * cfg.CoinPerFloor
+                 + result.PerfectDrops * cfg.CoinBonusPerfect
+                 + result.ComboBonusCoins; // coins from filled combo bars
         }
 
         /// <summary>

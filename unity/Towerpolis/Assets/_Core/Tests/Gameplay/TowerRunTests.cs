@@ -131,11 +131,11 @@ namespace Towerpolis.Core.Tests.Gameplay
             };
             foreach (var g in script) Place(run, FloorType.Standard, g);
 
-            Assert.That(run.Score, Is.EqualTo(2600), "floor scores 2100 + combo-complete bonus 500");
-            // Combo (Good holds, Miss resets, fills→bonus→reset at 5): 1,2,3,4,5(→bonus,reset 0),0,0,0,(miss),1.
+            Assert.That(run.Score, Is.EqualTo(2100), "floor scores only — the combo-bar bonus is COINS now, not score");
+            // Combo (only Perfects fill; fills→coins+reset at 5): 1,2,3,4,5(→+coins,reset 0),0,0,0,(miss),1.
             // residents per placed floor (base2 +perfect1 on P +combo bonus): 4,5,6,8,11,2,2,2,(–),4 = 44.
             Assert.That(run.TotalResidents, Is.EqualTo(44));
-            Assert.That(run.RunScore, Is.EqualTo(3040), "2600 + residents 440");
+            Assert.That(run.RunScore, Is.EqualTo(2540), "2100 + residents 440");
             Assert.That(run.MissStrikes, Is.EqualTo(1));
             Assert.That(run.FloorCount, Is.EqualTo(9)); // F1-8 + F10 (F9 bounced)
             Assert.That(run.IsOver, Is.False);
@@ -217,22 +217,22 @@ namespace Towerpolis.Core.Tests.Gameplay
             Place(run, FloorType.Standard, Grade.Perfect); // 2
             Place(run, FloorType.Standard, Grade.Perfect); // 3
             Place(run, FloorType.Standard, Grade.Perfect); // 4
-            var fifth = Place(run, FloorType.Standard, Grade.Perfect); // fills the bar → bonus + reset
-            Assert.That(fifth.ComboLevel, Is.Zero);              // reset to start over
-            Assert.That(fifth.ComboBonusScore, Is.EqualTo(500)); // ComboCompleteScoreBonus
+            var fifth = Place(run, FloorType.Standard, Grade.Perfect); // fills the bar → coins + reset
+            Assert.That(fifth.ComboLevel, Is.Zero);               // reset to start over
+            Assert.That(fifth.ComboBonusCoins, Is.EqualTo(20));   // ComboCompleteCoinBonus
             Assert.That(Place(run, FloorType.Standard, Grade.Perfect).ComboLevel, Is.EqualTo(1)); // fills again
         }
 
         [Test] // E2
-        public void Combo_GoodHoldsLevel()
+        public void Combo_GoodResetsLevel()
         {
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             for (int i = 0; i < 3; i++) Place(run, FloorType.Standard, Grade.Perfect); // ComboLevel → 3
             Assert.That(run.ComboLevel, Is.EqualTo(3));
             var o = Place(run, FloorType.Standard, Grade.Good);
-            Assert.That(o.ComboLevel, Is.EqualTo(3));    // a Good HOLDS the level (only a strike breaks it)
-            Assert.That(run.PerfectChain, Is.Zero);      // chain still resets on a Good
-            Assert.That(run.MissStrikes, Is.Zero);
+            Assert.That(o.ComboLevel, Is.Zero);          // a Good BREAKS the series (only Perfects fill it)
+            Assert.That(run.PerfectChain, Is.Zero);
+            Assert.That(run.MissStrikes, Is.Zero);       // but no strike — the block was caught
         }
 
         // (E4 — a Sloppy grade is unreachable via PlaceBlock under the default config: Grading collapses
@@ -259,14 +259,14 @@ namespace Towerpolis.Core.Tests.Gameplay
             Assert.That(o.ResidentsAdded, Is.Zero);
         }
 
-        [Test] // E6 — the combo bonus is paid on a Good, not only on Perfects (Good now HOLDS the level)
-        public void Combo_BonusApplies_OnGood()
+        [Test] // E6 — a Good breaks the combo → that floor earns base residents only
+        public void Combo_GoodEarnsBaseOnly()
         {
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             for (int i = 0; i < 3; i++) Place(run, FloorType.Standard, Grade.Perfect); // → level 3
-            var o = Place(run, FloorType.Standard, Grade.Good);                         // holds level 3
-            Assert.That(o.ComboLevel, Is.EqualTo(3));
-            Assert.That(o.ResidentsAdded, Is.EqualTo(2 + 3)); // base 2 + combo L3 (+3), no perfect bonus
+            var o = Place(run, FloorType.Standard, Grade.Good);                         // breaks → level 0
+            Assert.That(o.ComboLevel, Is.Zero);
+            Assert.That(o.ResidentsAdded, Is.EqualTo(2)); // base 2 only (combo broken)
         }
 
         [Test] // E7 — combo bonus stacks with the per-type Perfect bonus
@@ -280,16 +280,16 @@ namespace Towerpolis.Core.Tests.Gameplay
             Assert.That(o.ResidentsAdded, Is.EqualTo(11));
         }
 
-        [Test] // E8 — combo holds through Goods; only PerfectChain resets on a Good
+        [Test] // E8 — only Perfects fill the bar; a Good resets it
         public void Combo_Interleaved_IndependentOfPerfectChain()
         {
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             Grade[] script = { Grade.Perfect, Grade.Good, Grade.Perfect, Grade.Good, Grade.Perfect };
-            int[] expectedCombo = { 1, 1, 2, 2, 3 }; // Good holds, Perfect raises
+            int[] expectedCombo = { 1, 0, 1, 0, 1 }; // Perfect raises, Good resets
             for (int i = 0; i < script.Length; i++)
                 Assert.That(Place(run, FloorType.Standard, script[i]).ComboLevel, Is.EqualTo(expectedCombo[i]), $"drop {i}");
             Assert.That(run.PerfectChain, Is.EqualTo(1));
-            Assert.That(run.TotalResidents, Is.EqualTo(22)); // 4+3+5+4+6
+            Assert.That(run.TotalResidents, Is.EqualTo(16)); // 4+2+4+2+4
         }
 
         [Test] // E9
@@ -297,7 +297,7 @@ namespace Towerpolis.Core.Tests.Gameplay
         {
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             Assert.That(Place(run, FloorType.Standard, Grade.Perfect).ComboLevel, Is.EqualTo(1));
-            Assert.That(Place(run, FloorType.Standard, Grade.Good).ComboLevel, Is.EqualTo(1)); // a Good holds
+            Assert.That(Place(run, FloorType.Standard, Grade.Good).ComboLevel, Is.EqualTo(0)); // a Good resets
         }
 
         [Test] // E10 — worked example with combo
@@ -310,20 +310,20 @@ namespace Towerpolis.Core.Tests.Gameplay
                 Grade.Miss, Grade.Perfect, Grade.Good, Grade.Good, Grade.Perfect,
             };
             foreach (var g in script) Place(run, FloorType.Standard, g);
-            // combo (Good holds, Miss resets): 1,2,3,3,4,(miss 0),1,1,1,2
-            // residents: 4,5,6,5,8,(miss 0),4,3,3,5 = 43
-            Assert.That(run.TotalResidents, Is.EqualTo(43));
-            Assert.That(run.MaxComboLevel, Is.EqualTo(4));
+            // combo (only Perfects fill; Good + Miss reset): 1,2,3,0,1,(miss 0),1,0,0,1
+            // residents: 4,5,6,2,4,(miss 0),4,2,2,4 = 33
+            Assert.That(run.TotalResidents, Is.EqualTo(33));
+            Assert.That(run.MaxComboLevel, Is.EqualTo(3));
         }
 
-        [Test] // a Good HOLDS the combo (not decay), so the floor still earns the live combo bonus
-        public void Combo_GoodHoldsLevel1_StillEarnsBonus()
+        [Test] // a Good resets the combo to 0 → that floor earns base residents only
+        public void Combo_GoodResetsToZero()
         {
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             Place(run, FloorType.Standard, Grade.Perfect);      // combo → 1
-            var o = Place(run, FloorType.Standard, Grade.Good);  // holds at 1
-            Assert.That(o.ComboLevel, Is.EqualTo(1));
-            Assert.That(o.ResidentsAdded, Is.EqualTo(2 + 1));    // base 2 + combo[1] (1)
+            var o = Place(run, FloorType.Standard, Grade.Good);  // breaks → 0
+            Assert.That(o.ComboLevel, Is.Zero);
+            Assert.That(o.ResidentsAdded, Is.EqualTo(2));        // base 2 only
         }
 
         [Test] // QA gap: the combo bar fills + resets repeatedly across a long perfect run
@@ -341,8 +341,8 @@ namespace Towerpolis.Core.Tests.Gameplay
             var run = new TowerRun(new CoreConfig { StrikeLimit = 99 });
             for (int i = 0; i < 3; i++) Place(run, FloorType.Standard, Grade.Perfect); // → 3
             Assert.That(run.MaxComboLevel, Is.EqualTo(3));
-            Place(run, FloorType.Standard, Grade.Good); // combo holds 3
-            Place(run, FloorType.Standard, Grade.Miss); // combo → 0
+            Place(run, FloorType.Standard, Grade.Good); // combo resets to 0
+            Place(run, FloorType.Standard, Grade.Miss); // still 0
             Assert.That(run.ComboLevel, Is.Zero);
             Assert.That(run.MaxComboLevel, Is.EqualTo(3)); // peak preserved
         }

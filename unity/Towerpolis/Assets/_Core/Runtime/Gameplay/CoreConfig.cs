@@ -55,7 +55,7 @@ namespace Towerpolis.Core.Gameplay
         //     extra residents while the combo is alive. Deterministic (no clock) → daily-seed safe. ---
         public int[] ComboResidentBonus = { 0, 1, 2, 3, 5, 8 }; // residents/floor by combo level (tune by feel)
         public int ComboLevelCap = 5;                            // bar fills to this, then completes + resets
-        public int ComboCompleteScoreBonus = 500;                // score awarded when the combo bar fills, then it resets
+        public int ComboCompleteCoinBonus = 20;                  // coins awarded when the combo bar fills, then it resets
 
         // --- Phase C: earned specialty blocks (Tower-Bloxx). A streak of consecutive Perfects grants a
         //     pending upgrade that raises the NEXT spawned block (Standard→Balcony→Premium, more residents).

@@ -346,7 +346,7 @@ namespace Towerpolis.Game.UI
             _comboFlashing = true;
             if (_comboPop != null)
             {
-                _comboPop.text = "+" + bonus;
+                _comboPop.text = Loc.T(LocKeys.HudComboCoins, bonus); // "+N монет"
                 _comboPop.gameObject.SetActive(true);
             }
             float t = 0f; const float dur = 0.6f;

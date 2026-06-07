@@ -258,7 +258,7 @@ namespace Towerpolis.Game.Gameplay
             if (outcome.Grade == Grade.Perfect)
                 PerfectHit?.Invoke(placedPos + Vector3.up * tuning.floorHeight);
             if (outcome.Grade == Grade.Miss) StrikeAdded?.Invoke(Strikes);
-            if (outcome.ComboBonusScore > 0) ComboCompleted?.Invoke(outcome.ComboBonusScore);
+            if (outcome.ComboBonusCoins > 0) ComboCompleted?.Invoke(outcome.ComboBonusCoins);
 
             if (outcome.Toppled)
             {
