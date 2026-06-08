@@ -15,7 +15,7 @@ A modern take on the *Tower Bloxx* core loop: a crane swings a building block, y
 |---|---|
 | **Current phase** | Phase 3 — **Build City** meta (feature-complete; on-device gate pending) |
 | **Engine** | Unity 6.3 LTS (URP, mobile) |
-| **Core** | `Towerpolis.Core` — Unity-free C#, **291 NUnit tests green** (`dotnet test`) |
+| **Core** | `Towerpolis.Core` — Unity-free C#, **305 NUnit tests green** (`dotnet test`) |
 | **Platforms** | Android first → iOS later |
 | **Languages** | RU + EN from launch (custom localization service, ADR-0008) |
 | **Monetization** | F2P, monetization-ready (ads + IAP), switched **on after** retention is proven |
