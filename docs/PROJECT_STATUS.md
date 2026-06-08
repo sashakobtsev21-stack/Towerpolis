@@ -82,7 +82,31 @@
 3. **Balance pass (Phase-4 gate):** combo coin bonus, prestige star/coin curves, district fill goals vs best-N reachability — tune the `CoreConfig` data after playtest; watch GameAnalytics signals (see endless-spec §7).
 4. **Phase-4 UI polish:** prestige screen feel (VFX/star-rain), profile/trophy stat for `LifetimeBestPopulation`, prestige badge.
 5. **Phase-5 pass:** main menu, end-screen/share card, full screen reachability, hardcoded-string re-audit, settings persistence on device.
-6. **Open spec TODO-2** (Phase 5): daily-run void on app-quit (field `LastDailyAttemptDate` reserved).
+6. ~~**Open spec TODO-2** (Phase 5): daily-run void on app-quit~~ — **DONE**: configurable `DailyQuitPolicy` (`CountAsFailed` default / `VoidAttempt`) in CoreConfig + `CityState.BeginDailyAttempt`/`ResolveAbandonedDaily`, 14 NUnit tests.
+
+---
+
+## 5b. Pre-soft-launch audit (design + Unity code review)
+
+A full audit (design/balance + Unity-code) was run. The Core is solid (321 NUnit
+tests green; clean Unity↔Core boundary; daily-seed deterministic). The items below
+are the prioritized **pre-launch checklist** — most need Unity Editor or on-device
+playtest, so they're owner/playtest tasks, not code already landed.
+
+**P1 — must address before soft-launch**
+- [ ] **Restore `SummitHeight` 15 → 200** (`Game/UI/HUDController.cs:70`) — currently a dev test value; flip at launch.
+- [ ] **Re-model the prestige economy** — wiping upgrades + ½ coins for +25% residents is a punishing first prestige (risks D30). Consider keeping cosmetics/skins on prestige + prestige-count-scaled coin retain. (`CoreConfig.cs:89-91`, `CityState.Prestige()`)
+- [ ] **Perf hot-path:** pool residents in `ResidentFlyIn` (`Instantiate` + `.material`/`new Material()` per resident, up to 8/floor) and cache `HUDController.BuildRunResult()` (called every Update frame). (`ResidentFlyIn.cs:64,115`, `HUDController.cs:192-203`)
+- [ ] **`m_streak_days` weekly mission** can be mathematically unreachable in a given week — make it a relative increment or exclude when unreachable. (`progression-spec.md §4.1`, `MissionTracker.cs:133`)
+
+**P2 — before / right after launch (data-driven)**
+- [ ] **Grading thresholds — playtest first.** Sloppy is a dead grade (`GoodThreshold == SloppyThreshold == 0.80`); Perfect window (0.15) is tight on mobile mid-game. Try Good 0.55 / Sloppy 0.80 / Perfect 0.20-0.25, then playtest 10 sessions on a real device. (`CoreConfig.cs:12-14`)
+- [ ] **Wire `CoreConfig` fields through `GameTuning`** — `BuildCoreConfig()` returns `new CoreConfig()` defaults, so designers can't tune grading/scoring without recompiling. Blocks the balance pass above. (`GameTuning.cs:67`, `MetaService.cs:23`)
+- [ ] **Daily-seed comparison/share hook in Phase 3** — ship "yesterday's score" + a share card with the daily mode, not in Phase 5; without it the Wordle-for-stackers virality is inert. (`meta-spec.md §4.2, §8`)
+- [ ] Tune small rewards: combo bonus (20), day-7 streak (200), login day-1 (10) feel low; give gems an early sink. `BackgroundLayer.Update` writes `material.color` every frame (add a dirty-check). (`CoreConfig.cs:58,73,99`, `BackgroundLayer.cs:95`)
+
+**P3 — polish / watch list**
+- [ ] Decompose `HUDController.cs` (677 lines) into partials (follow the `MetaHud` 3-file pattern); move magic constants (tumble velocity, `settleDelay`) into `GameTuning`; use cached-`Coroutine` `StopCoroutine` instead of the `nameof` string overload; widen the mission template pool (8→12+); add eviction feedback when the city grid replaces a tower.
 
 ---
 
