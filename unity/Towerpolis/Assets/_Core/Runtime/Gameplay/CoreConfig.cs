@@ -73,6 +73,9 @@ namespace Towerpolis.Core.Gameplay
         public int[] StreakMilestoneDays = { 3, 7, 14, 30 };
         public int[] StreakMilestoneCoins = { 75, 200, 400, 1000 };
 
+        /// <summary>How to treat a daily-seed run abandoned by an app-quit mid-run.</summary>
+        public DailyQuitPolicy DailyQuitPolicy = DailyQuitPolicy.CountAsFailed;
+
         // --- Phase 4 — crane/meta upgrades (progression-spec §2). Index = level (0 = unupgraded). The
         //     gameplay track (Magnet) is SUPPRESSED in Daily Seed for fairness; the meta track (City Bonus)
         //     is safe everywhere. *UpgradeCosts[i] = cost to go from level i to level i+1. ---
@@ -105,5 +108,18 @@ namespace Towerpolis.Core.Gameplay
              0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
              0,  0,  0,  0,  0,  0,  0,  0,  1,  0,
         };
+    }
+
+    /// <summary>Policy for how the game handles a daily-seed run that was abandoned by an app-quit mid-run.</summary>
+    public enum DailyQuitPolicy
+    {
+        /// <summary>Treat the quit as a completed FAILED daily run (0 floors/0 residents, no deposit).
+        /// The day's streak still advances (a phone call doesn't break it) and the attempt is consumed
+        /// — today's daily cannot be retried. This is the default.</summary>
+        CountAsFailed = 0,
+
+        /// <summary>Void the attempt entirely — as if it never started: no streak change and the daily
+        /// can be replayed today.</summary>
+        VoidAttempt = 1,
     }
 }

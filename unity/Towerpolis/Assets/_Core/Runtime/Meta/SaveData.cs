@@ -98,6 +98,7 @@ namespace Towerpolis.Core.Meta
                 StreakLongest = s.Streak.Longest,
                 StreakLastDate = s.Streak.LastDate,
                 StreakFreezeCharges = s.Streak.FreezeCharges,
+                LastDailyAttemptDate = s.LastDailyAttemptDate,
                 RewardedDistricts = new List<string>(s.RewardedDistricts),
                 TotalPrestigeStars = s.TotalPrestigeStars,
                 PrestigeCount = s.PrestigeCount,

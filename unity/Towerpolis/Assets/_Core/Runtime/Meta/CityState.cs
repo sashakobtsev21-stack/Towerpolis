@@ -86,6 +86,8 @@ namespace Towerpolis.Core.Meta
         public int Coins { get; private set; }
         public int Gems { get; private set; }
         public DailyStreakState Streak { get; private set; } = DailyStreakState.Empty;
+        /// <summary>UTC yyyy-MM-dd of a daily run STARTED but not yet completed; "" when none in flight.</summary>
+        public string LastDailyAttemptDate { get; private set; } = "";
         public LocalLeaderboard Leaderboard { get; private set; } = new();
         public string ActiveDistrictId { get; set; } = "downtown";
 
@@ -201,6 +203,32 @@ namespace Towerpolis.Core.Meta
             return reward;
         }
 
+        /// <summary>Record that a daily run has been started for <paramref name="dateKey"/> (UTC yyyy-MM-dd).
+        /// Call at the moment the daily seed is launched; resolved by <see cref="EndDailyRun"/> or
+        /// <see cref="ResolveAbandonedDaily"/> on the next cold start.</summary>
+        public void BeginDailyAttempt(string dateKey) => LastDailyAttemptDate = dateKey ?? "";
+
+        /// <summary>Attempt to resolve an in-flight daily that was abandoned by an app-quit.
+        /// Returns <see cref="AbandonedDailyOutcome.None"/> when there is nothing to resolve:
+        /// no attempt in flight, the in-flight key doesn't match <paramref name="todayKey"/>, or
+        /// today was already completed normally. Otherwise applies the configured
+        /// <see cref="CoreConfig.DailyQuitPolicy"/> and returns the outcome.</summary>
+        public AbandonedDailyOutcome ResolveAbandonedDaily(string todayKey)
+        {
+            if (string.IsNullOrEmpty(todayKey)
+                || LastDailyAttemptDate != todayKey
+                || DailyStreak.HasPlayed(Streak, todayKey))
+                return AbandonedDailyOutcome.None;
+
+            LastDailyAttemptDate = "";
+            if (_cfg.DailyQuitPolicy == DailyQuitPolicy.VoidAttempt)
+                return new AbandonedDailyOutcome(resolved: true, consumed: false, streakAdvanced: false);
+
+            // CountAsFailed: advance the streak as a failed run (no deposit, no coins)
+            Streak = DailyStreak.Record(Streak, todayKey, Streak.FreezeCharges).next;
+            return new AbandonedDailyOutcome(resolved: true, consumed: true, streakAdvanced: true);
+        }
+
         public RunEndOutcome EndEndlessRun(in DistrictInfo d, in RunResult r, long timestampUtcTicks)
             => EndRun(in d, in r, timestampUtcTicks, daily: false, dateKey: null);
 
@@ -225,6 +253,7 @@ namespace Towerpolis.Core.Meta
                 milestoneCoins = DailyStreak.MilestoneCoins(Streak.Current, _cfg);
                 coins += milestoneCoins;
             }
+            if (daily) LastDailyAttemptDate = ""; // a completed daily run resolves any in-flight attempt
 
             int gemsEarned = 0;
             int districtRewardCoins = 0;
@@ -375,6 +404,7 @@ namespace Towerpolis.Core.Meta
             state.Gems = save.Gems;
             state.ActiveDistrictId = string.IsNullOrEmpty(save.ActiveDistrictId) ? "downtown" : save.ActiveDistrictId;
             state.Streak = new DailyStreakState(save.StreakCurrent, save.StreakLongest, save.StreakLastDate, save.StreakFreezeCharges);
+            state.LastDailyAttemptDate = save.LastDailyAttemptDate ?? "";
             state.Leaderboard = new LocalLeaderboard(save.LeaderboardMap());
             state.TotalPrestigeStars = save.TotalPrestigeStars;
             state.PrestigeCount = save.PrestigeCount;
@@ -407,5 +437,26 @@ namespace Towerpolis.Core.Meta
             }
             return state;
         }
+    }
+
+    /// <summary>Result of <see cref="CityState.ResolveAbandonedDaily"/>.</summary>
+    public readonly struct AbandonedDailyOutcome
+    {
+        /// <summary>True when there was an in-flight attempt that was resolved (consumed or voided).</summary>
+        public readonly bool Resolved;
+        /// <summary>True when the attempt was consumed (the daily cannot be retried today).</summary>
+        public readonly bool AttemptConsumed;
+        /// <summary>True when the streak was advanced as part of resolution.</summary>
+        public readonly bool StreakAdvanced;
+
+        public AbandonedDailyOutcome(bool resolved, bool consumed, bool streakAdvanced)
+        {
+            Resolved = resolved;
+            AttemptConsumed = consumed;
+            StreakAdvanced = streakAdvanced;
+        }
+
+        /// <summary>No in-flight attempt was found; nothing was changed.</summary>
+        public static AbandonedDailyOutcome None => new AbandonedDailyOutcome(false, false, false);
     }
 }
