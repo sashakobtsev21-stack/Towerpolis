@@ -11,7 +11,7 @@
 |---|---|
 | **Current focus** | Phase 3 (Build City meta) closing + Phase-4 meta (prestige, progression) building ahead of full UI |
 | **Engine** | Unity 6.3 LTS · URP mobile · Android-first |
-| **Core** | `Towerpolis.Core` (Unity-free, deterministic) — **312 NUnit tests, green** (`dotnet test`) |
+| **Core** | `Towerpolis.Core` (Unity-free, deterministic) — **321 NUnit tests, green** (`dotnet test`) |
 | **Build** | Game + Game.Tests compile against Unity DLLs; CI runs Core on every push |
 | **Repo** | origin = github.com/sashakobtsev21-stack/Towerpolis · all work on `master` |
 | **Monetization** | OFF (hooks only); flip after retention proven (D1≥30% / D7≥12% / rating≥4.0) |
